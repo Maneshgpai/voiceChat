@@ -96,22 +96,25 @@ def chat_interface():
         st.session_state.messages = []
 
     # Display previous messages
+    print("messages 2:",st.session_state.messages)
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
+            if message["role"] == "assistant":
+                st.audio(message["audio_file"])
 
     # Input for new message
     if prompt := st.chat_input(""):
         st.session_state.messages.append({"role": "user", "content": prompt})
-        with st.chat_message("user"):
+        with st.chat_message(name="user", avatar=":material/person:"):
             st.markdown(prompt)
 
         with st.chat_message(st.session_state["voice_name"]):
-            system_message = [{"role": "assistant", "content": voice_setting}]
+            voice_setting = [{"role": "assistant", "content": voice_setting}]
 
             response = client.chat.completions.create(
                 model=st.session_state["openai_model"],
-                messages=system_message+[
+                messages=voice_setting+[
                     {"role": m["role"], "content": m["content"]}
                     for m in st.session_state.messages
                 ],
@@ -132,9 +135,11 @@ def chat_interface():
                             # Append the content to the full response text
                             full_response += choice['delta']['content']
                             
-            voiceresponse.generateVoiceStream(full_response,st.session_state.voice_id)
+            filename = voiceresponse.generateVoice(full_response,st.session_state.voice_id)
+            st.audio(filename)
             
-        st.session_state.messages.append({"role": "assistant", "content": response})
+        st.session_state.messages.append({"role": "assistant", "content": response, "audio_file": filename})
+        print("messages 1:",st.session_state.messages)
 
 # Main function to control the flow
 def main():

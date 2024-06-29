@@ -1,6 +1,8 @@
 from elevenlabs.client import ElevenLabs
-from elevenlabs import stream, play,  Voice, VoiceSettings, save
+from elevenlabs import play,  Voice, VoiceSettings, save
 from datetime import datetime
+import subprocess
+import random
 
 client = ElevenLabs(api_key="sk_dc3a7c1e9fe70a079dad72dab79ecfe26d682f319df0154a")
 
@@ -17,8 +19,29 @@ def generateVoice(input_text,voice_id):
         ),
         model="eleven_multilingual_v2"
     )
-    # save(audio, "Riddhi_clone.mp3")
-    play(audio)
+    filename = voice_id+str(random.random()).replace(".","")+".mp3"
+    save(audio, filename)
+    print("saved audio file")
+    return filename
+
+def play_audio_stream(audio_stream):
+    # Start ffplay process
+    ffplay_process = subprocess.Popen(
+        ['ffplay', '-'],
+        stdin=subprocess.PIPE,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL
+    )
+
+    # Write audio data to ffplay's stdin
+    for chunk in audio_stream:
+        ffplay_process.stdin.write(chunk)
+    
+    # Close stdin to signal end of stream
+    ffplay_process.stdin.close()
+    
+    # Wait for ffplay to finish
+    ffplay_process.wait()
 
 def generateVoiceStream(input_text,voice_id):
     print(input_text)
@@ -27,6 +50,7 @@ def generateVoiceStream(input_text,voice_id):
             voice_id=voice_id,
             settings=client.voices.get_settings(voice_id)),
         model="eleven_multilingual_v2"
-        , stream=True)  
-    stream(audio_stream)
-    # return audio
+        , stream=True)
+    # stream(audio_stream)
+    # play_audio_stream(audio_stream)
+    return audio_stream
