@@ -1,0 +1,15 @@
+Fresh install
+=================
+python3 -m venv venv
+
+Run Virtual env and install dependancies
+========================================
+source venv/bin/activate
+pip install -r requirements.txt
+
+
+Running code
+================
+source venv/bin/activate
+streamlit run prototype_v0.1.py
+
