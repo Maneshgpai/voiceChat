@@ -145,12 +145,12 @@ dmypy.json
 cython_debug/
 
 .venv/
-.test_data/
+test_data
 .env
 *.json
 *.mp3
 *.flaac
-.cmdlineChat.py
+cmdlineChat.py
 
 # PyCharm
 #  JetBrains specific template is maintainted in a separate JetBrains.gitignore that can
