@@ -123,19 +123,8 @@ def chat_interface():
             )
             
             response = st.write_stream(response) ## For printing streaming text
-            # full_response = response.choices[0].message.content ## For printing full output
-            # st.write(full_response) ## For printing full output
-
-            full_response = ""
-            # Iterate over the streamed responses
-            for chunk in response:
-                if 'choices' in chunk:
-                    for choice in chunk['choices']:
-                        if 'delta' in choice and 'content' in choice['delta']:
-                            # Append the content to the full response text
-                            full_response += choice['delta']['content']
                             
-            filename = voiceresponse.generateVoice(full_response,st.session_state.voice_id)
+            filename = voiceresponse.generateVoice(response,st.session_state.voice_id)
             st.audio(filename)
             
         st.session_state.messages.append({"role": "assistant", "content": response, "audio_file": filename})

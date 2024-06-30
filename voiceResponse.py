@@ -9,7 +9,8 @@ client = ElevenLabs(api_key="sk_dc3a7c1e9fe70a079dad72dab79ecfe26d682f319df0154a
 # print(client.voices.get_all())
 
 def generateVoice(input_text,voice_id):
-    ## Code to create from an existing voice id
+    
+    print("Inside generateVoice >> input_text:",input_text)
     audio = client.generate(
         text=input_text,
         voice=Voice(
