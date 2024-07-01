@@ -10,7 +10,7 @@ client = ElevenLabs(api_key="sk_dc3a7c1e9fe70a079dad72dab79ecfe26d682f319df0154a
 
 def generateVoice(input_text,voice_id):
     
-    print("Inside generateVoice >> input_text:",input_text)
+    # print("Inside generateVoice >> input_text:",input_text)
     audio = client.generate(
         text=input_text,
         voice=Voice(
@@ -22,7 +22,7 @@ def generateVoice(input_text,voice_id):
     )
     filename = voice_id+str(random.random()).replace(".","")+".mp3"
     save(audio, filename)
-    print("saved audio file")
+    # print("saved audio file")
     return filename
 
 def play_audio_stream(audio_stream):

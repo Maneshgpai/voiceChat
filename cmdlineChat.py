@@ -1,12 +1,15 @@
 from openai import OpenAI
-import os
 from datetime import datetime
 import voiceResponse as voiceresponse
 from elevenlabs.client import ElevenLabs
 from elevenlabs import play
+import os
+from dotenv import load_dotenv
 
-os.environ["OPENAI_API_KEY"] = "sk-proj-LiZSI1OKw7YHB4WJEQ1BT3BlbkFJHlzqnlKXW0UkkSCLcd0U"
-client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"),)
+load_dotenv()
+openai_api_key = os.getenv("OPENAI_API_KEY")
+
+client = OpenAI(api_key=openai_api_key,)
 
 def chat_with_openai(prompt, history):
 
