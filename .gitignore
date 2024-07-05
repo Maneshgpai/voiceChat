@@ -1,7 +1,7 @@
 .venv/
 test_data
 .env
-*.json
+# *.json
 *.mp3
 *.flaac
 cmdlineChat.py
@@ -160,4 +160,4 @@ cython_debug/
 #.idea/
 test_data
 Riddhi_clone.mp3
-firestore_key.json
+# firestore_key.json
