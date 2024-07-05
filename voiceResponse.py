@@ -1,16 +1,17 @@
 from elevenlabs.client import ElevenLabs
 from elevenlabs import play,  Voice, VoiceSettings, save
+from datetime import datetime, timedelta, timezone
 from datetime import datetime
 import subprocess
 import random
+ist = timezone(timedelta(hours=5, minutes=30))
 
 client = ElevenLabs(api_key="sk_dc3a7c1e9fe70a079dad72dab79ecfe26d682f319df0154a")
 
 # print(client.voices.get_all())
 
 def generateVoice(input_text,voice_id):
-    
-    # print("Inside generateVoice >> input_text:",input_text)
+    print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')} Voice generation started")
     audio = client.generate(
         text=input_text,
         voice=Voice(
@@ -22,7 +23,7 @@ def generateVoice(input_text,voice_id):
     )
     filename = voice_id+str(random.random()).replace(".","")+".mp3"
     save(audio, filename)
-    # print("saved audio file")
+    print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')} Voice generation finished")
     return filename
 
 def play_audio_stream(audio_stream):
