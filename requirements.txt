@@ -2,6 +2,7 @@ openai
 elevenlabs
 streamlit
 python-dotenv
+google-cloud-firestore
 # mpv
 #sudo apt update
 #sudo apt install ffmpeg
