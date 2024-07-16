@@ -2,3 +2,9 @@ openai
 elevenlabs
 python-dotenv
 google-cloud-firestore
+Flask==3.0.3
+httpx==0.27.0
+flask_cors
+gunicorn==21.2.0
+Celery
+redis
