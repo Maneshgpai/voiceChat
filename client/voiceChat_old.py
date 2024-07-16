@@ -1,6 +1,6 @@
 from openai import OpenAI
 import streamlit as st
-import voiceResponse as voiceresponse
+import voiceResponseSrvr as voiceresponse
 import requests
 from elevenlabs import play
 from dotenv import load_dotenv
@@ -175,7 +175,7 @@ def render_setting_pg():
     with st.form("setting_form"):
         with st.container():
             st.text_area("User background & context",value=user_background, key="user_context")
-            col1, col2 = st.columns([1,1], gap="medium", vertical_alignment="top")
+            col1, col2 = st.columns([1,1], gap="medium")
             with col1:
                 language = st.selectbox("Language", dropdown_val_lang, index=index_lang, key="language", help="Selecting Hinglish will keep English as language to chat in Hindi. Tanglish is similar but for Tamil.")
                 mood = st.selectbox("Mood", dropdown_val_mood, index=index_mood, key="mood")
@@ -235,6 +235,32 @@ def get_prompt(context):
 
     return voice_setting
 
+def get_agent_response(voice_setting,session_messages,llm_model):
+
+    print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')} OpenAI call start")
+    response = client.chat.completions.create(
+        model=llm_model,
+        messages=voice_setting+[
+            {"role": m["role"], "content": m["content"]}
+            for m in session_messages
+        ],
+        stream=False, ## For streaming text
+        temperature=0
+    )
+    print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')} OpenAI call finished")
+    response = st.write(response)
+    return response
+
+def get_voice_response(response,voice_id):
+    try:
+        filename = ""
+        filename = voiceresponse.generateVoice(response,voice_id)
+        st.audio(filename)
+        return filename
+    except Exception as e:
+        error = "Error: {}".format(str(e))
+        st.error(error)
+
 # Function to display the chat interface
 def chat_interface():
     print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')} Chat page Render started")
@@ -251,12 +277,14 @@ def chat_interface():
         st.session_state["context"] = context
 
     # Display previous messages
+    st.markdown("Before displaying msg history")
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
             if message["role"] == "assistant":
                 st.audio(message["audio_file"])
 
+    st.markdown("After displaying msg history. Before Chat input")
     # Input for new message
     if prompt := st.chat_input(""):
         st.session_state.messages.append({"role": "user", "content": prompt})
@@ -264,32 +292,13 @@ def chat_interface():
             st.markdown(prompt)
 
         with st.chat_message(st.session_state["voice_name"]):
-            ## Get the user_context from DB and provide to prompt
             voice_setting = get_prompt(st.session_state["context"])
             voice_setting = [{"role": "assistant", "content": voice_setting}]
             
-            print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')} OpenAI call start")
-            response = client.chat.completions.create(
-                model=st.session_state["openai_model"],
-                messages=voice_setting+[
-                    {"role": m["role"], "content": m["content"]}
-                    for m in st.session_state.messages
-                ],
-                stream=True, ## For streaming text
-                temperature=0
-            )
-            print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')} OpenAI call finished")
-            response = st.write_stream(response) ## For printing streaming text
-                            
-            try:
-                filename = ""
-                filename = voiceresponse.generateVoice(response,st.session_state.voice_id)
-                st.audio(filename)
-            except Exception as e:
-                error = "Error: {}".format(str(e))
-                st.error(error)
+            response = get_agent_response(voice_setting,st.session_state.messages,st.session_state["openai_model"])
+            filename = get_voice_response(response,st.session_state.voice_id)
         
-            st.session_state.messages.append({"role": "assistant", "content": response, "audio_file": filename})
+        st.session_state.messages.append({"role": "assistant", "content": response, "audio_file": filename})
         # print("messages 1:",st.session_state.messages)
     print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')} Chat page Render finished")
 

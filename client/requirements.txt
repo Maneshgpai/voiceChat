@@ -1,0 +1,4 @@
+elevenlabs
+streamlit==1.36.0
+python-dotenv
+google-cloud-firestore

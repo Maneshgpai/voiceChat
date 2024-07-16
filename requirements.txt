@@ -1,9 +1,0 @@
-openai
-elevenlabs
-streamlit
-python-dotenv
-google-cloud-firestore
-# mpv
-#sudo apt update
-#sudo apt install ffmpeg
-# install mpv through Software GUI in Ubuntu

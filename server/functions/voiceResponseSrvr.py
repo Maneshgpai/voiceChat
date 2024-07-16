@@ -3,28 +3,34 @@ from elevenlabs import play,  Voice, VoiceSettings, save
 from datetime import datetime, timedelta, timezone
 from datetime import datetime
 import subprocess
-import random
 ist = timezone(timedelta(hours=5, minutes=30))
+import os
 
-client = ElevenLabs(api_key="sk_dc3a7c1e9fe70a079dad72dab79ecfe26d682f319df0154a")
+client = ElevenLabs(api_key=os.getenv("ELEVENLABS_API_KEY"))
 
-# print(client.voices.get_all())
-
-def generateVoice(input_text,voice_id):
+def generateVoice(context, input_text,voice_id):
     print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')} Voice generation started")
+    
+    voice_settings = VoiceSettings(
+        stability=context['voice_stability'],
+        similarity_boost=context['voice_similarity_boost'],
+        style=context['voice_style'],
+        use_speaker_boost=context['voice_use_speaker_boost']
+    )
+
+    print("Default setting for the voice id:",client.voices.get_settings(voice_id))
+
     audio = client.generate(
         text=input_text,
         voice=Voice(
             voice_id=voice_id,
-            settings=client.voices.get_settings(voice_id)
-            # settings=VoiceSettings(stability=0.71, similarity_boost=0.5, style=0.0, use_speaker_boost=True)
+            settings=client.voices.get_settings(voice_id),
+            # settings=voice_settings,
         ),
         model="eleven_multilingual_v2"
     )
-    filename = voice_id+str(random.random()).replace(".","")+".mp3"
-    save(audio, filename)
     print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')} Voice generation finished")
-    return filename
+    return audio
 
 def play_audio_stream(audio_stream):
     # Start ffplay process
