@@ -71,7 +71,7 @@ import os
 from dotenv import load_dotenv, find_dotenv
 load_dotenv(find_dotenv())
 
-default_setting_dict = json.loads(os.getenv("DEFAULT_VOICE_SETTING"))
+default_setting_dict = json.loads(os.getenv("DEFAULT_CHARACTER_SETTING"))
 
 # print(f"dict: {default_setting_dict}\n\n")
 print(default_setting_dict["voice_style"])

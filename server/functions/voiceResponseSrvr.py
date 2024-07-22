@@ -5,7 +5,10 @@ from datetime import datetime
 import subprocess
 ist = timezone(timedelta(hours=5, minutes=30))
 import os
+from dotenv import load_dotenv
+load_dotenv()
 
+print(os.getenv("ELEVENLABS_API_KEY"))
 client = ElevenLabs(api_key=os.getenv("ELEVENLABS_API_KEY"))
 
 def generateVoice(context, input_text,voice_id):
@@ -18,14 +21,15 @@ def generateVoice(context, input_text,voice_id):
         use_speaker_boost=context['voice_use_speaker_boost']
     )
 
-    print("Default setting for the voice id:",client.voices.get_settings(voice_id))
+    print("Default setting for voice:",client.voices.get_settings(voice_id))
+    print("Provided setting for voice:",voice_settings)
 
     audio = client.generate(
         text=input_text,
         voice=Voice(
             voice_id=voice_id,
-            settings=client.voices.get_settings(voice_id),
-            # settings=voice_settings,
+            # settings=client.voices.get_settings(voice_id),
+            settings=voice_settings,
         ),
         model="eleven_multilingual_v2"
     )

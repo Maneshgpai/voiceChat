@@ -8,3 +8,5 @@ flask_cors
 gunicorn==21.2.0
 Celery
 redis
+firebase_admin
+python-telegram-bot==13.12

@@ -33,9 +33,33 @@ def move_document(source_collection, target_collection, document_id):
     
     print(f"Document {document_id} has been moved from {source_collection} to {target_collection}.")
 
-# Example usage
-source_collection = 'voiceClone_users'
-target_collection = 'voiceClone_characters'
-document_id = '1qEiC6qsybMkmnNdVMbK'
+def duplicate_document(collection_name, original_doc_id):
+    original_doc_ref = db.collection(collection_name).document(original_doc_id)
+    # new_doc_ref = db.collection(collection_name).document(new_doc_id)
+    new_doc_ref = db.collection(collection_name).document()
 
-move_document(source_collection, target_collection, document_id)
+    try:
+        doc_snapshot = original_doc_ref.get()
+        
+        if not doc_snapshot.exists:
+            print(f'Original document {original_doc_id} does not exist!')
+            return
+        
+        original_data = doc_snapshot.to_dict()
+        new_doc_ref.set(original_data)
+        print(f'Document duplicated successfully: {new_doc_ref.id}')
+        
+    except Exception as e:
+        print(f'Error duplicating document: {e}')
+
+## MOVE DOCUMENT ##
+# source_collection = 'voiceClone_users'
+# target_collection = 'voiceClone_characters'
+# document_id = '1qEiC6qsybMkmnNdVMbK'
+# move_document(source_collection, target_collection, document_id)
+
+## DUPLICATE DOCUMENT ##
+collection_name = 'voiceClone_voices'
+original_doc_id = '0Ue9uqhhblwZNr8OFpCU'
+duplicate_document(collection_name, original_doc_id)
+

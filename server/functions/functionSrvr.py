@@ -5,7 +5,7 @@ import json
 
 ist = timezone(timedelta(hours=5, minutes=30))
 
-default_setting = json.loads(os.getenv("DEFAULT_VOICE_SETTING"))
+default_setting = json.loads(os.getenv("DEFAULT_CHARACTER_SETTING"))
 
 # default_character_name = "Sajni"
 # default_setting = {

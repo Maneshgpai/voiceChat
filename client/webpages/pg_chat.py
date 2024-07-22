@@ -101,12 +101,14 @@ def generateVoice(context, input_text,voice_id):
 def get_voice_response(voice_setting, full_response,voice_id):
     try:
         audio = generateVoice(voice_setting,full_response,voice_id)
+        print("Inside pg_chat >> get_voice_response > Generated Audio!")
         timestamp = datetime.now(ist).strftime('%Y%m%d%I%M%S%p')
         directory_path = "voice_chats/"+st.session_state["user_telegram"]
         if not os.path.exists(directory_path):
             os.makedirs(directory_path)
         filename = directory_path + "/"+ st.session_state["user_telegram"]+"_"+timestamp+".mp3"
         save(audio, filename)
+        print("Inside pg_chat >> get_voice_response > Saved Audio file!")
         return filename
     except Exception as e:
         error = "Error: {}".format(str(e))
@@ -150,10 +152,11 @@ def chat_interface():
         with st.chat_message("ai"):
             response = get_agent_response(st.session_state["voice_setting"],prompt)
             st.write(response)
+            print(f"Inside pg_chat >> chat_interface > response:{response}")
             file_name = get_voice_response(st.session_state["voice_setting"], response,st.session_state["char_id"])
             st.audio(file_name,autoplay=True)
+            print(f"Inside pg_chat >> chat_interface > Saving file in :{file_name}")
             st.session_state.messages.append({"role": "assistant", "content": response, "audio_file": file_name})
-
 def validate_user(db, telegram_id):
     user_exist = False
     collection_ref = db.collection('voiceClone_users')
@@ -168,7 +171,6 @@ def validate_user(db, telegram_id):
             st.session_state["uname"] = dict['user_name']
             user_exist = True
     return user_exist
-
 def render_page():
     if "voice_setting" not in st.session_state:
         df = get_all_voice_personas()
@@ -178,15 +180,17 @@ def render_page():
             char_name = st.selectbox("Select character to chat", df['Character'].tolist(), key="character_id")
             submit_voice_id = st.form_submit_button("Submit")
         if submit_voice_id:
-            print("Pressed submit:",datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S'))
-            result = df.loc[df['Character'] == char_name, 'ID']
-            char_id = result.iloc[0]
-            voice_setting = get_voice_setting(char_id)
-            ## Setting session variables : Voice ID, Voice Name, Voice Settings 
-            st.session_state["char_id"] = char_id
-            st.session_state["char_name"] = char_name
-            st.session_state["voice_setting"] = voice_setting
-            chat_interface()
+            with st.spinner("Loading..."):
+                result = df.loc[df['Character'] == char_name, 'ID']
+                char_id = result.iloc[0]
+                voice_setting = get_voice_setting(char_id)
+                ## Setting session variables : Voice ID, Voice Name, Voice Settings 
+                st.session_state["char_id"] = char_id
+                st.session_state["char_name"] = char_name
+                st.session_state["voice_setting"] = voice_setting
+                chat_interface()
+                st.rerun()
+
     else:
         chat_interface()
 

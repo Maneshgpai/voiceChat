@@ -61,8 +61,11 @@ def mockchat():
         response = {"status": "Success","status_cd": status_cd,"message": text_response}
         log_response = {"message": "Chat API > Bot responded successfully","status_cd":status_cd,"bot_message": text_response,"user_message":user_query, "timestamp":{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
 
-        ## Collating query & response to chat history, to add to Firebase DB 
+        ## Collating query & response to chat history, to add to Firebase DB
+        print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}**********BackendAPI >> mock_chat API >> PRE message_hist {message_hist}\n\n")
         message_hist.append({"role": "assistant", "content": text_response, "timestamp": datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S'),"source":"chat"})
+        print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}**********BackendAPI >> mock_chat API >> POST message_hist {message_hist}\n\n")
+        
     except Exception as e:
         error = "Error: {}".format(str(e))
         print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}**********BackendAPI >> mock_chat API >> ERROR {error}")
@@ -71,19 +74,85 @@ def mockchat():
         log_response = {"status": "Chat API > Error in Chat API call","status_cd":status_cd, "message": error,"user_message":user_query, "timestamp":{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
         response = {"status": "Error","status_cd":status_cd,"message": error}
 
+    print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}**********BackendAPI >> mock_chat API >> Log 1")
     ## Logging start ##
     log_ref = db.collection('voiceClone_log').document(document_id)
     func.createLog(log_ref, log_response)
     ## Logging stop ##
+    print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}**********BackendAPI >> mock_chat API >> Log 2")
 
     ## Adding chat history to Firebase DB 
     chat_ref = db.collection('voiceClone_chats').document(document_id)
+    print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}**********BackendAPI >> mock_chat API >> Log 3")
+    print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}**********BackendAPI >> mock_chat API >> document_id: {document_id}")
     if not chat_ref.get().exists:
         chat_ref.set({'messages': []})
+    print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}**********BackendAPI >> mock_chat API >> Log 4")
     chat_ref.update({"messages": firestore.ArrayUnion(message_hist)})
 
     print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}**********BackendAPI >> mock_chat API >> End statement in Backend API")
     return jsonify(response), status_cd
+
+@app.route("/api/tg_chat", methods=["POST"])
+def tg_chat():
+    document_id = ""
+    try:
+        data = request.json
+        telegram_id = data.get('telegram_id')
+        user_query = data.get('user_query')
+        voice_settings = data.get('voice_setting')
+        user_query_timestamp = data.get('user_query_timestamp')
+
+        ## Getting Firebase document ID
+        user_name, document_id = func.get_user_info(telegram_id, db)
+        print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}**********BackendAPI >> mock_chat API >> Telegram:{telegram_id}, Query:{user_query}, user_name:{user_name}, document_id:{document_id}")
+        
+        ## Getting Chat history
+        message_hist = func.get_chat_history(document_id, db)
+        ## Appending latest query to history 
+        message_hist.append({"role": "user", "content": user_query, "timestamp": user_query_timestamp,"source":"chat"})
+
+        ## Getting Bot response
+        text_response = textresponse.get_agent_response(voice_settings, message_hist)
+        print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}**********BackendAPI >> mock_chat API >> Response by bot is {text_response}")
+                
+        ## Setting up HTTP response
+        status_cd = 200
+        response = {"status": "Success","status_cd": status_cd,"message": text_response}
+        log_response = {"message": "Chat API > Bot responded successfully","status_cd":status_cd,"bot_message": text_response,"user_message":user_query, "timestamp":{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
+
+        ## Collating query & response to chat history, to add to Firebase DB
+        print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}**********BackendAPI >> mock_chat API >> PRE message_hist {message_hist}\n\n")
+        message_hist.append({"role": "assistant", "content": text_response, "timestamp": datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S'),"source":"chat"})
+        print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}**********BackendAPI >> mock_chat API >> POST message_hist {message_hist}\n\n")
+        
+    except Exception as e:
+        error = "Error: {}".format(str(e))
+        print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}**********BackendAPI >> mock_chat API >> ERROR {error}")
+        text_response = error
+        status_cd = 400
+        log_response = {"status": "Chat API > Error in Chat API call","status_cd":status_cd, "message": error,"user_message":user_query, "timestamp":{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
+        response = {"status": "Error","status_cd":status_cd,"message": error}
+
+    print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}**********BackendAPI >> mock_chat API >> Log 1")
+    ## Logging start ##
+    log_ref = db.collection('voiceClone_log').document(document_id)
+    func.createLog(log_ref, log_response)
+    ## Logging stop ##
+    print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}**********BackendAPI >> mock_chat API >> Log 2")
+
+    ## Adding chat history to Firebase DB 
+    chat_ref = db.collection('voiceClone_chats').document(document_id)
+    print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}**********BackendAPI >> mock_chat API >> Log 3")
+    print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}**********BackendAPI >> mock_chat API >> document_id: {document_id}")
+    if not chat_ref.get().exists:
+        chat_ref.set({'messages': []})
+    print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}**********BackendAPI >> mock_chat API >> Log 4")
+    chat_ref.update({"messages": firestore.ArrayUnion(message_hist)})
+
+    print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}**********BackendAPI >> mock_chat API >> End statement in Backend API")
+    return jsonify(response), status_cd
+
 
 @app.route("/api/create_profile", methods=["POST"])
 def create_profile():

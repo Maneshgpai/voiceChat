@@ -137,7 +137,7 @@ ist = timezone(timedelta(hours=5, minutes=30))
 #                 voice_setting = v
 #     else:
 #         print("pg_settings >> get_voice_setting > Fetching default voice settings from config files")
-#         voice_setting = json.loads(os.getenv("DEFAULT_VOICE_SETTING"))
+#         voice_setting = json.loads(os.getenv("DEFAULT_CHARACTER_SETTING"))
 #         print("pg_settings >> get_voice_setting > Default voice settings:",voice_setting)
 #         db.collection('voiceClone_characters').document(voice_id).set({
 #             "last_updated_on": datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S'),
