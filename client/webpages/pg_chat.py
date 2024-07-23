@@ -38,17 +38,17 @@ def login_prompt():
     st.text_input("Enter password:", key="password", type="password", on_change=check_password)
     if st.session_state.status == "incorrect":
         st.warning("Incorrect password. Please try again.")
-def get_voice_setting(char_id):
+def get_char_setting(char_id):
     ## If exists, fetch settings from DB
     setting = db.collection('voiceClone_characters').document(char_id)
     doc = setting.get()
-    voice_setting = {}
+    char_setting = {}
     if doc.exists:
         setting = doc.to_dict()
         for k, v in setting.items():
             if k == 'setting':
-                voice_setting = v
-    return voice_setting
+                char_setting = v
+    return char_setting
 def get_agent_response(voice_setting,user_query):
 
     ## Based on model from the voice_setting, call different LLMs
@@ -113,16 +113,17 @@ def get_voice_response(voice_setting, full_response,voice_id):
     except Exception as e:
         error = "Error: {}".format(str(e))
         st.error(error)
-def get_all_voice_personas():
+def get_all_characters():
     users_ref = db.collection('voiceClone_characters')
     docs = users_ref.stream()
     user_data = []
     for doc in docs:
-        voice_id1 = doc.id
+        char_id1 = doc.id
         user_info = doc.to_dict()
-        name = user_info.get('name', 'N/A')
-        user_data.append((name, voice_id1))
-    df = pd.DataFrame(user_data, columns=['Character', 'ID'])
+        name = user_info.get('name', 'not_populated')
+        voice_id1 = user_info.get('voice_id', 'not_populated')
+        user_data.append((name,voice_id1, char_id1))
+    df = pd.DataFrame(user_data, columns=['Character','Voice ID', 'ID'])
     return(df)
 def chat_interface():
     print("Inside pg_chat >> chat_interface > Entered func")
@@ -152,8 +153,7 @@ def chat_interface():
         with st.chat_message("ai"):
             response = get_agent_response(st.session_state["voice_setting"],prompt)
             st.write(response)
-            print(f"Inside pg_chat >> chat_interface > response:{response}")
-            file_name = get_voice_response(st.session_state["voice_setting"], response,st.session_state["char_id"])
+            file_name = get_voice_response(st.session_state["voice_setting"], response, st.session_state["v_voice_id"])
             st.audio(file_name,autoplay=True)
             print(f"Inside pg_chat >> chat_interface > Saving file in :{file_name}")
             st.session_state.messages.append({"role": "assistant", "content": response, "audio_file": file_name})
@@ -173,19 +173,21 @@ def validate_user(db, telegram_id):
     return user_exist
 def render_page():
     if "voice_setting" not in st.session_state:
-        df = get_all_voice_personas()
+        df = get_all_characters()
         st.subheader(f"Welcome {st.session_state['uname']}")
-        with st.form("Submit_voice_id", border=False):
-            print("Entered Voice ID form ",datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S'))
+        with st.form("select_chat_character", border=False):
+            print("Entered chat form ",datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S'))
             char_name = st.selectbox("Select character to chat", df['Character'].tolist(), key="character_id")
-            submit_voice_id = st.form_submit_button("Submit")
-        if submit_voice_id:
+            submit_chat_character = st.form_submit_button("Submit")
+        if submit_chat_character:
             with st.spinner("Loading..."):
                 result = df.loc[df['Character'] == char_name, 'ID']
                 char_id = result.iloc[0]
-                voice_setting = get_voice_setting(char_id)
-                ## Setting session variables : Voice ID, Voice Name, Voice Settings 
+                result = df.loc[df['Character'] == char_name, 'Voice ID']
+                v_voice_id = result.iloc[0]
+                voice_setting = get_char_setting(char_id)
                 st.session_state["char_id"] = char_id
+                st.session_state["v_voice_id"] = v_voice_id
                 st.session_state["char_name"] = char_name
                 st.session_state["voice_setting"] = voice_setting
                 chat_interface()

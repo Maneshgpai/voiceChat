@@ -62,9 +62,9 @@ def mockchat():
         log_response = {"message": "Chat API > Bot responded successfully","status_cd":status_cd,"bot_message": text_response,"user_message":user_query, "timestamp":{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
 
         ## Collating query & response to chat history, to add to Firebase DB
-        print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}**********BackendAPI >> mock_chat API >> PRE message_hist {message_hist}\n\n")
+        # print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}**********BackendAPI >> mock_chat API >> PRE message_hist {message_hist}\n\n")
         message_hist.append({"role": "assistant", "content": text_response, "timestamp": datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S'),"source":"chat"})
-        print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}**********BackendAPI >> mock_chat API >> POST message_hist {message_hist}\n\n")
+        # print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}**********BackendAPI >> mock_chat API >> POST message_hist {message_hist}\n\n")
         
     except Exception as e:
         error = "Error: {}".format(str(e))

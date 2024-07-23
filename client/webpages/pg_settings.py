@@ -382,10 +382,10 @@ def get_all_voices():
         user_data.append((
             user_info.get('name', '<Not given!>'),
             user_info.get('gender', '<Not given!>'),
-            user_info.get('Age', '<Not given!>'),
-            user_info.get('Ethnicity', '<Not given!>'),
+            user_info.get('age', '<Not given!>'),
+            user_info.get('ethnicity', '<Not given!>'),
             user_info.get('language', '<Not given!>'),
-            user_info.get('Tags', '<Not given!>'),
+            user_info.get('tags', '<Not given!>'),
             user_info.get('id', '<Not given!>')))
     df = pd.DataFrame(user_data, columns=['Name', 'Gender', 'Age', 'Ethnicity', 'Language', 'Tags', 'Voice ID'])
     return(df)
@@ -426,6 +426,7 @@ else:
                 print("Selected Create New character:",datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S'))
                 setting_pg("create_new_char", 'default_char_id')
                 st.rerun()
+
     else:
         setting_pg(st.session_state["action_setting"], st.session_state["char_id"])
 
