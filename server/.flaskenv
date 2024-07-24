@@ -1,2 +1,2 @@
-FLASK_APP=backend_app.py
+FLASK_APP=tg_bot.py
 FLASK_ENV=development
