@@ -1,4 +1,6 @@
 import logging
+from flask import Flask, jsonify, request, make_response, Response, stream_with_context
+from flask_cors import CORS
 from telegram import Update
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext, CallbackQueryHandler
 from telegram.error import TelegramError, NetworkError
@@ -12,6 +14,9 @@ from functions import voiceResponseSrvr as voiceresponse
 from functions import functionSrvr as func
 from google.cloud import firestore
 import shutil
+
+app = Flask(__name__)
+CORS(app)
 
 load_dotenv(find_dotenv())
 ist = timezone(timedelta(hours=5, minutes=30))
@@ -341,3 +346,5 @@ def main() -> None:
 
 if __name__ == '__main__':
     main()
+    app.run(debug=True, port=8080) ### For Local host
+
