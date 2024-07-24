@@ -170,32 +170,6 @@ def get_char_setting(char_id):
         print("pg_settings >> get_char_setting > New Character. Fetching default voice settings from config files")
         char_setting = json.loads(os.getenv("DEFAULT_CHARACTER_SETTING"))
 
-        # db.collection('voiceClone_characters').document(char_id).set({
-        #     "last_updated_on": datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S'),
-        #     "name":os.getenv("DEFAULT_CHARACTER_NAME"),
-        #     "voice_id":os.getenv("DEFAULT_VOICE_ID"),
-        #     "setting":char_setting,
-        #     "action":"created_new_profile"})
-
-        # if char_id == 'default_char_id':
-        #     print("pg_settings >> set_character_setting > Creating document with auto generated doc id")
-        #     db.collection('voiceClone_characters').document().set({
-        #         "last_updated_on": datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S'),
-        #         "name":"<Not given!>",
-        #         "character_descr":"<Not given!>",
-        #         "voice_id":os.getenv("DEFAULT_VOICE_ID"),
-        #         "setting":char_setting,
-        #         "action":"created_new_profile"})
-        # else:
-        #     print(f"pg_settings >> set_character_setting > Creating document with {char_id} as doc id")
-        #     db.collection('voiceClone_characters').document(char_id).set({
-        #         "last_updated_on": datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S'),
-        #         "name":"<Not given!>",
-        #         "character_descr":"<Not given!>",
-        #         "voice_id":os.getenv("DEFAULT_VOICE_ID"),
-        #         "setting":char_setting,
-        #         "action":"created_new_profile"})
-
     print("pg_settings >> get_char_setting > Succesfully fetched character setting")
 
 

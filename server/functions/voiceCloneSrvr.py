@@ -1,8 +1,10 @@
 from elevenlabs.client import ElevenLabs
 from elevenlabs import stream, play,  Voice, VoiceSettings, save
 from datetime import datetime, timedelta, timezone
+import os
 
-client = ElevenLabs(api_key="sk_dc3a7c1e9fe70a079dad72dab79ecfe26d682f319df0154a")
+client = ElevenLabs(api_key=os.getenv("ELEVENLABS_API_KEY"))
+
 
 print(f"{datetime.now()} Started cloning voice...")
 ## Code to clone a voice from sample files

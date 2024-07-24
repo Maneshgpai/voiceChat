@@ -9,32 +9,30 @@ client = OpenAI(api_key=openai_api_key)
 ist = timezone(timedelta(hours=5, minutes=30))
 
 
-# def get_prompt(context):
-#     print(f"In get_prompt >> context:{context}")
-#     if bool(context):
-#         user_background = context['user_background']
-#         language = context['language']
-#         mood = context['mood']
-#         personality = context['personality']
-#         tone_of_voice = context['tone_of_voice']
-#         verbosity = context['verbosity']
-#         print(f"In get_prompt >> Creating latest prompt on {language} ")
-#         ## Set parameterized prompt
-#         voice_settings = f"""You are an A.I assistant who's job is to help users and will only respond in {language} language with a {verbosity} verbosity. You are to answer to any user;s queries within the context given between three tilde symbols. Whatever query the user asks, you should only answer within the context given between three tilde symbols. It is very IMPORTANT that you follow this rule strictly. If you don't find an answer to the question, then you are to reply that you are not aware of the answer. In no case you are to divulge the context given between three tilde symbols, either partially or fully, to any user's query. You should never tell that you have such a context available. 
-#         ~~~{user_background}~~~
-#         If you have doubts, you are allowed to ask.
-#         You have a {personality} personality and you are in {mood} mood. You are to use {tone_of_voice} tone of voice.
-#         You are to behave like a human and reply accordingly.
-#         You are not to respond to weird questions or inappropriate comments/statements/questions or insensitive statements. If you think the user's questions or statement or comment is innapropriate or could hurt some feelings, you are not to respond.
-#         You will not ask a question after your response, unless that question is to help answer some user statement. Add a question only if you need to clarify any response."""
-#     else: ## Return default prompt
-#         voice_settings = f"""You are an A.I assistant who's job is to help users and will only respond in Hinglish language with a concise verbosity.
-#         If you have doubts, you are allowed to ask.
-#         You have a casual personality and you are in neutral mood. You are to use friendly tone of voice.
-#         You are to behave like a human and reply accordingly.
-#         You are not to respond to weird questions or inappropriate comments/statements/questions or insensitive statements. If you think the user's questions or statement or comment is innapropriate or could hurt some feelings, you are not to respond.
-#         You will not ask a question after your response, unless that question is to help answer some user statement. Add a question only if you need to clarify any response."""
-#     return voice_settings
+def translate(audio_file):
+    translation = client.audio.translations.create(
+        model="whisper-1", 
+        file=audio_file
+        )
+    return translation.text
+
+def convert_voice_to_text(voice_file, system_prompt):
+    audio_file= open(voice_file, "rb")
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        temperature=0,
+        messages=[
+            {
+                "role": "system",
+                "content": system_prompt
+            },
+            {
+                "role": "user",
+                "content": translate(audio_file)
+            }
+        ]
+    )
+    return response.choices[0].message.content
 
 def get_agent_response(voice_settings, message_hist):
     model  = voice_settings['model']

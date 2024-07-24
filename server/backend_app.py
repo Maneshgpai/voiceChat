@@ -50,7 +50,7 @@ def mockchat():
         ## Getting Chat history
         message_hist = func.get_chat_history(document_id, db)
         ## Appending latest query to history 
-        message_hist.append({"role": "user", "content": user_query, "timestamp": user_query_timestamp,"source":"chat"})
+        message_hist.append({"role": "user", "content": user_query, "timestamp": user_query_timestamp})
 
         ## Getting Bot response
         text_response = textresponse.get_agent_response(voice_settings, message_hist)
@@ -63,7 +63,7 @@ def mockchat():
 
         ## Collating query & response to chat history, to add to Firebase DB
         # print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}**********BackendAPI >> mock_chat API >> PRE message_hist {message_hist}\n\n")
-        message_hist.append({"role": "assistant", "content": text_response, "timestamp": datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S'),"source":"chat"})
+        message_hist.append({"role": "assistant", "content": text_response, "timestamp": datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')})
         # print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}**********BackendAPI >> mock_chat API >> POST message_hist {message_hist}\n\n")
         
     except Exception as e:
@@ -110,7 +110,7 @@ def tg_chat():
         ## Getting Chat history
         message_hist = func.get_chat_history(document_id, db)
         ## Appending latest query to history 
-        message_hist.append({"role": "user", "content": user_query, "timestamp": user_query_timestamp,"source":"chat"})
+        message_hist.append({"role": "user", "content": user_query, "timestamp": user_query_timestamp})
 
         ## Getting Bot response
         text_response = textresponse.get_agent_response(voice_settings, message_hist)
@@ -123,7 +123,7 @@ def tg_chat():
 
         ## Collating query & response to chat history, to add to Firebase DB
         print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}**********BackendAPI >> mock_chat API >> PRE message_hist {message_hist}\n\n")
-        message_hist.append({"role": "assistant", "content": text_response, "timestamp": datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S'),"source":"chat"})
+        message_hist.append({"role": "assistant", "content": text_response, "timestamp": datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')})
         print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}**********BackendAPI >> mock_chat API >> POST message_hist {message_hist}\n\n")
         
     except Exception as e:
