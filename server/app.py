@@ -367,24 +367,24 @@ def webhook():
 #     return 'ok', 200
 
 # Define a handler for the /start command
-def start(update, context):
-    context.bot.send_message(chat_id=update.effective_chat.id, text="Hello! I'm a simple bot.")
+# def start(update, context):
+#     context.bot.send_message(chat_id=update.effective_chat.id, text="Hello! I'm a simple bot.")
 
-# ## Define the start command handler
-# def start(update: Update, context: CallbackContext) -> None:
-#     # Create the inline keyboard markup with bot options
-#     keyboard = [
-#         [InlineKeyboardButton("Geetanjali Iyengar", callback_data='Geetanjali Iyengar')],
-#         [InlineKeyboardButton("Tripti", callback_data='Tripti')],
-#         [InlineKeyboardButton("Astrologer", callback_data='Astrologer')],
-#         [InlineKeyboardButton("Girl Next door", callback_data='Girl Next door')],
-#         [InlineKeyboardButton("Alia", callback_data='Alia')]
-#     ]
-#     reply_markup = InlineKeyboardMarkup(keyboard)
-#     update.message.reply_text('Hi! Choose a profile to talk to:', reply_markup=reply_markup)
+## Define the start command handler
+def start(update: Update, context: CallbackContext) -> None:
+    # Create the inline keyboard markup with bot options
+    keyboard = [
+        [InlineKeyboardButton("Geetanjali Iyengar", callback_data='Geetanjali Iyengar')],
+        [InlineKeyboardButton("Tripti", callback_data='Tripti')],
+        [InlineKeyboardButton("Astrologer", callback_data='Astrologer')],
+        [InlineKeyboardButton("Girl Next door", callback_data='Girl Next door')],
+        [InlineKeyboardButton("Alia", callback_data='Alia')]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    update.message.reply_text('Hi! Choose a profile to talk to:', reply_markup=reply_markup)
 
 # Create a dispatcher
-dispatcher = Dispatcher(bot, None, workers=0, use_context=True)
+dispatcher = Dispatcher(bot, None, workers=4, use_context=True)
 dispatcher.add_handler(CommandHandler("start", start))
 dispatcher.add_handler(CommandHandler("menu", menu))
 dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
@@ -406,7 +406,8 @@ bot.set_webhook(url='https://api-tgbot.onrender.com/{}'.format(TOKEN))
 #         return "Webhook setup failed"
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    # app.run(debug=True)
+    app.run(host='0.0.0.0', port=5000)
 
 # if __name__ == '__main__':
 #     # main()
