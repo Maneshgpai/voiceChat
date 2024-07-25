@@ -323,34 +323,34 @@ def error_handler(update: Update, context: CallbackContext) -> None:
         logger.error(f'An unexpected error occurred: {e}')
 
 # Main function to start the bot
-def main() -> None:
+# def main() -> None:
     
-    # Initialize the Updater
-    updater = Updater(token=TOKEN, use_context=True)
+#     # Initialize the Updater
+#     updater = Updater(token=TOKEN, use_context=True)
 
-    # Get the dispatcher to register handlers
-    dp = updater.dispatcher
+#     # Get the dispatcher to register handlers
+#     dp = updater.dispatcher
 
-    # Handle different commands, add /start command handler
-    dp.add_handler(CommandHandler("start", start))
+#     # Handle different commands, add /start command handler
+#     dp.add_handler(CommandHandler("start", start))
     
-    # Handle non-command messages
-    dp.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
+#     # Handle non-command messages
+#     dp.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
 
-    # Handle voice messages
-    dp.add_handler(MessageHandler(Filters.voice, handle_voice))
+#     # Handle voice messages
+#     dp.add_handler(MessageHandler(Filters.voice, handle_voice))
 
-    # Handle button presses in the inline keyboard
-    dp.add_handler(CallbackQueryHandler(button))
+#     # Handle button presses in the inline keyboard
+#     dp.add_handler(CallbackQueryHandler(button))
 
-    # Error handler to handle errors
-    dp.add_error_handler(error_handler)
+#     # Error handler to handle errors
+#     dp.add_error_handler(error_handler)
 
-    # Start the Bot
-    updater.start_polling()
+#     # Start the Bot
+#     updater.start_polling()
 
-    # Run the bot until you press Ctrl+C
-    updater.idle()
+#     # Run the bot until you press Ctrl+C
+#     updater.idle()
 
 # Set webhook URL
 @app.route('/{}'.format(TOKEN), methods=['POST'])
