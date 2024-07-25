@@ -1,10 +1,11 @@
 import logging
 from flask import Flask, jsonify, request, make_response, Response, stream_with_context
 from flask_cors import CORS
-from telegram import Update
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext, CallbackQueryHandler
+from telegram import Update, Bot
+from telegram.ext import Dispatcher, Updater, CommandHandler, MessageHandler, Filters, CallbackContext, CallbackQueryHandler
 from telegram.error import TelegramError, NetworkError
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.utils.request import Request
 import time
 import os
 from dotenv import load_dotenv, find_dotenv
@@ -44,6 +45,24 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+### To deploy to Render ###
+bot = Bot(token=TOKEN)
+dispatcher = Dispatcher(bot, None, use_context=True)
+### To deploy to Render ###
+
+### To display as Menu button ###
+def menu(update: Update, context: CallbackContext) -> None:
+    # Create the inline keyboard markup with bot options
+    keyboard = [
+        [InlineKeyboardButton("Geetanjali Iyengar", callback_data='Geetanjali Iyengar')],
+        [InlineKeyboardButton("Tripti", callback_data='Tripti')],
+        [InlineKeyboardButton("Astrologer", callback_data='Astrologer')],
+        [InlineKeyboardButton("Girl Next door", callback_data='Girl Next door')],
+        [InlineKeyboardButton("Alia", callback_data='Alia')]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    update.message.reply_text('Hi! Choose a profile to talk to:', reply_markup=reply_markup)
+
 # Replace the bot token and reinitialize the updater and dispatcher
 def switch_bot_token(new_token, context):
     context.bot.token = new_token
@@ -70,7 +89,6 @@ def start(update: Update, context: CallbackContext) -> None:
         [InlineKeyboardButton("Alia", callback_data='Alia')]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
-
     update.message.reply_text('Hi! Choose a profile to talk to:', reply_markup=reply_markup)
 
 def get_audio_file_location(response_type,tg_voice_id, db_document_name):
@@ -344,7 +362,33 @@ def main() -> None:
     # Run the bot until you press Ctrl+C
     updater.idle()
 
-if __name__ == '__main__':
-    main()
-    app.run(debug=True, port=8080) ### For Local host
 
+# Register handlers to dispatcher
+dispatcher.add_handler(CommandHandler("start", start))
+dispatcher.add_handler(CommandHandler("menu", menu))
+dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
+dispatcher.add_handler(MessageHandler(Filters.voice, handle_voice))
+dispatcher.add_handler(CallbackQueryHandler(button))
+dispatcher.add_error_handler(error_handler)
+
+# Flask route to handle webhook
+@app.route('/webhook', methods=['POST'])
+def webhook():
+    update = Update.de_json(request.get_json(force=True), bot)
+    dispatcher.process_update(update)
+    return 'ok', 200
+
+# Route to set the webhook
+@app.route('/set_webhook', methods=['GET', 'POST'])
+def set_webhook():
+    webhook_url = 'https://api-tgbot.onrender.com/webhook'
+    s = bot.setWebhook(webhook_url)
+    if s:
+        return "Webhook setup successful"
+    else:
+        return "Webhook setup failed"
+
+
+if __name__ == '__main__':
+    # main()
+    app.run(debug=True, port=8080) ### For Local host
