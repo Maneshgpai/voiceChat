@@ -381,7 +381,7 @@ def webhook():
 # Route to set the webhook
 @app.route('/set_webhook', methods=['GET', 'POST'])
 def set_webhook():
-    webhook_url = 'https://api-tgbot.onrender.com/webhook'
+    webhook_url = 'https://api-tgbot.onrender.com'
     s = bot.setWebhook(webhook_url)
     if s:
         return "Webhook setup successful"
