@@ -27,6 +27,12 @@ logger = logging.getLogger(__name__)
 load_dotenv(find_dotenv())
 ist = timezone(timedelta(hours=5, minutes=30))
 db = firestore.Client.from_service_account_json("firestore_key.json")
+bot1_token = os.getenv("TELEGRAM_API_KEY_BOT2_123456789_BOT")
+bot2_token = os.getenv("TELEGRAM_API_KEY_SAJNI123_BOT")
+bot3_token = os.getenv("TELEGRAM_API_KEY_SAJNI1234_BOT")
+bot4_token = os.getenv("TELEGRAM_API_KEY_BOT3_123456789_BOT")
+bot5_token = os.getenv("TELEGRAM_API_KEY_BOT4_123456789_BOT")
+TOKEN = bot2_token
 available_tokens = {
     'Tripti': bot1_token,
     'Geetanjali Iyengar': bot2_token,
@@ -35,12 +41,6 @@ available_tokens = {
     'Alia': bot5_token
 }
 
-bot1_token = os.getenv("TELEGRAM_API_KEY_BOT2_123456789_BOT")
-bot2_token = os.getenv("TELEGRAM_API_KEY_SAJNI123_BOT")
-bot3_token = os.getenv("TELEGRAM_API_KEY_SAJNI1234_BOT")
-bot4_token = os.getenv("TELEGRAM_API_KEY_BOT3_123456789_BOT")
-bot5_token = os.getenv("TELEGRAM_API_KEY_BOT4_123456789_BOT")
-TOKEN = bot2_token
 
 # Initialize TG bot
 bot = telegram.Bot(token=TOKEN)
