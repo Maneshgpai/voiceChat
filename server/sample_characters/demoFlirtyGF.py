@@ -40,7 +40,7 @@ def translate_text(text):
     params = {
             'q': text,  # Text to translate
             'source': 'en-us',
-            'target': 'hi',  # Target language (Spanish in this case)
+            'target': 'hi',  # Target language
             'key': API_KEY  # Your API key
         }
     response = requests.get(url, params=params)
