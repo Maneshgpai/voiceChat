@@ -17,7 +17,7 @@ from functions import functionSrvr as func
 from google.cloud import firestore
 import shutil
 
-# Set up logging for debugging
+## Set up logging for debugging
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level=logging.INFO
@@ -27,59 +27,16 @@ logger = logging.getLogger(__name__)
 load_dotenv(find_dotenv())
 ist = timezone(timedelta(hours=5, minutes=30))
 db = firestore.Client.from_service_account_json("firestore_key.json")
-bot1_token = os.getenv("TELEGRAM_API_KEY_BOT2_123456789_BOT")
-bot2_token = os.getenv("TELEGRAM_API_KEY_SAJNI123_BOT")
-bot3_token = os.getenv("TELEGRAM_API_KEY_SAJNI1234_BOT")
-bot4_token = os.getenv("TELEGRAM_API_KEY_BOT3_123456789_BOT")
-bot5_token = os.getenv("TELEGRAM_API_KEY_BOT4_123456789_BOT")
-TOKEN = bot2_token
-available_tokens = {
-    'Tripti': bot1_token,
-    'Geetanjali Iyengar': bot2_token,
-    'Astrologer': bot3_token,
-    'Girl Next door': bot4_token,
-    'Alia': bot5_token
-}
 
+TOKEN = os.getenv("BOT_TELEGRAM_API_KEY")
+char_id = os.getenv("BOT_CHAR_ID")
+bot_webhook_url = os.getenv("BOT_WEBHOOK_URL")
 
-# Initialize TG bot
+## Initialize TG bot
 bot = telegram.Bot(token=TOKEN)
 
-# Initialize Flask app
+## Initialize Flask app
 app = Flask(__name__)
-
-# @app.route('/', methods=['GET'])
-# def index():
-#     return 'Hello, this is the root endpoint and the bot is running!'
-
-### To display as Menu button ###
-def menu(update: Update, context: CallbackContext) -> None:
-    # Create the inline keyboard markup with bot options
-    keyboard = [
-        [InlineKeyboardButton("Geetanjali Iyengar", callback_data='Geetanjali Iyengar')],
-        [InlineKeyboardButton("Tripti", callback_data='Tripti')],
-        [InlineKeyboardButton("Astrologer", callback_data='Astrologer')],
-        [InlineKeyboardButton("Girl Next door", callback_data='Girl Next door')],
-        [InlineKeyboardButton("Alia", callback_data='Alia')]
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    update.message.reply_text('Hi! Choose a profile to talk to:', reply_markup=reply_markup)
-
-# Replace the bot token and reinitialize the updater and dispatcher
-def switch_bot_token(new_token, context):
-    context.bot.token = new_token
-    context.dispatcher.bot = context.bot
-    print(f"Switched to new bot with token:{new_token}")
-
-def button(update: Update, context: CallbackContext) -> None:
-    query = update.callback_query
-    query.answer()
-    selected_bot = query.data
-    new_token = available_tokens.get(selected_bot)
-    if new_token:
-        query.edit_message_text(text=f"Switching to {selected_bot}...")
-        switch_bot_token(new_token, context)
-
 
 def get_audio_file_location(response_type,tg_voice_id, db_document_name):
     timestamp = datetime.now(ist).strftime('%Y%m%d%I%M%S%p')
@@ -88,15 +45,6 @@ def get_audio_file_location(response_type,tg_voice_id, db_document_name):
         os.makedirs(full_directory_path)
     filename = full_directory_path + "/"+response_type+"_"+db_document_name+"_"+timestamp+"_"+tg_voice_id+".ogg"
     return filename
-
-# Function to handle user queries
-def agent_response(query: str) -> str:
-    ## Getting Bot response
-    # text_response = textresponse.get_agent_response(voice_settings, message_hist)
-    # print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}**********BackendAPI >> mock_chat API >> Response by bot is {text_response}")
-
-    # Respond with a constant "Hmm"
-    return "Hmm"
 
 ## Creating new / Updating existing user info in DB ##
 def set_tg_user_data(db_document_name,user_id, update, db):
@@ -169,26 +117,9 @@ def update_chat_hist(message_hist,db_document_name):
         log_ref = db.collection('voiceClone_tg_log').document(db_document_name)
         func.createLog(log_ref, log_response)
 
-## Get character as per the token
-def get_char(token):
-    if token == bot1_token:
-        char_id = os.getenv("CHAR_ID_SAJNI123_BOT")
-    elif token == bot2_token:
-        char_id = os.getenv("CHAR_ID_BOT2_123456789_BOT")
-    elif token == bot3_token:
-        char_id = os.getenv("CHAR_ID_SAJNI1234_BOT")
-    elif token == bot4_token:
-        char_id = os.getenv("CHAR_ID_BOT3_123456789_BOT")
-    elif token == bot5_token:
-        char_id = os.getenv("CHAR_ID_BOT4_123456789_BOT")
-    return char_id
-
-# Define the handler for receiving voice messages
+## Define the handler for receiving voice messages
 def handle_voice(update: Update, context: CallbackContext) -> None:
     print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')} *********** TG BOT STARTED....")
-
-    ## Get character as per the token
-    char_id = get_char(context.bot.token)
 
     user_id = str(update.message.from_user.id)
     db_document_name = user_id+'_'+char_id
@@ -265,14 +196,13 @@ def handle_voice(update: Update, context: CallbackContext) -> None:
         log_ref = db.collection('voiceClone_tg_log').document(db_document_name)
         func.createLog(log_ref, log_response)
 
-# Define the message handler for user queries
+## Define the message handler for user queries
 def handle_message(update: Update, context: CallbackContext) -> None:
     print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')} *********** TG BOT STARTED....")
-
     text_response = "Thank you, aapke msg ke liye. Thoda sa sabr karo, I will be back soon!"
 
     ## Get character as per the token
-    char_id = get_char(context.bot.token)
+    print("**************** update:",update,"\n")
     user_id = str(update.message.from_user.id)
 
     db_document_name = user_id+'_'+char_id
@@ -307,7 +237,7 @@ def handle_message(update: Update, context: CallbackContext) -> None:
     message_hist.append({"role": "assistant", "content": text_response, "content_type": "text","response_status":text_response_status, "timestamp": datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')})
     update_chat_hist(message_hist,db_document_name)
 
-# Error handler for network and other common errors
+## Error handler for network and other common errors
 def error_handler(update: Update, context: CallbackContext) -> None:
     try:
         raise context.error
@@ -322,94 +252,40 @@ def error_handler(update: Update, context: CallbackContext) -> None:
         # Log other unexpected errors
         logger.error(f'An unexpected error occurred: {e}')
 
-# # Main function to start the bot
-# def main() -> None:
-    
-#     # Initialize the Updater
-#     updater = Updater(token=TOKEN, use_context=True)
-
-#     # Get the dispatcher to register handlers
-#     dp = updater.dispatcher
-
-#     # Handle different commands, add /start command handler
-#     dp.add_handler(CommandHandler("start", start))
-    
-#     # Handle non-command messages
-#     dp.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
-
-#     # Handle voice messages
-#     dp.add_handler(MessageHandler(Filters.voice, handle_voice))
-
-#     # Handle button presses in the inline keyboard
-#     dp.add_handler(CallbackQueryHandler(button))
-
-#     # Error handler to handle errors
-#     dp.add_error_handler(error_handler)
-
-#     # Start the Bot
-#     updater.start_polling()
-
-#     # Run the bot until you press Ctrl+C
-#     updater.idle()
-
-# Set webhook URL
+## Set webhook URL
 @app.route('/{}'.format(TOKEN), methods=['POST'])
 def webhook():
     update = telegram.Update.de_json(request.get_json(force=True), bot)
     dispatcher.process_update(update)
     return 'ok'
 
-## Flask route to handle webhook
-# @app.route('/webhook', methods=['POST'])
-# def webhook():
-#     update = Update.de_json(request.get_json(force=True), bot)
-#     dispatcher.process_update(update)
-#     return 'ok', 200
-
-# Define a handler for the /start command
+## Define a handler for the /start command
 # def start(update, context):
-#     context.bot.send_message(chat_id=update.effective_chat.id, text="Hello! I'm a simple bot.")
+#     context.bot.send_message(chat_id=update.effective_chat.id, text="Hi!")
 
-## Define the start command handler
-def start(update: Update, context: CallbackContext) -> None:
-    # Create the inline keyboard markup with bot options
-    keyboard = [
-        [InlineKeyboardButton("Geetanjali Iyengar", callback_data='Geetanjali Iyengar')],
-        [InlineKeyboardButton("Tripti", callback_data='Tripti')],
-        [InlineKeyboardButton("Astrologer", callback_data='Astrologer')],
-        [InlineKeyboardButton("Girl Next door", callback_data='Girl Next door')],
-        [InlineKeyboardButton("Alia", callback_data='Alia')]
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    update.message.reply_text('Hi! Choose a profile to talk to:', reply_markup=reply_markup)
+## Main function to start the bot
+# def main() -> None:
+#     updater = Updater(token=TOKEN, use_context=True)
+#     dp = updater.dispatcher
+#     dp.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
+#     dp.add_handler(MessageHandler(Filters.voice, handle_voice))
+#     dp.add_error_handler(error_handler)
+#     updater.start_polling()
+#     updater.idle()
 
-# Create a dispatcher
-dispatcher = Dispatcher(bot, None, workers=4, use_context=True)
-dispatcher.add_handler(CommandHandler("menu", menu))
-dispatcher.add_handler(CommandHandler("start", start))
+## Create a dispatcher
+dispatcher = Dispatcher(bot, None, workers=8, use_context=True)
 dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
 dispatcher.add_handler(MessageHandler(Filters.voice, handle_voice))
-dispatcher.add_handler(CallbackQueryHandler(button))
 dispatcher.add_error_handler(error_handler)
+## dispatcher.add_handler(CommandHandler("start", start))
+## dispatcher.add_handler(CommandHandler("menu", menu))
+## dispatcher.add_handler(CallbackQueryHandler(button))
 
 # Set webhook
-bot.set_webhook(url='https://api-tgbot.onrender.com/{}'.format(TOKEN))
-
-## Route to set the webhook
-# @app.route('/set_webhook', methods=['GET', 'POST'])
-# def set_webhook():
-#     webhook_url = 'https://api-tgbot.onrender.com'
-#     s = bot.setWebhook(webhook_url)
-#     if s:
-#         return "Webhook setup successful"
-#     else:
-#         return "Webhook setup failed"
+bot.set_webhook(url=bot_webhook_url+'/{}'.format(TOKEN))
 
 if __name__ == '__main__':
-    app.run(debug=True)
-    # app.run(host='0.0.0.0', port=5000)
-
-# if __name__ == '__main__':
-#     # main()
-#     app.run(host='0.0.0.0', port=5000)
-#     # app.run(debug=True, port=5000)
+    # main()
+    # app.run(debug=True)
+    app.run(host='0.0.0.0', port=5000)
