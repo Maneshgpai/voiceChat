@@ -121,7 +121,12 @@ def set_tg_user_data(db_document_name,user_id, update, db):
         doc = doc_ref.get()
         if doc.exists:
             print("TG_Bot/functionSrvr/set_tg_user_data > Updating 'voiceClone_tg_users' for ",db_document_name)
-            doc_ref.update({'last_chatted_on': datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')})
+            user_data = {'first_name' : update.message.from_user.first_name,
+            'last_name' : update.message.from_user.last_name,
+            'username' : update.message.from_user.username,
+            'language_code' : update.message.from_user.language_code,
+            'last_updated_on': datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}
+            doc_ref.update(user_data)
         else:
             print("TG_Bot/functionSrvr/set_tg_user_data > Creating new entry in 'voiceClone_tg_users' for ",db_document_name)
             user_data = {'id' : update.message.from_user.id,

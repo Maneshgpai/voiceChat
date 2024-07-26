@@ -62,7 +62,7 @@ def get_agent_response(voice_settings, message_hist):
     if model == "gpt-4o" or model == "gpt-3.5-turbo":
 
         print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')} textResponseSrvr > get_agent_response: OpenAI call started")
-        print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')} textResponseSrvr > get_agent_response: message_hist:\n{message_hist}")
+        # print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')} textResponseSrvr > get_agent_response: message_hist:\n{message_hist}")
 
         voice_settings = [{"role": "assistant", "content": final_prompt}]
         
