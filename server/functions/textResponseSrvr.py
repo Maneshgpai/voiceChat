@@ -2,11 +2,14 @@ from openai import OpenAI
 from dotenv import load_dotenv
 import os
 from datetime import datetime, timedelta, timezone
+from groq import Groq
+
 load_dotenv()
 openai_api_key = os.getenv("OPENAI_API_KEY")
 voice_api_key = os.getenv("ELEVENLABS_API_KEY")
 client = OpenAI(api_key=openai_api_key)
 ist = timezone(timedelta(hours=5, minutes=30))
+groq_client = Groq()
 
 
 def translate(audio_file):
@@ -34,7 +37,7 @@ def convert_voice_to_text(voice_file, system_prompt):
     )
     return response.choices[0].message.content
 
-def get_agent_response(voice_settings, message_hist):
+def get_agent_response(query, voice_settings, message_hist):
     model  = voice_settings['model']
     temp = voice_settings['temperature']
     prompt  = voice_settings['prompt']
@@ -59,22 +62,32 @@ def get_agent_response(voice_settings, message_hist):
     if not(user_context == "Nothing defined yet") or not(user_context == ""):
         final_prompt = final_prompt + f"A brief background about you is given as below:"+user_context
 
+    system_message = [{"role": "system", "content": final_prompt}]
     if model == "gpt-4o" or model == "gpt-3.5-turbo":
-
         print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')} textResponseSrvr > get_agent_response: OpenAI call started")
-        # print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')} textResponseSrvr > get_agent_response: message_hist:\n{message_hist}")
-
-        voice_settings = [{"role": "assistant", "content": final_prompt}]
-        
         response = client.chat.completions.create(
             model=model,
-            messages=voice_settings+[
+            messages=system_message+[
                 {"role": m["role"], "content": m["content"]}
                 for m in message_hist
             ],
             stream=False,
             temperature=temp
         )
-        
-        print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')} textResponseSrvr > get_agent_response: OpenAI response object \n {response.choices[0].message.content}")
-    return response.choices[0].message.content
+        full_response = response.choices[0].message.content
+        print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')} textResponseSrvr > get_agent_response: from {model}: \n {full_response}")
+
+    ## These model names are from     
+    elif model == "llama3-8b-8192" or model == "llama3-70b-8192" or model == "llama-3.1-8b-instant":
+        response = groq_client.chat.completions.create(
+                    messages=system_message+[
+                            {"role": m["role"], "content": m["content"]}
+                            for m in message_hist
+                        ],
+                    model=model,
+                    temperature=temp,
+                    top_p=0.9,
+                )
+        full_response = response.choices[0].message.content
+        print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')} textResponseSrvr > get_agent_response: from {model}: \n {full_response}")
+    return full_response
