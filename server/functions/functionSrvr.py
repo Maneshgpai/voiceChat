@@ -2,7 +2,6 @@ from google.cloud import firestore
 from datetime import datetime, timedelta, timezone
 import os
 import json
-from marshmallow import Schema, fields
 
 ist = timezone(timedelta(hours=5, minutes=30))
 
