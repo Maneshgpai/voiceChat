@@ -52,6 +52,7 @@ def get_replicate_response(model, query, system_prompt, message_hist):
             new_message_hist += "<|start_header_id|>assistant<|end_header_id|>"+a_msg.strip().replace("\n","\\n")+"<|eot_id|>"
 
     # Explantion of parameters:
+    # sdfsfd
     # https://openrouter.ai/docs/parameters
     full_text = []
     for event in replicate.stream(
