@@ -211,6 +211,7 @@ def render_setting_pg(action, context):
 
     ## Set on load values for dropdowns
     dropdown_val_model = ["gpt-3.5-turbo", "gpt-4o", "llama 3", "llama 3.1"]
+    dropdown_val_model = ["gpt-4o-mini", "gpt-4o", "llama 3", "llama 3.1"]
     index_model = 1
     for i, item in enumerate(dropdown_val_model):
         if item == model:
