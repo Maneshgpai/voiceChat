@@ -67,7 +67,6 @@ def get_replicate_response(model, query, system_prompt, message_hist):
                 "system_prompt": final_prompt,
                 "length_penalty": 1.35,
                 "stop_sequences": "<|end_of_text|>,<|eot_id|>",
-                # "prompt_template": "<|begin_of_text|><|start_header_id|>system<|end_header_id|>{system_prompt}<|eot_id|><|start_header_id|>user<|end_header_id|>{prompt}<|eot_id|><|start_header_id|>assistant<|end_header_id|>",
                 "prompt_template": "<|begin_of_text|><|start_header_id|>system<|end_header_id|>{system_prompt}<|eot_id|>{prompt}<|start_header_id|>assistant<|end_header_id|>",
                 "presence_penalty": 1.15,
                 "log_performance_metrics": False
