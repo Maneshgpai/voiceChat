@@ -11,3 +11,4 @@ redis
 firebase_admin
 python-telegram-bot==13.12
 groq
+replicate
