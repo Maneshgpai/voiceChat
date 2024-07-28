@@ -50,18 +50,19 @@ def get_replicate_response(model, query, system_prompt, message_hist):
         elif item.get('role') == 'assistant':
             a_msg = item.get('content', '')
             new_message_hist += "<|start_header_id|>assistant<|end_header_id|>"+a_msg.strip().replace("\n","\\n")+"<|eot_id|>"
-    # print(f"textResponseSrvr >> get_replicate_response > new_message_hist for Llama3.1:\n{new_message_hist}\n")
 
+    # Explantion of parameters:
+    # https://openrouter.ai/docs/parameters
     full_text = []
     for event in replicate.stream(
             model,
             input={
                 "top_k": 0,
-                "top_p": 0.9,
+                "top_p": 0.6,
                 "prompt": new_message_hist,
-                "max_tokens": 2000,
+                "max_tokens": 30,
                 "min_tokens": 0,
-                "temperature": 1.31,
+                "temperature": 1,
                 "system_prompt": final_prompt,
                 "length_penalty": 1.35,
                 "stop_sequences": "<|end_of_text|>,<|eot_id|>",
@@ -72,6 +73,11 @@ def get_replicate_response(model, query, system_prompt, message_hist):
             },
         ):
             full_text.append(str(event))
+    response = ''.join(full_text)
+    print(f"textResponseSrvr >> get_replicate_response > full_text:\n{full_text}\n")
+    print(f"textResponseSrvr >> get_replicate_response > response:\n{response}\n")
+
+
     return ''.join(full_text)
 def get_agent_response(query, voice_settings, message_hist):
     model  = voice_settings['model']
