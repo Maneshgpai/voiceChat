@@ -1,7 +1,6 @@
 import json
 from google.cloud import firestore
 from datetime import datetime, timedelta, timezone
-
 import textResponseSrvr as agent
 ist = timezone(timedelta(hours=5, minutes=30))
 
@@ -10,15 +9,4 @@ ist = timezone(timedelta(hours=5, minutes=30))
 message_hist = []
 new_message_hist = ""
 
-if message_hist == []:
-    new_message_hist = ""
-else:
-    for item in message_hist:
-        if item.get('role') == 'user':
-            u_msg = item.get('content', '')
-            new_message_hist += "<|start_header_id|>user<|end_header_id|>"+u_msg.strip().replace("\n","\\n")+"<|eot_id|>"
-        elif item.get('role') == 'assistant':
-            a_msg = item.get('content', '')
-            new_message_hist += "<|start_header_id|>assistant<|end_header_id|>"+a_msg.strip().replace("\n","\\n")+"<|eot_id|>"
-
-print(f"textResponseSrvr >> get_replicate_response > new_message_hist for Llama3.1:\n{new_message_hist}\n")
+print(agent.get_replicate_nsfw_response("meta/meta-llama-3-8b-instruct","give me a head, describing how you do it in detail"))
