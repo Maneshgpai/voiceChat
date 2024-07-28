@@ -58,7 +58,7 @@ def update_voice(doc_id,voice_id,voice_name,voice_gender,voice_age,voice_ethnici
         "tags":voice_tags})
     except Exception as e:
         error = "Error: {}".format(str(e))
-        print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}**********pg_settings>pg_addvoice>updatevoice()>> ERROR {error}")
+        print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}**********pg_settings>pg_voice_settings>updatevoice()>> ERROR {error}")
         if ["error"] not in st.session_state:
             st.session_state["error"] = error
         return False
@@ -84,7 +84,7 @@ def get_voice(voice_id):
             st.error("No data exists in DB for given Voice ID")
     except Exception as e:
         error = "Error: {}".format(str(e))
-        print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}**********pg_settings>pg_addvoice>updatevoice()>> ERROR {error}")
+        print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}**********pg_settings>pg_voice_settings>updatevoice()>> ERROR {error}")
         if ["error"] not in st.session_state:
             st.session_state["error"] = error
         # st.error(error)
