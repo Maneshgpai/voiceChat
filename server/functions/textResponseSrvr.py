@@ -38,7 +38,22 @@ def convert_voice_to_text(voice_file, system_prompt):
         ]
     )
     return response.choices[0].message.content
-def get_replicate_nsfw_response(model,query):
+def get_replicate_response(model, query, system_prompt, message_hist):
+    # print(f"textResponseSrvr >> get_replicate_response > message_hist:\n{message_hist}\n")
+    final_prompt = system_prompt.replace("\n","\\n")
+    query = query.replace("\n","\\n")
+    new_message_hist = ""
+    for item in message_hist:
+        if item.get('role') == 'user':
+            u_msg = item.get('content', '')
+            new_message_hist += "<|start_header_id|>user<|end_header_id|>"+u_msg.strip().replace("\n","\\n")+"<|eot_id|>"
+        elif item.get('role') == 'assistant':
+            a_msg = item.get('content', '')
+            new_message_hist += "<|start_header_id|>assistant<|end_header_id|>"+a_msg.strip().replace("\n","\\n")+"<|eot_id|>"
+
+    # Explantion of parameters:
+    # sdfsfd
+    # https://openrouter.ai/docs/parameters
     full_text = []
     for event in replicate.stream(
             model,
