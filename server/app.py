@@ -181,14 +181,14 @@ def handle_voice(update: Update, context: CallbackContext) -> None:
     update_chat_hist(message_hist,db_document_name)
 
     ## OPTIONAL: Replying back with text
-    try:
-        update.message.reply_text(text_response)
-        print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')} *********** TG BOT REPLY SENT!")
-    except Exception as e:
-        error = "Error: {}".format(str(e))
-        log_response = {"status": "Chat API/TG Bot/handle_voice > Error while replying the Text on TG","status_cd":400, "message": error, "timestamp":{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
-        log_ref = db.collection('voiceClone_tg_log').document(db_document_name)
-        func.createLog(log_ref, log_response)
+    # try:
+    #     update.message.reply_text(text_response)
+    #     print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')} *********** TG BOT REPLY SENT!")
+    # except Exception as e:
+    #     error = "Error: {}".format(str(e))
+    #     log_response = {"status": "Chat API/TG Bot/handle_voice > Error while replying the Text on TG","status_cd":400, "message": error, "timestamp":{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
+    #     log_ref = db.collection('voiceClone_tg_log').document(db_document_name)
+    #     func.createLog(log_ref, log_response)
 
 ## Define the message handler for user queries
 def handle_message(update: Update, context: CallbackContext) -> None:
@@ -267,10 +267,10 @@ def main() -> None:
     updater.idle()
 
 ## Create a dispatcher
-dispatcher = Dispatcher(bot, None, workers=8, use_context=True)
-dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
-dispatcher.add_handler(MessageHandler(Filters.voice, handle_voice))
-dispatcher.add_error_handler(error_handler)
+# dispatcher = Dispatcher(bot, None, workers=8, use_context=True)
+# dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
+# dispatcher.add_handler(MessageHandler(Filters.voice, handle_voice))
+# dispatcher.add_error_handler(error_handler)
 ## dispatcher.add_handler(CommandHandler("start", start))
 ## dispatcher.add_handler(CommandHandler("menu", menu))
 ## dispatcher.add_handler(CallbackQueryHandler(button))
@@ -279,5 +279,5 @@ dispatcher.add_error_handler(error_handler)
 bot.set_webhook(url=bot_webhook_url+'/{}'.format(TOKEN))
 
 if __name__ == '__main__':
-    # main()
-    app.run(host='0.0.0.0', port=5000, debug=False)
+    main()
+    # app.run(host='0.0.0.0', port=5000, debug=False)
