@@ -210,6 +210,7 @@ def render_setting_pg(action, context):
         user_context = ""
 
     ## Set on load values for dropdowns
+    # dfsdf
     dropdown_val_model = ["gpt-4o-mini", "gpt-4o", "llama 3", "llama 3.1"]
     index_model = 1
     for i, item in enumerate(dropdown_val_model):
