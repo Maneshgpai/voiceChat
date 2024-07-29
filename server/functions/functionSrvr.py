@@ -2,9 +2,10 @@ from google.cloud import firestore
 from datetime import datetime, timedelta, timezone
 import os
 import json
+from dotenv import load_dotenv
 
 ist = timezone(timedelta(hours=5, minutes=30))
-
+load_dotenv()
 default_setting = json.loads(os.getenv("DEFAULT_CHARACTER_SETTING"))
 
 def set_default_settings(voice_id):
