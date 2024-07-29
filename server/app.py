@@ -83,14 +83,7 @@ def get_tg_char_setting(db_document_name,char_id, db):
 ## Fetch LLM Response ##
 def get_agent_response(query, query_timestamp, character_settings, message_hist, db_document_name):
     text_response = ""
-    try:
-        text_response = textresponse.get_agent_response(query, character_settings, message_hist)
-    except Exception as e:
-        error = "Error: {}".format(str(e))
-        print("************** get_agent_response > error:",error)
-        log_response = {"status": "Chat API/TG Bot/handle_message > Error while Fetch LLM Response","status_cd":400, "message": error, "timestamp":{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
-        log_ref = db.collection('voiceClone_tg_log').document(db_document_name)
-        func.createLog(log_ref, log_response)
+    text_response = textresponse.get_agent_response(query, character_settings, message_hist, db, db_document_name)
     return text_response
 
 ## Fetch VOICE Response ##

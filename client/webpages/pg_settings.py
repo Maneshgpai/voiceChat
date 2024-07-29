@@ -73,6 +73,13 @@ def set_character_setting(char_id):
 
     new_voice_setting = {"model": st.session_state.model,
         "temperature": st.session_state.temperature,
+        "top_k": st.session_state.top_k,
+        "top_p": st.session_state.top_p,
+        "max_tokens": st.session_state.max_tokens,
+        "min_tokens": st.session_state.min_tokens,
+        "length_penalty": st.session_state.length_penalty,
+        "presence_penalty": st.session_state.presence_penalty,
+        "frequency_penalty": st.session_state.frequency_penalty,
         "prompt": prompt,
         "negative_prompt": negative_prompt,
         "response_rules": response_rules,
@@ -192,6 +199,13 @@ def render_setting_pg(action, context):
     language  = context['language']
     model  = context['model']
     temperature = float(context['temperature'])
+    top_k =float(context['top_k'])
+    top_p =float(context['top_p'])
+    max_tokens =int(context['max_tokens'])
+    min_tokens =int(context['min_tokens'])
+    length_penalty =float(context['length_penalty'])
+    presence_penalty =float(context['presence_penalty'])
+    frequency_penalty =float(context['frequency_penalty'])
     prompt  = context['prompt']
     negative_prompt  = context['negative_prompt']
     response_rules = context['response_rules']
@@ -253,11 +267,20 @@ def render_setting_pg(action, context):
         
         ## Setting LLM Parameters: model and temperature
         with st.expander("Models", expanded=False, icon=":material/psychology:"):
-            col1, col2 = st.columns([1,1], gap="medium")
+            col1, col2, col3 = st.columns([1,1,1], gap="medium")
             with col1:
                 st.selectbox("LLM", dropdown_val_model, index=index_model, key="model",label_visibility="visible", help="Choose from different LLM models. Default = gpt-4o")
+                st.slider("top_k", min_value=0.0, max_value=1.0, value=top_k, step=0.1, key="top_k")
+                st.slider("top_p", min_value=0.0, max_value=1.0, value=top_p, step=0.1, key="top_p")
             with col2:
-                st.slider("Prompt Adherence", min_value=0.0, max_value=1.0, value=temperature, step=0.1, key="temperature", help="Degree of creativity and rendomness in the model responses. Higher number lets the A.I be more creative. Default = 0.7")
+                st.slider("temperature", min_value=0.0, max_value=1.0, value=temperature, step=0.1, key="temperature", help="Degree of creativity and rendomness in the model responses. Higher number lets the A.I be more creative. Default = 0.7")
+                st.number_input("max_tokens",min_value = 0, max_value=1000, value=max_tokens, step=1, key="max_tokens")
+                st.number_input("min_tokens",min_value = 0, max_value=100, value=min_tokens, step=1, key="min_tokens")
+            with col3:
+                st.slider("length_penalty", min_value=0.0, max_value=1.0, value=length_penalty, step=0.1, key="length_penalty")
+                st.slider("presence_penalty", min_value=0.0, max_value=1.0, value=presence_penalty, step=0.1, key="presence_penalty")
+                st.slider("frequency_penalty", min_value=0.0, max_value=1.0, value=frequency_penalty, step=0.1, key="frequency_penalty")
+                
         ## Setting LLM Prompt parameters: prompt, response rules, exclusion rules and additional guideline for prompt rule in prompt_tail
         with st.expander("Prompt", expanded=False, icon=":material/edit_note:"):
             col1,col2 = st.columns([9,1])
