@@ -220,6 +220,8 @@ def handle_message(update: Update, context: CallbackContext) -> None:
         log_ref = db.collection('voiceClone_tg_log').document(db_document_name)
         func.createLog(log_ref, log_response)
 
+    if not text_response:
+        text_response = ""
     message_hist.append({"role": "assistant", "content": text_response, "content_type": "text","response_status":text_response_status, "timestamp": datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')})
     update_chat_hist(message_hist,db_document_name)
 

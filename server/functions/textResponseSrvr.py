@@ -91,7 +91,40 @@ def get_replicate_response(model, query, system_prompt, message_hist, db, db_doc
         log_response = {"status": "textResponseSrvr > get_agent_response > get_replicate_response >> Error in Replicate Llama call!","status_cd":400, "message": error, "timestamp":{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
         log_ref = db.collection('voiceClone_tg_log').document(db_document_name)
         func.createLog(log_ref, log_response)
+
+def get_openai_response(model, system_message, message_hist, db, db_document_name, voice_settings):
+    try:
+        print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')} textResponseSrvr > get_agent_response > openai firing for {model}...\n")
+        user_message = []
+        for message in message_hist:
+            if not message["content"]:
+                message["content"] = ""
+            user_message.append({
+                "role": message["role"],
+                "content": message["content"]
+            })
+        response = client.chat.completions.create(
+            model=model,
+            messages=system_message+user_message,
+            stream=False,
+            frequency_penalty = voice_settings['frequency_penalty'], #2, # Number between -2.0 and 2.0. Positive values penalize new tokens based on their existing frequency in the text so far, decreasing the model's likelihood to repeat the same line verbatim.
+            max_tokens = voice_settings['max_tokens'],
+            top_p = voice_settings['top_p'], # 0.8, # An alternative to sampling with temperature, called nucleus sampling, where the model considers the results of the tokens with top_p probability mass. So 0.1 means only the tokens comprising the top 10% probability mass are considered. We generally recommend altering this or temperature but not both.
+            presence_penalty = voice_settings['presence_penalty'], #1.5, # Number between -2.0 and 2.0. Positive values penalize new tokens based on whether they appear in the text so far, increasing the model's likelihood to talk about new topics.
+            temperature=voice_settings['temperature'], #1.2 # What sampling temperature to use, between 0 and 2. Higher values like 0.8 will make the output more random, while lower values like 0.2 will make it more focused and deterministic.
+        )
+        full_response = response.choices[0].message.content
+        print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')} textResponseSrvr > get_agent_response > get_openai_response: from {model}: \n {full_response}")
+        return full_response
+    except Exception as e:
+        error = "Error: {}".format(str(e))
+        print("************** textResponseSrvr > get_openai_response > error:",error)
+        log_response = {"status": "textResponseSrvr > get_agent_response > get_openai_response >> Error in OpenAI call!","status_cd":400, "message": error, "timestamp":{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
+        log_ref = db.collection('voiceClone_tg_log').document(db_document_name)
+        func.createLog(log_ref, log_response)
+
 def get_agent_response(query, voice_settings, message_hist, db, db_document_name):
+    print("************** textResponseSrvr > Entered get_agent_response")
     model  = voice_settings['model']
     temp = voice_settings['temperature']
     prompt  = voice_settings['prompt']
@@ -115,23 +148,13 @@ def get_agent_response(query, voice_settings, message_hist, db, db_document_name
                 +f"Your responses should be {verbosity}."
     if not(user_context == "Nothing defined yet") or not(user_context == ""):
         final_prompt = final_prompt + f"A brief background about you is given as below:"+user_context
-
+    
     system_message = [{"role": "system", "content": final_prompt}]
     full_response = ""
-    if model == "gpt-4o" or model == "gpt-3.5-turbo":
+    if model == "gpt-4o" or model == "gpt-4o-mini":
         try:
             print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')} textResponseSrvr > get_agent_response: OpenAI call started")
-            response = client.chat.completions.create(
-                model=model,
-                messages=system_message+[
-                    {"role": m["role"], "content": m["content"]}
-                    for m in message_hist
-                ],
-                stream=False,
-                temperature=temp
-            )
-            full_response = response.choices[0].message.content
-            print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')} textResponseSrvr > get_agent_response: from {model}: \n {full_response}")
+            full_response = get_openai_response(model, system_message, message_hist, db, db_document_name, voice_settings)
         except Exception as e:
             error = "Error: {}".format(str(e))
             print("************** textResponseSrvr > get_agent_response >> Error in OpenAI call!",error)
@@ -159,7 +182,6 @@ def get_agent_response(query, voice_settings, message_hist, db, db_document_name
         #             top_p=0.9,
         #         )
         # full_response = response.choices[0].message.content
-
         ## Using Replicate:
         if model == "llama 3":
             replicate_model = "meta/meta-llama-3-70b-instruct"
