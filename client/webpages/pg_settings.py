@@ -269,17 +269,17 @@ def render_setting_pg(action, context):
         with st.expander("Models", expanded=False, icon=":material/psychology:"):
             col1, col2, col3 = st.columns([1,1,1], gap="medium")
             with col1:
-                st.selectbox("LLM", dropdown_val_model, index=index_model, key="model",label_visibility="visible", help="Choose from different LLM models. Default = gpt-4o")
-                st.slider("top_k", min_value=0.0, max_value=1.0, value=top_k, step=0.1, key="top_k")
-                st.slider("top_p", min_value=0.0, max_value=1.0, value=top_p, step=0.1, key="top_p")
+                st.selectbox("LLM", dropdown_val_model, index=index_model, key="model",label_visibility="visible", help="Cheapest is gpt-4o-mini")
+                st.slider("top_k (Only Llama)", min_value=0.0, max_value=1.0, value=top_k, step=0.1, key="top_k", help="Llama=1")
+                st.slider("top_p", min_value=0.0, max_value=1.0, value=top_p, step=0.1, key="top_p", help="Llama=0.8, OpenAI=0.8")
             with col2:
-                st.slider("temperature", min_value=0.0, max_value=1.0, value=temperature, step=0.1, key="temperature", help="Degree of creativity and rendomness in the model responses. Higher number lets the A.I be more creative. Default = 0.7")
-                st.number_input("max_tokens",min_value = 0, max_value=1000, value=max_tokens, step=1, key="max_tokens")
-                st.number_input("min_tokens",min_value = 0, max_value=100, value=min_tokens, step=1, key="min_tokens")
+                st.slider("temperature", min_value=0.0, max_value=1.0, value=temperature, step=0.1, key="temperature", help="Llama=1, OpenAI=1.2")
+                st.number_input("max_tokens",min_value = 0, max_value=1000, value=max_tokens, step=1, key="max_tokens", help="Llama=100, OpenAI=1.100")
+                st.number_input("min_tokens (Only Llama)",min_value = 0, max_value=100, value=min_tokens, step=1, key="min_tokens", help="Llama=10")
             with col3:
-                st.slider("length_penalty", min_value=0.0, max_value=1.0, value=length_penalty, step=0.1, key="length_penalty")
-                st.slider("presence_penalty", min_value=0.0, max_value=1.0, value=presence_penalty, step=0.1, key="presence_penalty")
-                st.slider("frequency_penalty", min_value=0.0, max_value=1.0, value=frequency_penalty, step=0.1, key="frequency_penalty")
+                st.slider("length_penalty (Only Llama)", min_value=0.0, max_value=1.0, value=length_penalty, step=0.1, key="length_penalty", help="Llama=0.1")
+                st.slider("presence_penalty", min_value=0.0, max_value=1.0, value=presence_penalty, step=0.1, key="presence_penalty", help="Llama=0.1, OpenAI=0.1")
+                st.slider("frequency_penalty", min_value=0.0, max_value=1.0, value=frequency_penalty, step=0.1, key="frequency_penalty", help="Llama=0.9, OpenAI=2")
                 
         ## Setting LLM Prompt parameters: prompt, response rules, exclusion rules and additional guideline for prompt rule in prompt_tail
         with st.expander("Prompt", expanded=False, icon=":material/edit_note:"):
