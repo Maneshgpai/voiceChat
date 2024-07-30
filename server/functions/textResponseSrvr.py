@@ -6,6 +6,8 @@ from groq import Groq
 import replicate
 from functions import functionSrvr as func
 from tenacity import retry, stop_after_attempt, wait_fixed, retry_if_exception_type
+import requests
+
 
 load_dotenv()
 openai_api_key = os.getenv("OPENAI_API_KEY")
@@ -13,7 +15,31 @@ voice_api_key = os.getenv("ELEVENLABS_API_KEY")
 client = OpenAI(api_key=openai_api_key)
 ist = timezone(timedelta(hours=5, minutes=30))
 groq_client = Groq()
+API_KEY = os.environ['GOOGLE_API_KEY']
 
+def google_translate_text(text,target_lang_cd, db, db_document_name):
+    print(f"************** textResponseSrvr > google_translate_text > text:{text}, target_lang_cd:{target_lang_cd}")
+    url = "https://translation.googleapis.com/language/translate/v2" 
+    params = {
+            'q': text,
+            # 'source': 'en-us',
+            'target': target_lang_cd,
+            'key': API_KEY
+        }
+    response = requests.get(url, params=params)
+    # Check if the request was successful
+    if response.status_code == 200:
+        translation = response.json()['data']['translations'][0]['translatedText']
+        print(f'Translated text: {translation}')
+    else:
+        error = "Error: Exception in Google Translate. Defaulting to English"
+        translation = text
+        print("************** textResponseSrvr > google_translate_text > error:",error)
+        log_response = {"status": "textResponseSrvr > get_agent_response > google_translate_text >> Error in Google Translate!","source_text":text,"status_cd":400, "message": error, "timestamp":{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
+        log_ref = db.collection('voiceClone_tg_log').document(db_document_name)
+        func.createLog(log_ref, log_response)
+
+    return translation
 
 def translate(audio_file):
     translation = client.audio.translations.create(
@@ -84,7 +110,6 @@ def get_replicate_response(model, query, system_prompt, message_hist, db, db_doc
             ):
                 full_text.append(str(event))
         response = ''.join(full_text)
-        # print(f"textResponseSrvr >> get_replicate_response > response:\n{response}\n")
         return ''.join(full_text)
     except Exception as e:
         error = "Error: {}".format(str(e))

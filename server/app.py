@@ -115,6 +115,15 @@ def update_chat_hist(message_hist,db_document_name):
 def handle_voice(update: Update, context: CallbackContext) -> None:
     print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')} *********** TG BOT STARTED....")
 
+    ## Send "typing" response
+    context.bot.send_chat_action(
+    chat_id=update.effective_chat.id,
+    action=telegram.ChatAction.RECORD_AUDIO
+    )
+    ## Other responses:
+    ## UPLOAD_PHOTO, RECORD_VIDEO, UPLOAD_VIDEO, UPLOAD_AUDIO, UPLOAD_DOCUMENT, FIND_LOCATION, RECORD_VIDEO_NOTE, and UPLOAD_VIDEO_NOTE.
+
+
     user_id = str(update.message.from_user.id)
     db_document_name = user_id+'_'+char_id
     voice_file = update.message.voice
@@ -186,6 +195,13 @@ def handle_voice(update: Update, context: CallbackContext) -> None:
 ## Define the message handler for user queries
 def handle_message(update: Update, context: CallbackContext) -> None:
     print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')} *********** TG BOT STARTED....")
+
+    ## Send "typing" response
+    context.bot.send_chat_action(
+    chat_id=update.effective_chat.id,
+    action=telegram.ChatAction.TYPING
+    )
+
     text_response = "Thank you, aapke msg ke liye. Thoda sa sabr karo, I will be back soon!"
 
     ## Get character as per the token
@@ -207,7 +223,15 @@ def handle_message(update: Update, context: CallbackContext) -> None:
     query_timestamp = update.message.date
     message_hist.append({"role": "user", "content": query, "content_type": "text", "timestamp": query_timestamp})
     text_response = get_agent_response(query, query_timestamp, character_settings, message_hist, db_document_name)
-    
+
+    ## Call Google Translate if needed 
+    translated_text_response = ""
+    # if character_settings['model'] == "llama 3" and character_settings['language'] != 'English' and (text_response != "" or text_response):
+    #     lang_cd = {'hindi':'hi','hinglish':'hi','bengali':'bn','gujarati':'gu','kannada':'kn','malayalam':'ml','marathi':'mr','tamil':'ta','telugu':'te'}
+    #     selected_lang_cd = lang_cd.get(character_settings['language'].lower(), "en-us")
+    #     translated_text_response = textresponse.google_translate_text(text_response,selected_lang_cd,db, db_document_name)
+    #     text_response = translated_text_response
+
     ## Replying back
     text_response_status = "Success"
     try:
@@ -222,8 +246,12 @@ def handle_message(update: Update, context: CallbackContext) -> None:
 
     if not text_response:
         text_response = ""
-    message_hist.append({"role": "assistant", "content": text_response, "content_type": "text","response_status":text_response_status, "timestamp": datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')})
+    if translated_text_response == "":
+        message_hist.append({"role": "assistant", "content": text_response, "content_type": "text","response_status":text_response_status, "timestamp": datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')})
+    else:
+        message_hist.append({"role": "assistant", "content": text_response, "translated_content": translated_text_response, "content_type": "text","response_status":text_response_status, "timestamp": datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')})
     update_chat_hist(message_hist,db_document_name)
+
 
 ## Error handler for network and other common errors
 def error_handler(update: Update, context: CallbackContext) -> None:

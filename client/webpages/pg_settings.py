@@ -199,7 +199,7 @@ def render_setting_pg(action, context):
     language  = context['language']
     model  = context['model']
     temperature = float(context['temperature'])
-    top_k =float(context['top_k'])
+    top_k =int(context['top_k'])
     top_p =float(context['top_p'])
     max_tokens =int(context['max_tokens'])
     min_tokens =int(context['min_tokens'])
@@ -230,7 +230,7 @@ def render_setting_pg(action, context):
     for i, item in enumerate(dropdown_val_model):
         if item == model:
             index_model = i
-    dropdown_val_lang = ["Hinglish", "English", "Hindi", "Bengali", "Benglish or Bengali in English", "Tamil", "Tanglish or Tamil in English", "Gujarati", "Gujarati-English", "Telugu", "Kannada", "Marathi", "Punjabi", "Malayalam", "Manglish or Malayalam in English"]
+    dropdown_val_lang = ["Hinglish", "English", "Hindi", "Bengali", "Tamil", "Gujarati", "Telugu", "Kannada", "Marathi", "Malayalam"]
     index_lang = 0
     for i, item in enumerate(dropdown_val_lang):
         if item == language:
@@ -277,7 +277,7 @@ def render_setting_pg(action, context):
                 st.number_input("max_tokens",min_value = 0, max_value=1000, value=max_tokens, step=1, key="max_tokens", help="Llama=100, OpenAI=1.100")
                 st.slider("presence_penalty", min_value=0.0, max_value=1.0, value=presence_penalty, step=0.1, key="presence_penalty", help="Llama=0.1, OpenAI=0.1")
             with col3:
-                st.slider("top_k (Llama only)", min_value=0.0, max_value=1.0, value=top_k, step=0.1, key="top_k", help="Llama=1")
+                st.slider("top_k (Llama only)", min_value=0, max_value=100, value=top_k, step=1, key="top_k", help="Llama=1")
                 st.number_input("min_tokens (Llama only)",min_value = 0, max_value=100, value=min_tokens, step=1, key="min_tokens", help="Llama=10")
                 st.slider("length_penalty (Llama only)", min_value=0.0, max_value=1.0, value=length_penalty, step=0.1, key="length_penalty", help="Llama=0.1")
                 
