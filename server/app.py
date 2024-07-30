@@ -115,6 +115,15 @@ def update_chat_hist(message_hist,db_document_name):
 def handle_voice(update: Update, context: CallbackContext) -> None:
     print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')} *********** TG BOT STARTED....")
 
+    ## Send "typing" response
+    context.bot.send_chat_action(
+    chat_id=update.effective_chat.id,
+    action=telegram.ChatAction.RECORD_AUDIO
+    )
+    ## Other responses:
+    ## UPLOAD_PHOTO, RECORD_VIDEO, UPLOAD_VIDEO, UPLOAD_AUDIO, UPLOAD_DOCUMENT, FIND_LOCATION, RECORD_VIDEO_NOTE, and UPLOAD_VIDEO_NOTE.
+
+
     user_id = str(update.message.from_user.id)
     db_document_name = user_id+'_'+char_id
     voice_file = update.message.voice
@@ -186,6 +195,13 @@ def handle_voice(update: Update, context: CallbackContext) -> None:
 ## Define the message handler for user queries
 def handle_message(update: Update, context: CallbackContext) -> None:
     print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')} *********** TG BOT STARTED....")
+
+    ## Send "typing" response
+    context.bot.send_chat_action(
+    chat_id=update.effective_chat.id,
+    action=telegram.ChatAction.TYPING
+    )
+
     text_response = "Thank you, aapke msg ke liye. Thoda sa sabr karo, I will be back soon!"
 
     ## Get character as per the token
@@ -262,10 +278,10 @@ def main() -> None:
     updater.idle()
 
 ## Create a dispatcher
-dispatcher = Dispatcher(bot, None, workers=8, use_context=True)
-dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
-dispatcher.add_handler(MessageHandler(Filters.voice, handle_voice))
-dispatcher.add_error_handler(error_handler)
+# dispatcher = Dispatcher(bot, None, workers=8, use_context=True)
+# dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
+# dispatcher.add_handler(MessageHandler(Filters.voice, handle_voice))
+# dispatcher.add_error_handler(error_handler)
 ## dispatcher.add_handler(CommandHandler("start", start))
 ## dispatcher.add_handler(CommandHandler("menu", menu))
 ## dispatcher.add_handler(CallbackQueryHandler(button))
@@ -274,5 +290,5 @@ dispatcher.add_error_handler(error_handler)
 bot.set_webhook(url=bot_webhook_url+'/{}'.format(TOKEN))
 
 if __name__ == '__main__':
-    # main()
-    app.run(host='0.0.0.0', port=5000, debug=False)
+    main()
+    # app.run(host='0.0.0.0', port=5000, debug=False)

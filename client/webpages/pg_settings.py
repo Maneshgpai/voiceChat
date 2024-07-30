@@ -230,7 +230,7 @@ def render_setting_pg(action, context):
     for i, item in enumerate(dropdown_val_model):
         if item == model:
             index_model = i
-    dropdown_val_lang = ["Hinglish", "English", "Hindi", "Bengali", "Benglish or Bengali in English", "Tamil", "Tanglish or Tamil in English", "Gujarati", "Gujarati-English", "Telugu", "Kannada", "Marathi", "Punjabi", "Malayalam", "Manglish or Malayalam in English"]
+    dropdown_val_lang = ["Hinglish", "English", "Hindi", "Bengali", "Tamil", "Gujarati", "Telugu", "Kannada", "Marathi", "Malayalam"]
     index_lang = 0
     for i, item in enumerate(dropdown_val_lang):
         if item == language:
