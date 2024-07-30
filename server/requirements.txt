@@ -13,4 +13,4 @@ python-telegram-bot==13.12
 groq
 replicate
 tenacity
-google-cloud-translate==2.0.1
+# google-cloud-translate==2.0.1
