@@ -58,6 +58,8 @@ def get_replicate_response(model, query, system_prompt, message_hist, db, db_doc
                 if a_msg is None:
                     a_msg = ""
                 new_message_hist += "<|start_header_id|>assistant<|end_header_id|>"+a_msg.strip().replace("\n","\\n")+"<|eot_id|>"
+        # print(f"textResponseSrvr >> get_replicate_response > final_prompt:\n{final_prompt}\n")
+        # print(f"textResponseSrvr >> get_replicate_response > new_message_hist:\n{new_message_hist}\n")
 
         # Explantion of parameters:
         # https://openrouter.ai/docs/parameters
@@ -82,7 +84,6 @@ def get_replicate_response(model, query, system_prompt, message_hist, db, db_doc
             ):
                 full_text.append(str(event))
         response = ''.join(full_text)
-        # print(f"textResponseSrvr >> get_replicate_response > full_text:\n{full_text}\n")
         # print(f"textResponseSrvr >> get_replicate_response > response:\n{response}\n")
         return ''.join(full_text)
     except Exception as e:
@@ -187,7 +188,8 @@ def get_agent_response(query, voice_settings, message_hist, db, db_document_name
             replicate_model = "meta/meta-llama-3-70b-instruct"
         elif model == "llama 3.1":
             replicate_model = "meta/meta-llama-3.1-405b-instruct"
-            full_response = get_replicate_response(replicate_model, query, final_prompt, message_hist, db, db_document_name, voice_settings)
+        
+        full_response = get_replicate_response(replicate_model, query, final_prompt, message_hist, db, db_document_name, voice_settings)
 
         print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')} textResponseSrvr > get_agent_response: from {model}: \n {full_response}")
     return full_response
