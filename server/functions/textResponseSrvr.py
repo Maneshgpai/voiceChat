@@ -14,8 +14,10 @@ openai_api_key = os.getenv("OPENAI_API_KEY")
 voice_api_key = os.getenv("ELEVENLABS_API_KEY")
 client = OpenAI(api_key=openai_api_key)
 ist = timezone(timedelta(hours=5, minutes=30))
-groq_client = Groq()
+groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 API_KEY = os.environ['GOOGLE_API_KEY']
+replicate_models = {"llama 3":"meta/meta-llama-3-70b-instruct", "llama 3.1":"meta/meta-llama-3.1-405b-instruct"}
+groq_models = {"llama 3":"llama3-70b-8192", "llama 3.1":"llama-3.1-70b-versatile"}
 
 def google_translate_text(text,target_lang_cd, db, db_document_name):
     print(f"************** textResponseSrvr > google_translate_text > text:{text}, target_lang_cd:{target_lang_cd}")
@@ -66,10 +68,71 @@ def convert_voice_to_text(voice_file, system_prompt):
     )
     return response.choices[0].message.content
 
+# @retry(stop=stop_after_attempt(3), wait=wait_fixed(5), retry=retry_if_exception_type(ConnectionError))
+# def get_huggingface_response(model, query, system_prompt, message_hist, db, db_document_name, voice_settings):
+#     try:
+#         final_prompt = system_prompt.replace("\n","\\n")
+#         for item in message_hist:
+#             chat_history += ' '.join(f"{item.get('role')}: {item.get('content', '')}")
+
+#         input_text = final_prompt + ' ' + chat_history + ' user: ' + query
+#         parameters = {
+#             "top_k": voice_settings['top_k'], #1,
+#             "top_p": voice_settings['top_p'], #0.8,
+#             "max_length": voice_settings['max_tokens'], #100,
+#             "min_length": voice_settings['min_tokens'], #10,
+#             "temperature": voice_settings['temperature'], #1,
+#             "repetition_penalty": voice_settings['frequency_penalty'], 
+#             "max_time": 120
+#             # "prompt": new_message_hist,
+#             # "system_prompt": final_prompt,
+#             # "length_penalty": voice_settings['length_penalty'], #0.1,
+#             # "stop_sequences": "<|end_of_text|>,<|eot_id|>",
+#             # "prompt_template": "<|begin_of_text|><|start_header_id|>system<|end_header_id|>{system_prompt}<|eot_id|>{prompt}<|start_header_id|>assistant<|end_header_id|>",
+#             # "presence_penalty": voice_settings['presence_penalty'], #0.1,
+#             # "frequency_penalty": voice_settings['frequency_penalty'], #0.9,
+#             # "log_performance_metrics": False
+
+#         }
+
+#         # api_key = "your_huggingface_api_key"
+#         # model = "your_model/llama3"  # Replace with the exact model name or repository ID
+#         # api = InferenceApi(repo_id=model, token=api_key)
+#         # response = api(inputs=input_text, parameters=parameters)
+
+#         if model == "llama 3":
+#             replicate_model = "meta/meta-llama-3-70b-instruct"
+#         elif model == "llama 3.1":
+#             replicate_model = "meta/meta-llama-3.1-405b-instruct"
+
+#         API_URL = "https://api-inference.huggingface.co/models/meta-llama/Meta-Llama-3-8B"
+#         API_URL = "https://api-inference.huggingface.co/models/meta-llama/Meta-Llama-3.1-8B"
+#         headers = {"Authorization": "Bearer hf_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"}
+
+#         payload = {
+#             "inputs": input_text,
+#             "parameters": parameters
+#         }
+#         response = requests.post(API_URL, headers=headers, json=payload)
+#         assistant_reply = response.get("generated_text", ":)")
+
+#         print("textResponseSrvr > get_huggingface_response > response.json():",response.json())
+#         print("textResponseSrvr > get_huggingface_response > assistant_reply:",assistant_reply)
+#         # return response.json()
+#         # return assistant_reply
+
+#     except Exception as e:
+#         error = "Error: {}".format(str(e))
+#         print("textResponseSrvr > get_huggingface_response > error:",error)
+#         log_response = {"status": "textResponseSrvr > get_agent_response > get_huggingface_response >> Error in Huggingface InferenceAPI call!","status_cd":400, "message": error, "timestamp":{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
+#         log_ref = db.collection('voiceClone_tg_log').document(db_document_name)
+#         func.createLog(log_ref, log_response)
+
 
 @retry(stop=stop_after_attempt(3), wait=wait_fixed(5), retry=retry_if_exception_type(ConnectionError))
 def get_replicate_response(model, query, system_prompt, message_hist, db, db_document_name, voice_settings):
     try:
+        replicate_model = replicate_models.get(model, "llama 3")
         final_prompt = system_prompt.replace("\n","\\n")
         query = query.replace("\n","\\n")
         new_message_hist = ""
@@ -89,7 +152,7 @@ def get_replicate_response(model, query, system_prompt, message_hist, db, db_doc
         # https://openrouter.ai/docs/parameters
         full_text = []
         for event in replicate.stream(
-                model,
+                model=replicate_model,
                 input={
                     "top_k": voice_settings['top_k'], #1,
                     "top_p": voice_settings['top_p'], #0.8,
@@ -115,6 +178,29 @@ def get_replicate_response(model, query, system_prompt, message_hist, db, db_doc
         log_response = {"status": "textResponseSrvr > get_agent_response > get_replicate_response >> Error in Replicate Llama call!","status_cd":400, "message": error, "timestamp":{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
         log_ref = db.collection('voiceClone_tg_log').document(db_document_name)
         func.createLog(log_ref, log_response)
+
+@retry(stop=stop_after_attempt(3), wait=wait_fixed(5), retry=retry_if_exception_type(ConnectionError))
+def get_groq_response(model, query, system_prompt, message_hist, db, db_document_name, voice_settings):
+    groq_model = groq_models.get(voice_settings['model'].lower(), "llama 3")
+
+    chat_completion = groq_client.chat.completions.create(messages=[
+            {
+                "role": "system",
+                "content": "you are adult movie script write"
+            },
+            # Set a user message for the assistant to respond to.
+            {
+                "role": "user",
+                "content": "Tell a short story with details on oral",
+            }
+        ],
+        model=groq_model
+        temperature=1.2,
+        max_tokens=1024,
+        top_p=0.2,
+        stop=None,
+        stream=False,)
+    return chat_completion.choices[0].message.content
 
 def get_openai_response(model, system_message, message_hist, db, db_document_name, voice_settings):
     try:
@@ -207,11 +293,11 @@ def get_agent_response(query, voice_settings, message_hist, db, db_document_name
         #         )
         # full_response = response.choices[0].message.content
         ## Using Replicate:
-        if model == "llama 3":
-            replicate_model = "meta/meta-llama-3-70b-instruct"
-        elif model == "llama 3.1":
-            replicate_model = "meta/meta-llama-3.1-405b-instruct"
-        
-        full_response = get_replicate_response(replicate_model, query, final_prompt, message_hist, db, db_document_name, voice_settings)
+
+        full_response = get_replicate_response(voice_settings['model'], query, final_prompt, message_hist, db, db_document_name, voice_settings)
+
+
+
+
         print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')} textResponseSrvr > get_agent_response: from {model}: \n {full_response}")
     return full_response
