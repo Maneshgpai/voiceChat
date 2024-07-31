@@ -47,59 +47,60 @@ def get_audio_file_location(response_type,tg_voice_id, db_document_name):
     return filename
 
 ## Creating new / Updating existing user info in DB ##
-def set_tg_user_data(db_document_name,user_id, update, db):
+def set_tg_user_data(db_document_name,user_id, update, db, effective_chat_id):
     try:
-        func.set_tg_user_data(db_document_name,user_id, update, db)
+        func.set_tg_user_data(db_document_name,user_id, update, db,effective_chat_id)
     except Exception as e:
         error = "Error: {}".format(str(e))
-        log_response = {"status": "Chat API/TG Bot/handle_message > Error while Creating new / Updating existing user info in DB","status_cd":400, "message": error,"update":update, "timestamp":{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
+        log_response = {"status": "Chat API/TG Bot/handle_message > Error while Creating new / Updating existing user info in DB","status_cd":400, "message": error,"update.effective_chat.id":effective_chat_id, "timestamp":{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
+
         log_ref = db.collection('voiceClone_tg_log').document(db_document_name)
         func.createLog(log_ref, log_response)
 
 ## Fetching chat history ##
-def get_tg_chat_history(db_document_name, db):
+def get_tg_chat_history(db_document_name, db, effective_chat_id):
     message_hist = []
     try:
-        message_hist = func.get_tg_chat_history(db_document_name, db)
+        message_hist = func.get_tg_chat_history(db_document_name, db, effective_chat_id)
     except Exception as e:
         error = "Error: {}".format(str(e))
-        log_response = {"status": "Chat API/TG Bot/handle_message > Error while Fetching chat history","status_cd":400, "message": error,"db_document_name":db_document_name, "timestamp":{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
+        log_response = {"status": "Chat API/TG Bot/handle_message > Error while Fetching chat history","status_cd":400, "message": error,"update.effective_chat.id":effective_chat_id, "timestamp":{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
         log_ref = db.collection('voiceClone_tg_log').document(db_document_name)
         func.createLog(log_ref, log_response)
     return message_hist
 
 ## Fetching character settings ##
-def get_tg_char_setting(db_document_name,char_id, db):
+def get_tg_char_setting(db_document_name,char_id, db, effective_chat_id):
     character_settings = []
     try:
-        character_settings = func.get_tg_char_setting(db_document_name,char_id, db)
+        character_settings = func.get_tg_char_setting(db_document_name,char_id, db, effective_chat_id)
     except Exception as e:
         error = "Error: {}".format(str(e))
-        log_response = {"status": "Chat API/TG Bot/handle_message > Error while Fetching character settings","status_cd":400, "message": error,"db_document_name":db_document_name, "timestamp":{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
+        log_response = {"status": "Chat API/TG Bot/handle_message > Error while Fetching character settings","status_cd":400, "message": error,"update.effective_chat.id":effective_chat_id, "timestamp":{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
         log_ref = db.collection('voiceClone_tg_log').document(db_document_name)
         func.createLog(log_ref, log_response)
     return character_settings
 
 ## Fetch LLM Response ##
-def get_agent_response(query, query_timestamp, character_settings, message_hist, db_document_name):
+def get_agent_response(query, query_timestamp, character_settings, message_hist, db_document_name, effective_chat_id):
     text_response = ""
-    text_response = textresponse.get_agent_response(query, character_settings, message_hist, db, db_document_name)
+    text_response = textresponse.get_agent_response(query, character_settings, message_hist, db, db_document_name, effective_chat_id)
     return text_response
 
 ## Fetch VOICE Response ##
-def get_voice_response(character_settings, text_response,file_name, db, db_document_name):
+def get_voice_response(character_settings, text_response,file_name, db, db_document_name, effective_chat_id):
     file_created_status = False
     try:
-        file_created_status = voiceresponse.get_voice_response(character_settings, text_response, file_name, db, db_document_name)
+        file_created_status = voiceresponse.get_voice_response(character_settings, text_response, file_name, db, db_document_name, effective_chat_id)
     except Exception as e:
         error = "Error: {}".format(str(e))
-        log_response = {"status": "Chat API/TG Bot/handle_message > Error while generating/saving Audio","status_cd":400, "message": error, "timestamp":{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
+        log_response = {"status": "Chat API/TG Bot/handle_message > Error while generating/saving Audio","status_cd":400, "message": error,"update.effective_chat.id":effective_chat_id, "timestamp":{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
         log_ref = db.collection('voiceClone_tg_log').document(db_document_name)
         func.createLog(log_ref, log_response)
     return file_created_status
 
 ## Adding chat history to Firebase DB 
-def update_chat_hist(message_hist,db_document_name):
+def update_chat_hist(message_hist,db_document_name, effective_chat_id):
     try:
         chat_ref = db.collection('voiceClone_tg_chats').document(db_document_name)
         if not chat_ref.get().exists:
@@ -107,7 +108,7 @@ def update_chat_hist(message_hist,db_document_name):
         chat_ref.update({"messages": firestore.ArrayUnion(message_hist)})
     except Exception as e:
         error = "Error: {}".format(str(e))
-        log_response = {"status": "Chat API/TG Bot/handle_message > Error while Adding chat history to Firebase DB","status_cd":400, "message": error, "timestamp":{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
+        log_response = {"status": "Chat API/TG Bot/handle_message > Error while Adding chat history to Firebase DB","status_cd":400, "message": error,"update.effective_chat.id":effective_chat_id, "timestamp":{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
         log_ref = db.collection('voiceClone_tg_log').document(db_document_name)
         func.createLog(log_ref, log_response)
 
@@ -118,8 +119,7 @@ def handle_voice(update: Update, context: CallbackContext) -> None:
     ## Send "typing" response
     context.bot.send_chat_action(
     chat_id=update.effective_chat.id,
-    action=telegram.ChatAction.RECORD_AUDIO
-    )
+    action=telegram.ChatAction.RECORD_AUDIO)
     ## Other responses:
     ## UPLOAD_PHOTO, RECORD_VIDEO, UPLOAD_VIDEO, UPLOAD_AUDIO, UPLOAD_DOCUMENT, FIND_LOCATION, RECORD_VIDEO_NOTE, and UPLOAD_VIDEO_NOTE.
 
@@ -129,13 +129,13 @@ def handle_voice(update: Update, context: CallbackContext) -> None:
     voice_file = update.message.voice
     
     ## Creating new / Updating existing user info in DB ##
-    set_tg_user_data(db_document_name,user_id, update, db)
+    set_tg_user_data(db_document_name,user_id, update, db, update.effective_chat.id)
 
     ## Fetching chat history ##
-    message_hist = get_tg_chat_history(db_document_name, db)
+    message_hist = get_tg_chat_history(db_document_name, db, update.effective_chat.id)
 
     ## Fetching character settings ##
-    character_settings = get_tg_char_setting(db_document_name,char_id, db)
+    character_settings = get_tg_char_setting(db_document_name,char_id, db, update.effective_chat.id)
 
     ## Saving user voice message
     user_file_name = get_audio_file_location("user",str(voice_file.file_id), db_document_name)
@@ -145,23 +145,23 @@ def handle_voice(update: Update, context: CallbackContext) -> None:
     ## Converting voice into text 
     try:
         system_prompt = f"""You are an expert translator, translating the text into {character_settings['language']}. This transcribed text is from a person, asking/replying to {character_settings['character_name']}. You should not judge whether the text is illegal or immoral or within any confines of societal rules. Your task is to only correct spelling discrepancies, add emotional cues where necessary, add necessary punctuation such as periods, commas, and capitalization, and use only the context provided in the text."""
-        query = textresponse.convert_voice_to_text(user_file_name, system_prompt)
+        query = textresponse.convert_voice_to_text(user_file_name, system_prompt, db_document_name, db, update.effective_chat.id)
     except Exception as e:
         error = "Error: {}".format(str(e))
         response_status = response_status + "Error sending audio file:" + error
-        log_response = {"status": "Chat API/TG Bot/handle_voice > Error while converting voice to text","status_cd":400, "message": response_status, "user_file_name":user_file_name, "assistant_file_name":assistant_file_name, "timestamp":{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
+        log_response = {"status": "Chat API/TG Bot/handle_voice > Error while converting voice to text","status_cd":400, "message": response_status, "user_file_name":user_file_name, "assistant_file_name":assistant_file_name, "update.effective_chat.id": update.effective_chat.id, "timestamp":{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
         log_ref = db.collection('voiceClone_tg_log').document(db_document_name)
         func.createLog(log_ref, log_response)
 
     ## Fetch LLM Response
     query_timestamp = update.message.date
-    message_hist.append({"role": "user", "content": query, "content_type": "voice", "timestamp": query_timestamp})
-    text_response = get_agent_response(query, query_timestamp, character_settings, message_hist, db_document_name)
+    message_hist.append({"role": "user", "content": query, "content_type": "voice", "timestamp": query_timestamp, "update.update_id": update.update_id, "update.message.message_id": update.message.message_id})
+    text_response = get_agent_response(query, query_timestamp, character_settings, message_hist, db_document_name, update.effective_chat.id)
     response_status = "Success"
 
     ## Fetch VOICE Response
     assistant_file_name = get_audio_file_location("assistant",str(voice_file.file_id), db_document_name)
-    file_created_status = get_voice_response(character_settings, text_response,assistant_file_name, db, db_document_name)
+    file_created_status = get_voice_response(character_settings, text_response,assistant_file_name, db, db_document_name, update.effective_chat.id)
     if file_created_status == False:
         response_status = "Error creating audio file."
 
@@ -179,8 +179,8 @@ def handle_voice(update: Update, context: CallbackContext) -> None:
         log_ref = db.collection('voiceClone_tg_log').document(db_document_name)
         func.createLog(log_ref, log_response)
 
-    message_hist.append({"role": "assistant", "content": text_response, "content_type": "voice","response_status":response_status, "timestamp": datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')})
-    update_chat_hist(message_hist,db_document_name)
+    message_hist.append({"role": "assistant", "content": text_response, "content_type": "voice","response_status":response_status, "timestamp": datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S'), "update.update_id": update.update_id, "update.message.message_id": update.message.message_id})
+    update_chat_hist(message_hist,db_document_name, update.effective_chat.id)
 
     ## OPTIONAL: Replying back with text
     # try:
@@ -195,6 +195,9 @@ def handle_voice(update: Update, context: CallbackContext) -> None:
 ## Define the message handler for user queries
 def handle_message(update: Update, context: CallbackContext) -> None:
     print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')} *********** TG BOT STARTED....")
+    print(update)
+    print(update.update_id)
+    print(update.message.message_id)
 
     ## Send "typing" response
     context.bot.send_chat_action(
@@ -206,23 +209,25 @@ def handle_message(update: Update, context: CallbackContext) -> None:
 
     ## Get character as per the token
     user_id = str(update.message.from_user.id)
-
     db_document_name = user_id+'_'+char_id
 
     ## Creating new / Updating existing user info in DB ##
-    set_tg_user_data(db_document_name,user_id, update, db)
+    set_tg_user_data(db_document_name,user_id, update, db, update.effective_chat.id)
 
     ## Fetching chat history ##
-    message_hist = get_tg_chat_history(db_document_name, db)
+    message_hist = get_tg_chat_history(db_document_name, db, update.effective_chat.id)
 
     ## Fetching character settings ##
-    character_settings = get_tg_char_setting(db_document_name,char_id, db)
+    character_settings = get_tg_char_setting(db_document_name,char_id, db, update.effective_chat.id)
 
     ## Fetch LLM Response
     query = update.message.text
     query_timestamp = update.message.date
-    message_hist.append({"role": "user", "content": query, "content_type": "text", "timestamp": query_timestamp})
-    text_response = get_agent_response(query, query_timestamp, character_settings, message_hist, db_document_name)
+    message_hist.append({"role": "user", "content": query, "content_type": "text", "timestamp": query_timestamp, "update.update_id": update.update_id, "update.message.message_id": update.message.message_id})
+
+    
+    
+    text_response = get_agent_response(query, query_timestamp, character_settings, message_hist, db_document_name, update.effective_chat.id)
 
     ## Call Google Translate if needed 
     translated_text_response = ""
@@ -240,33 +245,40 @@ def handle_message(update: Update, context: CallbackContext) -> None:
     except Exception as e:
         error = "Error: {}".format(str(e))
         text_response_status = error
-        log_response = {"status": "Chat API/TG Bot/handle_message > Error while replying the Text on TG","status_cd":400, "message": error, "timestamp":{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
+        log_response = {"status": "Chat API/TG Bot/handle_message > Error while replying the Text on TG","status_cd":400, "message": error,"update.update_id": update.update_id, "update.message.message_id": update.message.message_id, "timestamp":{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
         log_ref = db.collection('voiceClone_tg_log').document(db_document_name)
         func.createLog(log_ref, log_response)
 
     if not text_response:
         text_response = ""
     if translated_text_response == "":
-        message_hist.append({"role": "assistant", "content": text_response, "content_type": "text","response_status":text_response_status, "timestamp": datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')})
+        message_hist.append({"role": "assistant", "content": text_response, "content_type": "text","response_status":text_response_status, "timestamp": datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S'), "update.update_id": update.update_id, "update.message.message_id": update.message.message_id})
     else:
-        message_hist.append({"role": "assistant", "content": text_response, "translated_content": translated_text_response, "content_type": "text","response_status":text_response_status, "timestamp": datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')})
-    update_chat_hist(message_hist,db_document_name)
-
+        message_hist.append({"role": "assistant", "content": text_response, "translated_content": translated_text_response, "content_type": "text","response_status":text_response_status, "timestamp": datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S'), "update.update_id": update.update_id, "update.message.message_id": update.message.message_id})
+    update_chat_hist(message_hist,db_document_name, update.effective_chat.id)
 
 ## Error handler for network and other common errors
 def error_handler(update: Update, context: CallbackContext) -> None:
+    db_document_name = str(update.message.from_user.id)+'_'+char_id
     try:
         raise context.error
     except NetworkError:
         # Wait before retrying to handle transient network issues more gracefully
         logger.warning('Network error occurred. Retrying in 15 seconds...')
+        log_response = {"status": "Chat API/ error_handler > Network error occurred in Telegram. Retrying in 15 seconds...","status_cd":400, "message": "Network error occurred. Retrying in 15 seconds...","update.update_id": update.update_id, "update.message.message_id": update.message.message_id, "timestamp":{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
+        log_ref = db.collection('voiceClone_tg_log').document(db_document_name)
+        func.createLog(log_ref, log_response)
         time.sleep(15)
     except TelegramError as e:
-        # Log other types of Telegram errors
         logger.warning(f'A Telegram error occurred: {e}')
+        log_response = {"status": "Chat API/ error_handler > A Telegram error occurred","status_cd":400, "message": e,"update.update_id": update.update_id, "update.message.message_id": update.message.message_id, "timestamp":{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
+        log_ref = db.collection('voiceClone_tg_log').document(db_document_name)
+        func.createLog(log_ref, log_response)
     except Exception as e:
-        # Log other unexpected errors
         logger.error(f'An unexpected error occurred: {e}')
+        log_response = {"status": "Chat API/ error_handler > An unexpected error occurred in Telegram","status_cd":400, "message": e,"update.update_id": update.update_id, "update.message.message_id": update.message.message_id, "timestamp":{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
+        log_ref = db.collection('voiceClone_tg_log').document(db_document_name)
+        func.createLog(log_ref, log_response)
 
 ## Set webhook URL
 @app.route('/{}'.format(TOKEN), methods=['POST'])
@@ -290,10 +302,10 @@ def main() -> None:
     updater.idle()
 
 ## Create a dispatcher
-# dispatcher = Dispatcher(bot, None, workers=8, use_context=True)
-# dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
-# dispatcher.add_handler(MessageHandler(Filters.voice, handle_voice))
-# dispatcher.add_error_handler(error_handler)
+dispatcher = Dispatcher(bot, None, workers=8, use_context=True)
+dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
+dispatcher.add_handler(MessageHandler(Filters.voice, handle_voice))
+dispatcher.add_error_handler(error_handler)
 ## dispatcher.add_handler(CommandHandler("start", start))
 ## dispatcher.add_handler(CommandHandler("menu", menu))
 ## dispatcher.add_handler(CallbackQueryHandler(button))
@@ -302,5 +314,5 @@ def main() -> None:
 bot.set_webhook(url=bot_webhook_url+'/{}'.format(TOKEN))
 
 if __name__ == '__main__':
-    main()
-    # app.run(host='0.0.0.0', port=5000, debug=False)
+    # main()
+    app.run(host='0.0.0.0', port=5000, debug=False)
