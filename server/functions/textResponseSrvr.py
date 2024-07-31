@@ -14,10 +14,12 @@ openai_api_key = os.getenv("OPENAI_API_KEY")
 voice_api_key = os.getenv("ELEVENLABS_API_KEY")
 client = OpenAI(api_key=openai_api_key)
 ist = timezone(timedelta(hours=5, minutes=30))
-groq_client = Groq()
+groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 API_KEY = os.environ['GOOGLE_API_KEY']
+replicate_models = {"llama 3":"meta/meta-llama-3-70b-instruct", "llama 3.1":"meta/meta-llama-3.1-405b-instruct"}
+groq_models = {"llama 3":"llama3-70b-8192", "llama 3.1":"llama-3.1-70b-versatile"}
 
-def google_translate_text(text,target_lang_cd, db, db_document_name):
+def google_translate_text(text,target_lang_cd, db, db_document_name, effective_chat_id):
     print(f"************** textResponseSrvr > google_translate_text > text:{text}, target_lang_cd:{target_lang_cd}")
     url = "https://translation.googleapis.com/language/translate/v2" 
     params = {
@@ -35,41 +37,134 @@ def google_translate_text(text,target_lang_cd, db, db_document_name):
         error = "Error: Exception in Google Translate. Defaulting to English"
         translation = text
         print("************** textResponseSrvr > google_translate_text > error:",error)
-        log_response = {"status": "textResponseSrvr > get_agent_response > google_translate_text >> Error in Google Translate!","source_text":text,"status_cd":400, "message": error, "timestamp":{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
+        log_response = {"status": "textResponseSrvr > get_agent_response > google_translate_text >> Error in Google Translate!","source_text":text,"status_cd":400, "message": error,"update.effective_chat.id":effective_chat_id, "timestamp":{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
         log_ref = db.collection('voiceClone_tg_log').document(db_document_name)
         func.createLog(log_ref, log_response)
 
     return translation
-
 def translate(audio_file):
     translation = client.audio.translations.create(
         model="whisper-1", 
         file=audio_file
         )
     return translation.text
+def convert_voice_to_text(voice_file, system_prompt, db_document_name, db, effective_chat_id):
+    try:
+        audio_file= open(voice_file, "rb")
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            temperature=0,
+            messages=[
+                {
+                    "role": "system",
+                    "content": system_prompt
+                },
+                {
+                    "role": "user",
+                    "content": translate(audio_file)
+                }
+            ]
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        error = "Error: {}".format(str(e))
+        print("************** textResponseSrvr > convert_voice_to_text > error:",error)
+        log_response = {"status": "textResponseSrvr > convert_voice_to_text >> Error in converting Voice to Text!","status_cd":400, "message": error,"update.effective_chat.id":effective_chat_id, "timestamp":{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
+        log_ref = db.collection('voiceClone_tg_log').document(db_document_name)
+        func.createLog(log_ref, log_response)
 
-def convert_voice_to_text(voice_file, system_prompt):
-    audio_file= open(voice_file, "rb")
-    response = client.chat.completions.create(
-        model="gpt-4o",
-        temperature=0,
-        messages=[
-            {
-                "role": "system",
-                "content": system_prompt
-            },
-            {
-                "role": "user",
-                "content": translate(audio_file)
-            }
-        ]
-    )
-    return response.choices[0].message.content
+# @retry(stop=stop_after_attempt(3), wait=wait_fixed(5), retry=retry_if_exception_type(ConnectionError))
+# def get_huggingface_response(model, query, system_prompt, message_hist, db, db_document_name, voice_settings):
+#     try:
+#         final_prompt = system_prompt.replace("\n","\\n")
+#         for item in message_hist:
+#             chat_history += ' '.join(f"{item.get('role')}: {item.get('content', '')}")
 
+#         input_text = final_prompt + ' ' + chat_history + ' user: ' + query
+#         parameters = {
+#             "top_k": voice_settings['top_k'], #1,
+#             "top_p": voice_settings['top_p'], #0.8,
+#             "max_length": voice_settings['max_tokens'], #100,
+#             "min_length": voice_settings['min_tokens'], #10,
+#             "temperature": voice_settings['temperature'], #1,
+#             "repetition_penalty": voice_settings['frequency_penalty'], 
+#             "max_time": 120
+#             # "prompt": new_message_hist,
+#             # "system_prompt": final_prompt,
+#             # "length_penalty": voice_settings['length_penalty'], #0.1,
+#             # "stop_sequences": "<|end_of_text|>,<|eot_id|>",
+#             # "prompt_template": "<|begin_of_text|><|start_header_id|>system<|end_header_id|>{system_prompt}<|eot_id|>{prompt}<|start_header_id|>assistant<|end_header_id|>",
+#             # "presence_penalty": voice_settings['presence_penalty'], #0.1,
+#             # "frequency_penalty": voice_settings['frequency_penalty'], #0.9,
+#             # "log_performance_metrics": False
+
+#         }
+
+#         # api_key = "your_huggingface_api_key"
+#         # model = "your_model/llama3"  # Replace with the exact model name or repository ID
+#         # api = InferenceApi(repo_id=model, token=api_key)
+#         # response = api(inputs=input_text, parameters=parameters)
+
+#         if model == "llama 3":
+#             replicate_model = "meta/meta-llama-3-70b-instruct"
+#         elif model == "llama 3.1":
+#             replicate_model = "meta/meta-llama-3.1-405b-instruct"
+
+#         API_URL = "https://api-inference.huggingface.co/models/meta-llama/Meta-Llama-3-8B"
+#         API_URL = "https://api-inference.huggingface.co/models/meta-llama/Meta-Llama-3.1-8B"
+#         headers = {"Authorization": "Bearer hf_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"}
+
+#         payload = {
+#             "inputs": input_text,
+#             "parameters": parameters
+#         }
+#         response = requests.post(API_URL, headers=headers, json=payload)
+#         assistant_reply = response.get("generated_text", ":)")
+
+#         print("textResponseSrvr > get_huggingface_response > response.json():",response.json())
+#         print("textResponseSrvr > get_huggingface_response > assistant_reply:",assistant_reply)
+#         # return response.json()
+#         # return assistant_reply
+
+#     except Exception as e:
+#         error = "Error: {}".format(str(e))
+#         print("textResponseSrvr > get_huggingface_response > error:",error)
+#         log_response = {"status": "textResponseSrvr > get_agent_response > get_huggingface_response >> Error in Huggingface InferenceAPI call!","status_cd":400, "message": error, "timestamp":{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
+#         log_ref = db.collection('voiceClone_tg_log').document(db_document_name)
+#         func.createLog(log_ref, log_response)
 
 @retry(stop=stop_after_attempt(3), wait=wait_fixed(5), retry=retry_if_exception_type(ConnectionError))
-def get_replicate_response(model, query, system_prompt, message_hist, db, db_document_name, voice_settings):
+def get_groq_response(system_prompt, message_hist, db, db_document_name, voice_settings, effective_chat_id):
     try:
+        groq_model = groq_models.get(voice_settings['model'].lower(), "llama 3")
+        system_message = [{"role": "system", "content": system_prompt}]
+        user_message = []
+        for message in message_hist:
+            if not message["content"]:
+                message["content"] = ""
+            user_message.append({
+                "role": message["role"],
+                "content": message["content"]
+            })
+
+        chat_completion = groq_client.chat.completions.create(messages=system_message+user_message,
+            model=groq_model,
+            temperature=voice_settings['temperature'],
+            max_tokens=1024,
+            top_p=0.2,
+            stop=None,
+            stream=False,)
+        return chat_completion.choices[0].message.content
+    except Exception as e:
+        error = "Error: {}".format(str(e))
+        print("************** textResponseSrvr > get_groq_response > error:",error)
+        log_response = {"status": "textResponseSrvr > get_agent_response > get_groq_response >> Error in Groq Llama call!","status_cd":400, "message": error,"update.effective_chat.id":effective_chat_id, "timestamp":{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
+        log_ref = db.collection('voiceClone_tg_log').document(db_document_name)
+        func.createLog(log_ref, log_response)
+@retry(stop=stop_after_attempt(3), wait=wait_fixed(5), retry=retry_if_exception_type(ConnectionError))
+def get_replicate_response(model, query, system_prompt, message_hist, db, db_document_name, voice_settings, effective_chat_id):
+    try:
+        replicate_model = replicate_models.get(model, "llama 3")
         final_prompt = system_prompt.replace("\n","\\n")
         query = query.replace("\n","\\n")
         new_message_hist = ""
@@ -91,7 +186,7 @@ def get_replicate_response(model, query, system_prompt, message_hist, db, db_doc
         # https://openrouter.ai/docs/parameters
         full_text = []
         for event in replicate.stream(
-                model,
+                replicate_model,
                 input={
                     "top_k": voice_settings['top_k'], #1,
                     "top_p": voice_settings['top_p'], #0.8,
@@ -105,20 +200,22 @@ def get_replicate_response(model, query, system_prompt, message_hist, db, db_doc
                     "prompt_template": "<|begin_of_text|><|start_header_id|>system<|end_header_id|>{system_prompt}<|eot_id|>{prompt}<|start_header_id|>assistant<|end_header_id|>",
                     "presence_penalty": voice_settings['presence_penalty'], #0.1,
                     "frequency_penalty": voice_settings['frequency_penalty'], #0.9,
+                    "repetition_penalty": voice_settings['repetition_penalty'],
                     "log_performance_metrics": False
                 },
             ):
                 full_text.append(str(event))
         response = ''.join(full_text)
-        return ''.join(full_text)
     except Exception as e:
         error = "Error: {}".format(str(e))
-        print("************** textResponseSrvr > get_replicate_response > error:",error)
-        log_response = {"status": "textResponseSrvr > get_agent_response > get_replicate_response >> Error in Replicate Llama call!","status_cd":400, "message": error, "timestamp":{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
+        print("************** textResponseSrvr > get_replicate_response > Error in Replicate call. Switching to Groq.",error)
+        log_response = {"status": "textResponseSrvr > get_agent_response > get_replicate_response >> Error in Replicate call. Switching to Groq","status_cd":400, "message": error,"update.effective_chat.id":effective_chat_id, "timestamp":{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
         log_ref = db.collection('voiceClone_tg_log').document(db_document_name)
         func.createLog(log_ref, log_response)
+        response = get_groq_response(system_prompt, message_hist, db, db_document_name, voice_settings,effective_chat_id)
 
-def get_openai_response(model, system_message, message_hist, db, db_document_name, voice_settings):
+    return response
+def get_openai_response(model, system_message, message_hist, db, db_document_name, voice_settings,effective_chat_id):
     try:
         print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')} textResponseSrvr > get_agent_response > openai firing for {model}...\n")
         user_message = []
@@ -145,11 +242,11 @@ def get_openai_response(model, system_message, message_hist, db, db_document_nam
     except Exception as e:
         error = "Error: {}".format(str(e))
         print("************** textResponseSrvr > get_openai_response > error:",error)
-        log_response = {"status": "textResponseSrvr > get_agent_response > get_openai_response >> Error in OpenAI call!","status_cd":400, "message": error, "timestamp":{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
+        log_response = {"status": "textResponseSrvr > get_agent_response > get_openai_response >> Error in OpenAI call!","status_cd":400, "message": error,"update.effective_chat.id":effective_chat_id, "timestamp":{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
         log_ref = db.collection('voiceClone_tg_log').document(db_document_name)
         func.createLog(log_ref, log_response)
 
-def get_agent_response(query, voice_settings, message_hist, db, db_document_name):
+def get_agent_response(query, voice_settings, message_hist, db, db_document_name,effective_chat_id):
     print("************** textResponseSrvr > Entered get_agent_response")
     model  = voice_settings['model']
     temp = voice_settings['temperature']
@@ -175,46 +272,21 @@ def get_agent_response(query, voice_settings, message_hist, db, db_document_name
     if not(user_context == "Nothing defined yet") or not(user_context == ""):
         final_prompt = final_prompt + f"A brief background about you is given as below:"+user_context
     
-    system_message = [{"role": "system", "content": final_prompt}]
     full_response = ""
     if model == "gpt-4o" or model == "gpt-4o-mini":
+        system_message = [{"role": "system", "content": final_prompt}]
         try:
             print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')} textResponseSrvr > get_agent_response: OpenAI call started")
-            full_response = get_openai_response(model, system_message, message_hist, db, db_document_name, voice_settings)
+            full_response = get_openai_response(model, system_message, message_hist, db, db_document_name, voice_settings, effective_chat_id)
         except Exception as e:
             error = "Error: {}".format(str(e))
             print("************** textResponseSrvr > get_agent_response >> Error in OpenAI call!",error)
-            log_response = {"status": "textResponseSrvr > get_agent_response >> Error in OpenAI call!","status_cd":400, "message": error, "timestamp":{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
+            log_response = {"status": "textResponseSrvr > get_agent_response >> Error in OpenAI call!","status_cd":400, "message": error,"update.effective_chat.id":effective_chat_id, "timestamp":{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
             log_ref = db.collection('voiceClone_tg_log').document(db_document_name)
             func.createLog(log_ref, log_response)
     ## These model names are from     
     elif model == "llama 3" or model == "llama 3.1":
-        ## Using Groq's OpenAI chat completion method
-        # if model == "llama 3 8b":
-        #     groq_model = "llama3-8b-8192"
-        # elif model == "llama 3 70b":
-        #     groq_model == "llama3-70b-8192"
-        # elif model == "llama 3.1 8b":
-        #     groq_model = "llama-3.1-8b-instant"
-        # elif model == "llama 3.1 405b":
-        #     groq_model = "llama-3.1-405b-instant"
-        # response = groq_client.chat.completions.create(
-        #             messages=system_message+[
-        #                     {"role": m["role"], "content": m["content"]}
-        #                     for m in message_hist
-        #                 ],
-        #             model=model,
-        #             temperature=temp,
-        #             top_p=0.9,
-        #         )
-        # full_response = response.choices[0].message.content
-        ## Using Replicate:
-        if model == "llama 3":
-            replicate_model = "meta/meta-llama-3-70b-instruct"
-        elif model == "llama 3.1":
-            replicate_model = "meta/meta-llama-3.1-405b-instruct"
-        
-        full_response = get_replicate_response(replicate_model, query, final_prompt, message_hist, db, db_document_name, voice_settings)
+        full_response = get_replicate_response(voice_settings['model'], query, final_prompt, message_hist, db, db_document_name, voice_settings, effective_chat_id)
 
-        print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')} textResponseSrvr > get_agent_response: from {model}: \n {full_response}")
+    print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')} textResponseSrvr > get_agent_response: from {model}: \n {full_response}")
     return full_response

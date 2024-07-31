@@ -18,7 +18,8 @@ ist = timezone(timedelta(hours=5, minutes=30))
 voice_api_key = os.getenv("ELEVENLABS_API_KEY")
 
 if "status" not in st.session_state:
-    st.session_state.status = st.session_state.get("status", "unverified")
+    # st.session_state.status = st.session_state.get("status", "unverified")
+    st.session_state.status = st.session_state.get("status", "verified")
 if "voice_id_disabled" not in st.session_state:
     st.session_state["voice_id_disabled"] = False
 if "action_setting" not in st.session_state:
@@ -80,6 +81,7 @@ def set_character_setting(char_id):
         "length_penalty": st.session_state.length_penalty,
         "presence_penalty": st.session_state.presence_penalty,
         "frequency_penalty": st.session_state.frequency_penalty,
+        "repetition_penalty": st.session_state.repetition_penalty,
         "prompt": prompt,
         "negative_prompt": negative_prompt,
         "response_rules": response_rules,
@@ -206,6 +208,7 @@ def render_setting_pg(action, context):
     length_penalty =float(context['length_penalty'])
     presence_penalty =float(context['presence_penalty'])
     frequency_penalty =float(context['frequency_penalty'])
+    repetition_penalty =float(context['repetition_penalty'])
     prompt  = context['prompt']
     negative_prompt  = context['negative_prompt']
     response_rules = context['response_rules']
@@ -267,19 +270,21 @@ def render_setting_pg(action, context):
         
         ## Setting LLM Parameters: model and temperature
         with st.expander("Models", expanded=False, icon=":material/psychology:"):
-            col1, col2, col3 = st.columns([1,1,1], gap="medium")
+            st.selectbox("LLM", dropdown_val_model, index=index_model, key="model",label_visibility="visible", help="Cheapest is gpt-4o-mini")
+            col1, col2 = st.columns([1,1], gap="medium")
             with col1:
-                st.selectbox("LLM", dropdown_val_model, index=index_model, key="model",label_visibility="visible", help="Cheapest is gpt-4o-mini")
-                st.slider("temperature", min_value=0.0, max_value=1.0, value=temperature, step=0.1, key="temperature", help="Llama=1, OpenAI=1.2")
-                st.slider("frequency_penalty", min_value=0.0, max_value=1.0, value=frequency_penalty, step=0.1, key="frequency_penalty", help="Llama=0.9, OpenAI=2")
-            with col2:
+                st.write("Parameters common to OpenAI and Meta Llama")
+                st.slider("temperature (Llama value range is 0 to 1)", min_value=0.0, max_value=2.0, value=temperature, step=0.1, key="temperature", help="Llama=1, OpenAI=1.2")
+                st.slider("frequency_penalty (Llama value range is 0 to 2)", min_value=-2.0, max_value=2.0, value=frequency_penalty, step=0.1, key="frequency_penalty", help="Llama=0.9, OpenAI=2")
                 st.slider("top_p", min_value=0.0, max_value=1.0, value=top_p, step=0.1, key="top_p", help="Llama=0.8, OpenAI=0.8")
                 st.number_input("max_tokens",min_value = 0, max_value=1000, value=max_tokens, step=1, key="max_tokens", help="Llama=100, OpenAI=1.100")
-                st.slider("presence_penalty", min_value=0.0, max_value=1.0, value=presence_penalty, step=0.1, key="presence_penalty", help="Llama=0.1, OpenAI=0.1")
-            with col3:
+                st.slider("presence_penalty (Llama value range is 0 to 2)", min_value=-2.0, max_value=2.0, value=presence_penalty, step=0.1, key="presence_penalty", help="Llama=0.1, OpenAI=0.1")
+            with col2:
+                st.write("Parameters only for Meta Llama")
                 st.slider("top_k (Llama only)", min_value=0, max_value=100, value=top_k, step=1, key="top_k", help="Llama=1")
                 st.number_input("min_tokens (Llama only)",min_value = 0, max_value=100, value=min_tokens, step=1, key="min_tokens", help="Llama=10")
-                st.slider("length_penalty (Llama only)", min_value=0.0, max_value=1.0, value=length_penalty, step=0.1, key="length_penalty", help="Llama=0.1")
+                st.slider("length_penalty (Llama only)", min_value=0.0, max_value=2.0, value=length_penalty, step=0.1, key="length_penalty", help="Llama=0.1")
+                st.slider("repetition_penalty (Llama only)", min_value=0.0, max_value=2.0, value=repetition_penalty, step=0.1, key="repetition_penalty", help="Llama=1.8")
                 
         ## Setting LLM Prompt parameters: prompt, response rules, exclusion rules and additional guideline for prompt rule in prompt_tail
         with st.expander("Prompt", expanded=False, icon=":material/edit_note:"):

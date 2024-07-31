@@ -67,7 +67,7 @@ def generateVoiceStream(input_text,voice_id):
     # play_audio_stream(audio_stream)
     return audio_stream
 
-def get_voice_response(voice_setting, full_response,filename, db, db_document_name):
+def get_voice_response(voice_setting, full_response,filename, db, db_document_name, effective_chat_id):
     print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')} voiceResponseSrvr > get_voice_response: Started generating voice...")
     try:
         audio = generateVoice(voice_setting,full_response,voice_setting['voice_id'])
@@ -75,7 +75,7 @@ def get_voice_response(voice_setting, full_response,filename, db, db_document_na
     except Exception as e:
         error = "Error: {}".format(str(e))
         print("*** ERROR *** TG_Bot/voiceResponseSrvr/get_voice_response > Error in generating Audio",error)
-        log_response = {"status": "TG_Bot/voiceResponseSrvr/get_voice_response: Error in generating Audio","status_cd":400, "message": error,"timestamp":{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
+        log_response = {"status": "TG_Bot/voiceResponseSrvr/get_voice_response: Error in generating Audio","status_cd":400, "message": error,"update.effective_chat.id":effective_chat_id,"timestamp":{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
         log_ref = db.collection('voiceClone_tg_log').document(db_document_name)
         func.createLog(log_ref, log_response)
 
@@ -86,7 +86,7 @@ def get_voice_response(voice_setting, full_response,filename, db, db_document_na
     except Exception as e:
         error = "Error: {}".format(str(e))
         print("*** ERROR *** TG_Bot/voiceResponseSrvr/get_voice_response > Error in saving Audio file",error)
-        log_response = {"status": "TG_Bot/voiceResponseSrvr/get_voice_response: Error in saving Audio file","status_cd":400, "message": error,"timestamp":{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
+        log_response = {"status": "TG_Bot/voiceResponseSrvr/get_voice_response: Error in saving Audio file","status_cd":400, "message": error,"update.effective_chat.id":effective_chat_id,"timestamp":{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
         log_ref = db.collection('voiceClone_tg_log').document(db_document_name)
         func.createLog(log_ref, log_response)
         return False
