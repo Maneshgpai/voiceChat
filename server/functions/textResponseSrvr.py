@@ -191,6 +191,7 @@ def get_replicate_response(model, query, system_prompt, message_hist, db, db_doc
                     "prompt_template": "<|begin_of_text|><|start_header_id|>system<|end_header_id|>{system_prompt}<|eot_id|>{prompt}<|start_header_id|>assistant<|end_header_id|>",
                     "presence_penalty": voice_settings['presence_penalty'], #0.1,
                     "frequency_penalty": voice_settings['frequency_penalty'], #0.9,
+                    "repetition_penalty": voice_settings['repetition_penalty'],
                     "log_performance_metrics": False
                 },
             ):
