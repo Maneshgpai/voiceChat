@@ -42,14 +42,12 @@ def google_translate_text(text,target_lang_cd, db, db_document_name):
         func.createLog(log_ref, log_response)
 
     return translation
-
 def translate(audio_file):
     translation = client.audio.translations.create(
         model="whisper-1", 
         file=audio_file
         )
     return translation.text
-
 def convert_voice_to_text(voice_file, system_prompt):
     audio_file= open(voice_file, "rb")
     response = client.chat.completions.create(
@@ -128,7 +126,34 @@ def convert_voice_to_text(voice_file, system_prompt):
 #         log_ref = db.collection('voiceClone_tg_log').document(db_document_name)
 #         func.createLog(log_ref, log_response)
 
+@retry(stop=stop_after_attempt(3), wait=wait_fixed(5), retry=retry_if_exception_type(ConnectionError))
+def get_groq_response(system_prompt, message_hist, db, db_document_name, voice_settings):
+    try:
+        groq_model = groq_models.get(voice_settings['model'].lower(), "llama 3")
+        system_message = [{"role": "system", "content": system_prompt}]
+        user_message = []
+        for message in message_hist:
+            if not message["content"]:
+                message["content"] = ""
+            user_message.append({
+                "role": message["role"],
+                "content": message["content"]
+            })
 
+        chat_completion = groq_client.chat.completions.create(messages=system_message+user_message,
+            model=groq_model,
+            temperature=voice_settings['temperature'],
+            max_tokens=1024,
+            top_p=0.2,
+            stop=None,
+            stream=False,)
+        return chat_completion.choices[0].message.content
+    except Exception as e:
+        error = "Error: {}".format(str(e))
+        print("************** textResponseSrvr > get_groq_response > error:",error)
+        log_response = {"status": "textResponseSrvr > get_agent_response > get_groq_response >> Error in Groq Llama call!","status_cd":400, "message": error, "timestamp":{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
+        log_ref = db.collection('voiceClone_tg_log').document(db_document_name)
+        func.createLog(log_ref, log_response)
 @retry(stop=stop_after_attempt(3), wait=wait_fixed(5), retry=retry_if_exception_type(ConnectionError))
 def get_replicate_response(model, query, system_prompt, message_hist, db, db_document_name, voice_settings):
     try:
@@ -152,7 +177,7 @@ def get_replicate_response(model, query, system_prompt, message_hist, db, db_doc
         # https://openrouter.ai/docs/parameters
         full_text = []
         for event in replicate.stream(
-                model=replicate_model,
+                replicate_model,
                 input={
                     "top_k": voice_settings['top_k'], #1,
                     "top_p": voice_settings['top_p'], #0.8,
@@ -171,37 +196,15 @@ def get_replicate_response(model, query, system_prompt, message_hist, db, db_doc
             ):
                 full_text.append(str(event))
         response = ''.join(full_text)
-        return ''.join(full_text)
     except Exception as e:
         error = "Error: {}".format(str(e))
-        print("************** textResponseSrvr > get_replicate_response > error:",error)
-        log_response = {"status": "textResponseSrvr > get_agent_response > get_replicate_response >> Error in Replicate Llama call!","status_cd":400, "message": error, "timestamp":{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
+        print("************** textResponseSrvr > get_replicate_response > Error in Replicate call. Switching to Groq.",error)
+        log_response = {"status": "textResponseSrvr > get_agent_response > get_replicate_response >> Error in Replicate call. Switching to Groq","status_cd":400, "message": error, "timestamp":{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
         log_ref = db.collection('voiceClone_tg_log').document(db_document_name)
         func.createLog(log_ref, log_response)
+        response = get_groq_response(system_prompt, message_hist, db, db_document_name, voice_settings)
 
-@retry(stop=stop_after_attempt(3), wait=wait_fixed(5), retry=retry_if_exception_type(ConnectionError))
-def get_groq_response(model, query, system_prompt, message_hist, db, db_document_name, voice_settings):
-    groq_model = groq_models.get(voice_settings['model'].lower(), "llama 3")
-
-    chat_completion = groq_client.chat.completions.create(messages=[
-            {
-                "role": "system",
-                "content": "you are adult movie script write"
-            },
-            # Set a user message for the assistant to respond to.
-            {
-                "role": "user",
-                "content": "Tell a short story with details on oral",
-            }
-        ],
-        model=groq_model
-        temperature=1.2,
-        max_tokens=1024,
-        top_p=0.2,
-        stop=None,
-        stream=False,)
-    return chat_completion.choices[0].message.content
-
+    return response
 def get_openai_response(model, system_message, message_hist, db, db_document_name, voice_settings):
     try:
         print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')} textResponseSrvr > get_agent_response > openai firing for {model}...\n")
@@ -259,9 +262,9 @@ def get_agent_response(query, voice_settings, message_hist, db, db_document_name
     if not(user_context == "Nothing defined yet") or not(user_context == ""):
         final_prompt = final_prompt + f"A brief background about you is given as below:"+user_context
     
-    system_message = [{"role": "system", "content": final_prompt}]
     full_response = ""
     if model == "gpt-4o" or model == "gpt-4o-mini":
+        system_message = [{"role": "system", "content": final_prompt}]
         try:
             print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')} textResponseSrvr > get_agent_response: OpenAI call started")
             full_response = get_openai_response(model, system_message, message_hist, db, db_document_name, voice_settings)
@@ -273,31 +276,7 @@ def get_agent_response(query, voice_settings, message_hist, db, db_document_name
             func.createLog(log_ref, log_response)
     ## These model names are from     
     elif model == "llama 3" or model == "llama 3.1":
-        ## Using Groq's OpenAI chat completion method
-        # if model == "llama 3 8b":
-        #     groq_model = "llama3-8b-8192"
-        # elif model == "llama 3 70b":
-        #     groq_model == "llama3-70b-8192"
-        # elif model == "llama 3.1 8b":
-        #     groq_model = "llama-3.1-8b-instant"
-        # elif model == "llama 3.1 405b":
-        #     groq_model = "llama-3.1-405b-instant"
-        # response = groq_client.chat.completions.create(
-        #             messages=system_message+[
-        #                     {"role": m["role"], "content": m["content"]}
-        #                     for m in message_hist
-        #                 ],
-        #             model=model,
-        #             temperature=temp,
-        #             top_p=0.9,
-        #         )
-        # full_response = response.choices[0].message.content
-        ## Using Replicate:
-
         full_response = get_replicate_response(voice_settings['model'], query, final_prompt, message_hist, db, db_document_name, voice_settings)
 
-
-
-
-        print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')} textResponseSrvr > get_agent_response: from {model}: \n {full_response}")
+    print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')} textResponseSrvr > get_agent_response: from {model}: \n {full_response}")
     return full_response
