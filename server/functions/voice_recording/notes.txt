@@ -1,0 +1,28 @@
+
+
+What I found out:
+- Convert to Hindi text response for voice. Do not pass Hinglish to voice.
+- Use defined voice settings given below
+   stability=0.1, similarity_boost=0.1, style=0.5, use_speaker_boost=False
+- Include SSML to reduce speed & pitch of voice. Eg:
+ 	<speak><prosody rate="x-slow" pitch="x-slow">
+ 	Movies are not just a timepass <break time="0.5s" /> Many parts of the movie like the dialogues create a lot of magic in our world
+ 	<break time="1.5s" />I hope you all liked this short demo...
+ 	</prosody></speak>
+- Include pauses between sentence by:
+   Add <break time="1.0s" />
+   Add commas to include pause
+- Text response to have random pause/stop words like um, uh etc
+  example: Movies, oh my gosh, I just just absolutely love them. They're like time machines taking you to different worlds and landscapes, and um, and I just can't get enough of it.
+- Text response to have randomly some words repeat (< 2% from total text) to show excitment/passion
+
+
+Selected voices:
+================
+Saanu - Soft and Calm; 50YSQEDPA2vlOxhCseP4
+Charlotte; XB0fDUnXU5powFXDhCwa Seductive & soft
+Riya K. Rao - Hindi Conversational Voice; mActWQg9kibLro6Z2ouY
+Monika Sogam - Hindi Modulated; 1qEiC6qsybMkmnNdVMbKs
+
+
+<speak><prosody rate="x-slow" pitch="x-slow">Movies are not just a timepass <break time="0.5s" /> Many parts of the movie like the dialogues create a lot of magic in our world<break time="1.5s" />I hope you all liked this short demo...</prosody></speak>

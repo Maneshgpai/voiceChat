@@ -82,9 +82,9 @@ def get_tg_char_setting(db_document_name,char_id, db, effective_chat_id):
     return character_settings
 
 ## Fetch LLM Response ##
-def get_agent_response(query, query_timestamp, character_settings, message_hist, db_document_name, effective_chat_id):
+def get_agent_response(query, query_timestamp, character_settings, message_hist, db_document_name, effective_chat_id, voice_or_text):
     text_response = ""
-    text_response = textresponse.get_agent_response(query, character_settings, message_hist, db, db_document_name, effective_chat_id)
+    text_response = textresponse.get_agent_response(query, character_settings, message_hist, db, db_document_name, effective_chat_id, voice_or_text)
     return text_response
 
 ## Fetch VOICE Response ##
@@ -116,14 +116,6 @@ def update_chat_hist(message_hist,db_document_name, effective_chat_id):
 def handle_voice(update: Update, context: CallbackContext) -> None:
     print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')} *********** TG BOT STARTED....")
 
-    ## Send "typing" response
-    context.bot.send_chat_action(
-    chat_id=update.effective_chat.id,
-    action=telegram.ChatAction.RECORD_AUDIO)
-    ## Other responses:
-    ## UPLOAD_PHOTO, RECORD_VIDEO, UPLOAD_VIDEO, UPLOAD_AUDIO, UPLOAD_DOCUMENT, FIND_LOCATION, RECORD_VIDEO_NOTE, and UPLOAD_VIDEO_NOTE.
-
-
     user_id = str(update.message.from_user.id)
     db_document_name = user_id+'_'+char_id
     voice_file = update.message.voice
@@ -153,27 +145,38 @@ def handle_voice(update: Update, context: CallbackContext) -> None:
         log_ref = db.collection('voiceClone_tg_log').document(db_document_name)
         func.createLog(log_ref, log_response)
 
-    ## Fetch LLM Response
+    ## Fetch LLM Response in regional language only, as regional language is pronounced correctly than Hinglish
     query_timestamp = update.message.date
     message_hist.append({"role": "user", "content": query, "content_type": "voice", "timestamp": query_timestamp, "update.update_id": update.update_id, "update.message.message_id": update.message.message_id})
-    text_response = get_agent_response(query, query_timestamp, character_settings, message_hist, db_document_name, update.effective_chat.id)
+    text_response = get_agent_response(query, query_timestamp, character_settings, message_hist, db_document_name, update.effective_chat.id, "voice")
     response_status = "Success"
 
     ## Fetch VOICE Response
     assistant_file_name = get_audio_file_location("assistant",str(voice_file.file_id), db_document_name)
-    file_created_status = get_voice_response(character_settings, text_response,assistant_file_name, db, db_document_name, update.effective_chat.id)
+    ## Adding SSML tags for better speech rate
+    ssml_text_response = """<speak><prosody rate="x-slow" pitch="x-slow">"""+text_response+"""</prosody></speak>"""
+    file_created_status = get_voice_response(character_settings, ssml_text_response,assistant_file_name, db, db_document_name, update.effective_chat.id)
     if file_created_status == False:
         response_status = "Error creating audio file."
 
-    ## Replying back
+    ## Send "typing" response
+    context.bot.send_chat_action(
+    chat_id=update.effective_chat.id,
+    action=telegram.ChatAction.RECORD_AUDIO)
+    ## Other responses:
+    ## UPLOAD_PHOTO, RECORD_VIDEO, UPLOAD_VIDEO, UPLOAD_AUDIO, UPLOAD_DOCUMENT, FIND_LOCATION, RECORD_VIDEO_NOTE, and UPLOAD_VIDEO_NOTE.
+
+    ## Sending voice message
     try:
         temp_voice_file = str(voice_file.file_id)+"_"+datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')+".ogg"
         shutil.copy(assistant_file_name, temp_voice_file)
         with open(temp_voice_file, 'rb') as voice_file:
             # context.bot.send_audio(chat_id=update.message.chat_id, audio=audio_file_info)
             context.bot.send_voice(chat_id=update.message.chat_id, voice=voice_file)
+        print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')} *********** TG BOT VOICE REPLY SENT!")
     except Exception as e:
         error = "Error: {}".format(str(e))
+        print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')} *********** ERROR in sending voice msg!:{error}")
         response_status = response_status + "Error sending audio file:" + error
         log_response = {"status": "Chat API/TG Bot/handle_voice > Error while sending the Audio on TG","status_cd":400, "message": response_status, "user_file_name":user_file_name, "assistant_file_name":assistant_file_name, "timestamp":{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
         log_ref = db.collection('voiceClone_tg_log').document(db_document_name)
@@ -182,29 +185,31 @@ def handle_voice(update: Update, context: CallbackContext) -> None:
     message_hist.append({"role": "assistant", "content": text_response, "content_type": "voice","response_status":response_status, "timestamp": datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S'), "update.update_id": update.update_id, "update.message.message_id": update.message.message_id})
     update_chat_hist(message_hist,db_document_name, update.effective_chat.id)
 
-    ## OPTIONAL: Replying back with text
-    # try:
-    #     update.message.reply_text(text_response)
-    #     print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')} *********** TG BOT REPLY SENT!")
-    # except Exception as e:
-    #     error = "Error: {}".format(str(e))
-    #     log_response = {"status": "Chat API/TG Bot/handle_voice > Error while replying the Text on TG","status_cd":400, "message": error, "timestamp":{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
-    #     log_ref = db.collection('voiceClone_tg_log').document(db_document_name)
-    #     func.createLog(log_ref, log_response)
-
-## Define the message handler for user queries
-def handle_message(update: Update, context: CallbackContext) -> None:
-    print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')} *********** TG BOT STARTED....")
-    print(update)
-    print(update.update_id)
-    print(update.message.message_id)
-
     ## Send "typing" response
     context.bot.send_chat_action(
     chat_id=update.effective_chat.id,
     action=telegram.ChatAction.TYPING
     )
 
+    ## OPTIONAL: Sending text along with voice
+    try:
+        system_message = [{"role": "system", "content": f"Translate user message, without any variation, to {character_settings['language']}"}]
+        user_message = [{"role": "user", "content": text_response}]
+        print(f"********************* Fetching {character_settings['language']} translation \n{system_message}\n{user_message}")
+        voice_text_response = textresponse.get_openai_response("gpt-4o-mini", system_message, user_message, db, db_document_name, character_settings, update.effective_chat.id)
+        print(f"********************* {character_settings['language']} translation for texting \n{voice_text_response}")
+        update.message.reply_text(voice_text_response)
+        print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')} *********** TG BOT TEXT REPLY SENT!")
+    except Exception as e:
+        error = "Error: {}".format(str(e))
+        log_response = {"status": "Chat API/TG Bot/handle_voice > Error while replying the Text on TG","status_cd":400, "message": error,"update.update_id": update.update_id, "update.message.message_id": update.message.message_id, "timestamp":{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
+        log_ref = db.collection('voiceClone_tg_log').document(db_document_name)
+        func.createLog(log_ref, log_response)
+
+
+## Define the message handler for user queries
+def handle_message(update: Update, context: CallbackContext) -> None:
+    print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')} *********** TG BOT STARTED....")
     text_response = "Thank you, aapke msg ke liye. Thoda sa sabr karo, I will be back soon!"
 
     ## Get character as per the token
@@ -225,9 +230,7 @@ def handle_message(update: Update, context: CallbackContext) -> None:
     query_timestamp = update.message.date
     message_hist.append({"role": "user", "content": query, "content_type": "text", "timestamp": query_timestamp, "update.update_id": update.update_id, "update.message.message_id": update.message.message_id})
 
-    
-    
-    text_response = get_agent_response(query, query_timestamp, character_settings, message_hist, db_document_name, update.effective_chat.id)
+    text_response = get_agent_response(query, query_timestamp, character_settings, message_hist, db_document_name, update.effective_chat.id, "text")
 
     ## Call Google Translate if needed 
     translated_text_response = ""
@@ -236,6 +239,12 @@ def handle_message(update: Update, context: CallbackContext) -> None:
     #     selected_lang_cd = lang_cd.get(character_settings['language'].lower(), "en-us")
     #     translated_text_response = textresponse.google_translate_text(text_response,selected_lang_cd,db, db_document_name)
     #     text_response = translated_text_response
+
+    ## Send "typing" response
+    context.bot.send_chat_action(
+    chat_id=update.effective_chat.id,
+    action=telegram.ChatAction.TYPING
+    )
 
     ## Replying back
     text_response_status = "Success"
@@ -252,9 +261,9 @@ def handle_message(update: Update, context: CallbackContext) -> None:
     if not text_response:
         text_response = ""
     if translated_text_response == "":
-        message_hist.append({"role": "assistant", "content": text_response, "content_type": "text","response_status":text_response_status, "timestamp": datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S'), "update.update_id": update.update_id, "update.message.message_id": update.message.message_id})
+        message_hist.append({"role": "assistant", "content": text_response, "content_type": "text","response_status":text_response_status, "timestamp": datetime.now(ist), "update.update_id": update.update_id, "update.message.message_id": update.message.message_id})
     else:
-        message_hist.append({"role": "assistant", "content": text_response, "translated_content": translated_text_response, "content_type": "text","response_status":text_response_status, "timestamp": datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S'), "update.update_id": update.update_id, "update.message.message_id": update.message.message_id})
+        message_hist.append({"role": "assistant", "content": text_response, "translated_content": translated_text_response, "content_type": "text","response_status":text_response_status, "timestamp": datetime.now(ist), "update.update_id": update.update_id, "update.message.message_id": update.message.message_id})
     update_chat_hist(message_hist,db_document_name, update.effective_chat.id)
 
 ## Error handler for network and other common errors
@@ -302,10 +311,10 @@ def main() -> None:
     updater.idle()
 
 ## Create a dispatcher
-dispatcher = Dispatcher(bot, None, workers=8, use_context=True)
-dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
-dispatcher.add_handler(MessageHandler(Filters.voice, handle_voice))
-dispatcher.add_error_handler(error_handler)
+# dispatcher = Dispatcher(bot, None, workers=8, use_context=True)
+# dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
+# dispatcher.add_handler(MessageHandler(Filters.voice, handle_voice))
+# dispatcher.add_error_handler(error_handler)
 ## dispatcher.add_handler(CommandHandler("start", start))
 ## dispatcher.add_handler(CommandHandler("menu", menu))
 ## dispatcher.add_handler(CallbackQueryHandler(button))
@@ -314,5 +323,5 @@ dispatcher.add_error_handler(error_handler)
 bot.set_webhook(url=bot_webhook_url+'/{}'.format(TOKEN))
 
 if __name__ == '__main__':
-    # main()
-    app.run(host='0.0.0.0', port=5000, debug=False)
+    main()
+    # app.run(host='0.0.0.0', port=5000, debug=False)

@@ -274,17 +274,17 @@ def render_setting_pg(action, context):
             col1, col2 = st.columns([1,1], gap="medium")
             with col1:
                 st.write("Parameters common to OpenAI and Meta Llama")
-                st.slider("temperature (Llama value range is 0 to 1)", min_value=0.0, max_value=2.0, value=temperature, step=0.1, key="temperature", help="Llama=1, OpenAI=1.2")
-                st.slider("frequency_penalty (Llama value range is 0 to 2)", min_value=-2.0, max_value=2.0, value=frequency_penalty, step=0.1, key="frequency_penalty", help="Llama=0.9, OpenAI=2")
-                st.slider("top_p", min_value=0.0, max_value=1.0, value=top_p, step=0.1, key="top_p", help="Llama=0.8, OpenAI=0.8")
-                st.number_input("max_tokens",min_value = 0, max_value=1000, value=max_tokens, step=1, key="max_tokens", help="Llama=100, OpenAI=1.100")
-                st.slider("presence_penalty (Llama value range is 0 to 2)", min_value=-2.0, max_value=2.0, value=presence_penalty, step=0.1, key="presence_penalty", help="Llama=0.1, OpenAI=0.1")
+                st.slider("Temperature (Llama= 0 to 1, OpenAI= 0 to 2)", min_value=0.0, max_value=2.0, value=temperature, step=0.01, key="temperature", help="Llama=1, OpenAI=1.2")
+                st.slider("frequency_penalty (Llama= 0 to +2, OpenAI=-2 to +2)", min_value=-2.0, max_value=2.0, value=frequency_penalty, step=0.01, key="frequency_penalty", help="Llama=0.9, OpenAI=2. Frequency penalty applies a penalty on the next token proportional to how many times that token already appeared in the response and prompt. The higher the frequency penalty, the less likely a word will appear again.")
+                st.slider("top_p (Llama= 0 to +1, OpenAI= 0 to +1)", min_value=0.0, max_value=1.0, value=top_p, step=0.01, key="top_p", help="Degree of creativity for words and phrases choosen. Higher value means more adventurous choice of words, but at risk of sounding Off topic or Disjointed")
+                st.number_input("max_tokens",min_value = 0, max_value=1000, value=max_tokens, step=1, key="max_tokens", help="Llama=100, OpenAI=100")
+                st.slider("presence_penalty (Llama= 0 to +2, OpenAI=-2 to +2)", min_value=-2.0, max_value=2.0, value=presence_penalty, step=0.01, key="presence_penalty", help="The presence penalty also applies a penalty on repeated tokens but, unlike the frequency penalty, the penalty is the same for all repeated tokens. A token that appears twice and a token that appears 10 times are penalized the same.")
             with col2:
                 st.write("Parameters only for Meta Llama")
-                st.slider("top_k (Llama only)", min_value=0, max_value=100, value=top_k, step=1, key="top_k", help="Llama=1")
+                st.slider("top_k (Llama only)", min_value=0, max_value=100, value=top_k, step=1, key="top_k", help="Llama=80. Top_k influences how random the next token will be generated. Eg with slightly higher value, instead of word Happy, LLM might choose Elated. But high values might result in picking words which don't fit to the situation")
                 st.number_input("min_tokens (Llama only)",min_value = 0, max_value=100, value=min_tokens, step=1, key="min_tokens", help="Llama=10")
-                st.slider("length_penalty (Llama only)", min_value=0.0, max_value=2.0, value=length_penalty, step=0.1, key="length_penalty", help="Llama=0.1")
-                st.slider("repetition_penalty (Llama only)", min_value=0.0, max_value=2.0, value=repetition_penalty, step=0.1, key="repetition_penalty", help="Llama=1.8")
+                st.slider("length_penalty (Llama only)", min_value=0.0, max_value=2.0, value=length_penalty, step=0.01, key="length_penalty", help="Llama=0.1")
+                st.slider("repetition_penalty (Llama only)", min_value=0.0, max_value=2.0, value=repetition_penalty, step=0.01, key="repetition_penalty", help="Degree of discouragement for repetitive or redundant output.")
                 
         ## Setting LLM Prompt parameters: prompt, response rules, exclusion rules and additional guideline for prompt rule in prompt_tail
         with st.expander("Prompt", expanded=False, icon=":material/edit_note:"):
@@ -338,10 +338,10 @@ def setting_pg(setting_action, char_id):
 
     v_character_setting = st.session_state["character_setting"]
 
-    col1, col2 = st.columns([1,1])
+    col1, col2 = st.columns([2,1])
     with col1:
         if setting_action == "edit_existing_char":
-            st.subheader(f"Edit Setting for {v_character_setting['character_name']}")
+            st.subheader(f"Edit Setting for {v_character_setting['character_name']} ({char_id})")
         else:
             st.subheader(f"Create New Character")
             st.caption(f"Options are pre-loaded with default values. Please review carefully before updating!")
