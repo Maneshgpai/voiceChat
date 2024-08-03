@@ -52,6 +52,31 @@ def duplicate_document(collection_name, original_doc_id):
     except Exception as e:
         print(f'Error duplicating document: {e}')
 
+def convert_string_timestamp()
+import datetime
+
+def string_to_timestamp(date_string, format_string):
+        """Converts a string to a timestamp.
+
+        Args:
+            date_string: The date string to convert.
+            format_string: The format of the date string.
+
+        Returns:
+            The timestamp representation of the date string.
+        """
+
+        datetime_object = datetime.datetime.strptime(date_string, format_string)
+        return datetime_object.timestamp()
+
+    # Example usage
+    date_string = "2023-05-12 10:30:00"
+    format_string = "%Y-%m-%d %H:%M:%S"
+    timestamp = string_to_timestamp(date_string, format_string)
+
+    print(timestamp)
+
+
 ## MOVE DOCUMENT ##
 # source_collection = 'voiceClone_users'
 # target_collection = 'voiceClone_characters'

@@ -100,7 +100,7 @@ def translate(audio_file):
         file=audio_file
         )
     print(f"COST: Translate user audio to text via OpenAI whisper-1:\n{translation}\n")
-    total_tokens = translation.get('usage', {}).get('total_tokens', 0)
+    # total_tokens = translation.get('usage', {}).get('total_tokens', 0)
     print(f"COST: Translate user audio to text via OpenAI whisper-1:\n{total_tokens}\n")
     return translation.text
 def convert_voice_to_text(voice_file, system_prompt, db_document_name, db, effective_chat_id):
@@ -121,7 +121,7 @@ def convert_voice_to_text(voice_file, system_prompt, db_document_name, db, effec
             ]
         )
         print(f"COST: Convert voice to text via gpt-4o-mini:\n{response}\n")
-        total_tokens = response.get('usage', {}).get('total_tokens', 0)
+        # total_tokens = response.get('usage', {}).get('total_tokens', 0)
         print(f"COST: Convert voice to text via gpt-4o-mini:\n{total_tokens}\n")
         return response.choices[0].message.content
     except Exception as e:
