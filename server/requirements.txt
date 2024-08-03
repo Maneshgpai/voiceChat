@@ -14,3 +14,4 @@ groq
 replicate
 tenacity
 transformers
+pandas
