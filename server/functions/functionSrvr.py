@@ -3,10 +3,14 @@ from datetime import datetime, timedelta, timezone
 import os
 import json
 from dotenv import load_dotenv
+from transformers import AutoTokenizer
+# import tiktoken
 
 ist = timezone(timedelta(hours=5, minutes=30))
 load_dotenv()
 default_setting = json.loads(os.getenv("DEFAULT_CHARACTER_SETTING"))
+# encoding = tiktoken.get_encoding("cl100k_base")
+
 
 def set_default_settings(voice_id):
     db = firestore.Client.from_service_account_json("firestore_key.json")
@@ -169,3 +173,13 @@ def get_user_info(telegram_id, db):
             else:
                 print("Given Telegram ID does not exist in DB")
     return user_name, document_id
+
+def calculate_tokens(model, input_text):
+    if 'llama' in model.lower():
+        tokenizer = AutoTokenizer.from_pretrained("meta-llama/Meta-Llama-3-8B", token=os.getenv("HUGGINGFACE_API_KEY"))
+        tokens = tokenizer.tokenize(input_text)
+        token_count = len(tokens)
+    # elif 'gpt-4o' in model.lower():
+    #     encoded_tokens = encoding.encode(input_text)
+    #     token_count = len(encoded_tokens)
+    return token_count
