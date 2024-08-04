@@ -161,4 +161,6 @@ cython_debug/
 test_data
 *.mp3
 *.ogg
+*.xlsx
+*.csv
 # firestore_key.json

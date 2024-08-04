@@ -1,5 +1,7 @@
 import firebase_admin
 from firebase_admin import credentials, firestore
+import datetime
+from pytz import timezone
 
 # Initialize the Firebase Admin SDK
 cred = credentials.Certificate("firestore_key.json")
@@ -32,6 +34,25 @@ def move_document(source_collection, target_collection, document_id):
     # source_doc_ref.delete()
     
     print(f"Document {document_id} has been moved from {source_collection} to {target_collection}.")
+## MOVE DOCUMENT ##
+# source_collection = 'voiceClone_users'
+# target_collection = 'voiceClone_characters'
+# document_id = '1qEiC6qsybMkmnNdVMbK'
+# move_document(source_collection, target_collection, document_id)
+
+def duplicate_collection(source_collection_name,target_collection_name):
+    source_collection_ref = db.collection(source_collection_name)
+    target_collection_ref = db.collection(target_collection_name)
+
+    # Retrieve all documents from the source collection
+    docs = source_collection_ref.stream()
+
+    # Copy each document to the target collection
+    for doc in docs:
+        doc_dict = doc.to_dict()
+        target_doc_ref = target_collection_ref.document(doc.id)
+        target_doc_ref.set(doc_dict)
+# duplicate_collection('voiceClone_tg_logs','voiceClone_tg_log_bkp')
 
 def duplicate_document(collection_name, original_doc_id):
     original_doc_ref = db.collection(collection_name).document(original_doc_id)
@@ -52,40 +73,33 @@ def duplicate_document(collection_name, original_doc_id):
     except Exception as e:
         print(f'Error duplicating document: {e}')
 
-def convert_string_timestamp()
-import datetime
+def update_timestamps(collection_name):
+    local_timezone = timezone("Asia/Kolkata")
+    collection_ref = db.collection(collection_name)
+    docs = collection_ref.stream()
 
-def string_to_timestamp(date_string, format_string):
-        """Converts a string to a timestamp.
+    # Iterate through all documents
+    for doc in docs:
+        doc_id = doc.id
+        doc_data = doc.to_dict()
+        messages = doc_data.get('messages', [])
 
-        Args:
-            date_string: The date string to convert.
-            format_string: The format of the date string.
+        # Check each message for the timestamp field
+        for i, message in enumerate(messages):
+            if isinstance(message, dict) and 'timestamp' in message:
+                timestamp_value = message['timestamp']
+                if isinstance(timestamp_value, str):
+                    try:
+                        # new_timestamp = datetime.datetime.strptime(timestamp_value, "%Y-%m-%d %H:%M:%S")
+                        naive_datetime = datetime.datetime.strptime(timestamp_value, "%Y-%m-%d %H:%M:%S")
+                        new_timestamp = local_timezone.localize(naive_datetime)
+                        messages[i]['timestamp'] = new_timestamp
+                    except ValueError as e:
+                        print(f"Error converting timestamp for document {doc_id}: {e}")
 
-        Returns:
-            The timestamp representation of the date string.
-        """
-
-        datetime_object = datetime.datetime.strptime(date_string, format_string)
-        return datetime_object.timestamp()
-
-    # Example usage
-    date_string = "2023-05-12 10:30:00"
-    format_string = "%Y-%m-%d %H:%M:%S"
-    timestamp = string_to_timestamp(date_string, format_string)
-
-    print(timestamp)
-
-
-## MOVE DOCUMENT ##
-# source_collection = 'voiceClone_users'
-# target_collection = 'voiceClone_characters'
-# document_id = '1qEiC6qsybMkmnNdVMbK'
-# move_document(source_collection, target_collection, document_id)
-
-## DUPLICATE DOCUMENT ##
-collection_name = 'voiceClone_voices'
-original_doc_id = '0Ue9uqhhblwZNr8OFpCU'
-duplicate_document(collection_name, original_doc_id)
-
-
+        # Update the document with the new messages array
+        doc_ref = collection_ref.document(doc_id)
+        doc_ref.update({'messages': messages})
+    print("Finished updating all documents!")
+# update_timestamps('voiceClone_chats')
+duplicate_collection('session_2024-07-27','session_2024-07-27_bkp')
