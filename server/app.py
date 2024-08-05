@@ -323,10 +323,10 @@ def main() -> None:
     updater.idle()
 
 ## Create a dispatcher
-# dispatcher = Dispatcher(bot, None, workers=8, use_context=True)
-# dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
-# dispatcher.add_handler(MessageHandler(Filters.voice, handle_voice))
-# dispatcher.add_error_handler(error_handler)
+dispatcher = Dispatcher(bot, None, workers=8, use_context=True)
+dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
+dispatcher.add_handler(MessageHandler(Filters.voice, handle_voice))
+dispatcher.add_error_handler(error_handler)
 # dispatcher.add_handler(CommandHandler("start", start))
 ## dispatcher.add_handler(CommandHandler("menu", menu))
 ## dispatcher.add_handler(CallbackQueryHandler(button))
@@ -335,5 +335,5 @@ def main() -> None:
 bot.set_webhook(url=bot_webhook_url+'/{}'.format(TOKEN))
 
 if __name__ == '__main__':
-    main()
-    # app.run(host='0.0.0.0', port=5000, debug=False)
+    # main()
+    app.run(host='0.0.0.0', port=5000, debug=False)
