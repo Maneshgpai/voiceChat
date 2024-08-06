@@ -38,8 +38,11 @@ bot = telegram.Bot(token=TOKEN)
 ## Initialize Flask app
 app = Flask(__name__)
 
+def get_datetime():
+    return (str(datetime.now())).replace('.','').replace(':','').replace(' ','').replace('-','')
+
 def log(msg_id,status,status_cd,message,origin,db,db_document_name):
-    log_response = {str(msg_id)+"_"+str(datetime.now()): {"status": status,"status_cd":status_cd,"message":message, "origin":origin, "message_id": msg_id, "timestamp":datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
+    log_response = {str(msg_id)+"_"+get_datetime(): {"status": status,"status_cd":status_cd,"message":message, "origin":origin, "message_id": msg_id, "timestamp":datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
     log_ref = db.collection('voiceClone_tg_logs').document(db_document_name)
     func.createLog(log_ref, log_response)
 
@@ -57,7 +60,7 @@ def set_tg_user_data(db_document_name,user_id, update, db, msg_id):
         func.set_tg_user_data(db_document_name,user_id, update, db,msg_id)
     except Exception as e:
         error = "Error: {}".format(str(e))
-        log_response = {str(msg_id)+"_"+str(datetime.now()): {"status": "error","status_cd":400,"message":error, "origin":"set_tg_user_data", "message_id": msg_id,"timestamp":datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
+        log_response = {str(msg_id)+"_"+get_datetime(): {"status": "error","status_cd":400,"message":error, "origin":"set_tg_user_data", "message_id": msg_id,"timestamp":datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
         log_ref = db.collection('voiceClone_tg_logs').document(db_document_name)
         func.createLog(log_ref, log_response)
 
@@ -68,7 +71,7 @@ def get_tg_chat_history(db_document_name, db, msg_id):
         message_hist = func.get_tg_chat_history(db_document_name, db, msg_id)
     except Exception as e:
         error = "Error: {}".format(str(e))
-        log_response = {str(msg_id)+"_"+str(datetime.now()): {"status": "error","status_cd":400,"message":error, "origin":"get_tg_chat_history", "message_id": msg_id,"timestamp":datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
+        log_response = {str(msg_id)+"_"+get_datetime(): {"status": "error","status_cd":400,"message":error, "origin":"get_tg_chat_history", "message_id": msg_id,"timestamp":datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
         log_ref = db.collection('voiceClone_tg_logs').document(db_document_name)
         func.createLog(log_ref, log_response)
     return message_hist
@@ -80,7 +83,7 @@ def get_tg_char_setting(db_document_name,char_id, db, msg_id):
         character_settings = func.get_tg_char_setting(db_document_name,char_id, db, msg_id)
     except Exception as e:
         error = "Error: {}".format(str(e))
-        log_response = {str(msg_id)+"_"+str(datetime.now()): {"status": "error","status_cd":400,"message":error, "origin":"get_tg_char_setting", "message_id": msg_id,"timestamp":datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
+        log_response = {str(msg_id)+"_"+get_datetime(): {"status": "error","status_cd":400,"message":error, "origin":"get_tg_char_setting", "message_id": msg_id,"timestamp":datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
         log_ref = db.collection('voiceClone_tg_logs').document(db_document_name)
         func.createLog(log_ref, log_response)
     return character_settings
@@ -98,7 +101,7 @@ def get_voice_response(character_settings, text_response,file_name, db, db_docum
         file_created_status = voiceresponse.get_voice_response(character_settings, text_response, file_name, db, db_document_name, msg_id)
     except Exception as e:
         error = "Error: {}".format(str(e))
-        log_response = {str(msg_id)+"_"+str(datetime.now()): {"status": "error","status_cd":400,"message":error, "origin":"get_voice_response", "message_id": msg_id,"timestamp":datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
+        log_response = {str(msg_id)+"_"+get_datetime(): {"status": "error","status_cd":400,"message":error, "origin":"get_voice_response", "message_id": msg_id,"timestamp":datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
         log_ref = db.collection('voiceClone_tg_logs').document(db_document_name)
         func.createLog(log_ref, log_response)
     return file_created_status
@@ -112,7 +115,7 @@ def update_chat_hist(message_hist,db_document_name, msg_id):
         chat_ref.update({"messages": firestore.ArrayUnion(message_hist)})
     except Exception as e:
         error = "Error: {}".format(str(e))
-        log_response = {str(msg_id)+"_"+str(datetime.now()): {"status": "error","status_cd":400,"message":error, "origin":"update_chat_hist", "message_id": msg_id,"timestamp":datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
+        log_response = {str(msg_id)+"_"+get_datetime(): {"status": "error","status_cd":400,"message":error, "origin":"update_chat_hist", "message_id": msg_id,"timestamp":datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
         log_ref = db.collection('voiceClone_tg_logs').document(db_document_name)
         func.createLog(log_ref, log_response)
 
@@ -147,7 +150,7 @@ def handle_voice(update: Update, context: CallbackContext) -> None:
     except Exception as e:
         error = "Error: {}".format(str(e))
         response_status = response_status + "Error sending audio file:" + error
-        log_response = {str(update.message.message_id)+"_"+str(datetime.now()): {"status": "error","status_cd":400,"message":error, "origin":"handle_voice/convert_voice_to_text", "message_id": update.message.message_id,"timestamp":datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
+        log_response = {str(update.message.message_id)+"_"+get_datetime(): {"status": "error","status_cd":400,"message":error, "origin":"handle_voice/convert_voice_to_text", "message_id": update.message.message_id,"timestamp":datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
         log_ref = db.collection('voiceClone_tg_logs').document(db_document_name)
         func.createLog(log_ref, log_response)
 
@@ -183,7 +186,7 @@ def handle_voice(update: Update, context: CallbackContext) -> None:
     except Exception as e:
         error = "Error: {}".format(str(e))
         response_status = response_status + "Error sending audio file:" + error
-        log_response = {str(update.message.message_id)+"_"+str(datetime.now()): {"status": "error","status_cd":400,"message":error, "origin":"handle_voice/context.bot.send_voice", "message_id": update.message.message_id,"timestamp":datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
+        log_response = {str(update.message.message_id)+"_"+get_datetime(): {"status": "error","status_cd":400,"message":error, "origin":"handle_voice/context.bot.send_voice", "message_id": update.message.message_id,"timestamp":datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
         log_ref = db.collection('voiceClone_tg_logs').document(db_document_name)
         func.createLog(log_ref, log_response)
 
@@ -205,7 +208,7 @@ def handle_voice(update: Update, context: CallbackContext) -> None:
         # print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')} *********** TG BOT TEXT REPLY SENT!")
     except Exception as e:
         error = "Error: {}".format(str(e))
-        log_response = {str(update.message.message_id)+"_"+str(datetime.now()): {"status": "error","status_cd":400,"message":error, "origin":"handle_voice/update.message.reply_text", "message_id": update.message.message_id,"timestamp":datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
+        log_response = {str(update.message.message_id)+"_"+get_datetime(): {"status": "error","status_cd":400,"message":error, "origin":"handle_voice/update.message.reply_text", "message_id": update.message.message_id,"timestamp":datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
         log_ref = db.collection('voiceClone_tg_logs').document(db_document_name)
         func.createLog(log_ref, log_response)
     
@@ -259,7 +262,7 @@ def handle_message(update: Update, context: CallbackContext) -> None:
     except Exception as e:
         error = "Error: {}".format(str(e))
         text_response_status = error
-        log_response = {str(update.message.message_id)+"_"+str(datetime.now()): {"status": "error","status_cd":400,"message":error, "origin":"handle_message/update.message.reply_text", "message_id": update.message.message_id,"timestamp":datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
+        log_response = {str(update.message.message_id)+"_"+get_datetime(): {"status": "error","status_cd":400,"message":error, "origin":"handle_message/update.message.reply_text", "message_id": update.message.message_id,"timestamp":datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
         log_ref = db.collection('voiceClone_tg_logs').document(db_document_name)
         func.createLog(log_ref, log_response)
 
@@ -282,18 +285,18 @@ def error_handler(update: Update, context: CallbackContext) -> None:
     except NetworkError:
         # Wait before retrying to handle transient network issues more gracefully
         logger.warning('Network error occurred. Retrying in 15 seconds...')
-        log_response = {str(update.message.message_id)+"_"+str(datetime.now()): {"status": "error","status_cd":400,"message":e, "origin":"error_handler/NetworkError", "message_id": update.message.message_id, "timestamp":datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
+        log_response = {str(update.message.message_id)+"_"+get_datetime(): {"status": "error","status_cd":400,"message":e, "origin":"error_handler/NetworkError", "message_id": update.message.message_id, "timestamp":datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
         log_ref = db.collection('voiceClone_tg_logs').document(db_document_name)
         func.createLog(log_ref, log_response)
         time.sleep(15)
     except TelegramError as e:
         logger.warning(f'A Telegram error occurred: {e}')
-        log_response = {str(update.message.message_id)+"_"+str(datetime.now()): {"status": "error","status_cd":400,"message":e, "origin":"error_handler/TelegramError", "message_id": update.message.message_id, "timestamp":datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
+        log_response = {str(update.message.message_id)+"_"+get_datetime(): {"status": "error","status_cd":400,"message":e, "origin":"error_handler/TelegramError", "message_id": update.message.message_id, "timestamp":datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
         log_ref = db.collection('voiceClone_tg_logs').document(db_document_name)
         func.createLog(log_ref, log_response)
     except Exception as e:
         logger.error(f'An unexpected error occurred: {e}')
-        log_response = {str(update.message.message_id)+"_"+str(datetime.now()): {"status": "error","status_cd":400,"message":e, "origin":"error_handler/Exception", "message_id": update.message.message_id, "timestamp":datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
+        log_response = {str(update.message.message_id)+"_"+get_datetime(): {"status": "error","status_cd":400,"message":e, "origin":"error_handler/Exception", "message_id": update.message.message_id, "timestamp":datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
         log_ref = db.collection('voiceClone_tg_logs').document(db_document_name)
         func.createLog(log_ref, log_response)
 
@@ -306,11 +309,21 @@ def webhook():
 
 # Define a handler for the /start command
 def start(update, context):
-    # context.bot.send_message(chat_id=update.effective_chat.id, text="Hi!")
     user_id = str(update.message.from_user.id)
     db_document_name = user_id+'_'+char_id
+    print(f"Clicked start by {user_id}, talking to {char_id}")
+    ## Fetching character settings ##
+    character_settings = get_tg_char_setting(db_document_name,char_id, db, update.message.message_id)
+
+    context.bot.send_message(chat_id=update.effective_chat.id, text=character_settings['welcome_msg'])
+
+    ## Creating new / Updating existing user info in DB ##
+    set_tg_user_data(db_document_name,user_id, update, db, update.message.message_id)
+
+
     log_msg = f"Started BOT for first time!"
     log(update.message.message_id,"logging",200,log_msg,"start",db,db_document_name)
+
 
 # Main function to start the bot
 def main() -> None:
@@ -318,6 +331,7 @@ def main() -> None:
     dp = updater.dispatcher
     dp.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
     dp.add_handler(MessageHandler(Filters.voice, handle_voice))
+    dp.add_handler(CommandHandler("start", start))
     dp.add_error_handler(error_handler)
     updater.start_polling()
     updater.idle()
@@ -326,8 +340,8 @@ def main() -> None:
 dispatcher = Dispatcher(bot, None, workers=8, use_context=True)
 dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
 dispatcher.add_handler(MessageHandler(Filters.voice, handle_voice))
+dispatcher.add_handle wr(CommandHandler("start", start))
 dispatcher.add_error_handler(error_handler)
-dispatcher.add_handler(CommandHandler("start", start))
 ## dispatcher.add_handler(CommandHandler("menu", menu))
 ## dispatcher.add_handler(CallbackQueryHandler(button))
 

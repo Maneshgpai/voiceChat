@@ -20,8 +20,11 @@ API_KEY = os.environ['GOOGLE_API_KEY']
 replicate_models = {"llama 3":"meta/meta-llama-3-70b-instruct", "llama 3.1":"meta/meta-llama-3.1-405b-instruct"}
 groq_models = {"llama 3":"llama3-70b-8192", "llama 3.1":"llama-3.1-70b-versatile"}
 
+def get_datetime():
+    return (str(datetime.now())).replace('.','').replace(':','').replace(' ','').replace('-','')
+
 def log(msg_id,status,status_cd,message,origin,db,db_document_name):
-    log_response = {str(msg_id)+"_"+str(datetime.now()): {"status": status,"status_cd":status_cd,"message":message, "origin":origin, "message_id": msg_id, "timestamp":datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
+    log_response = {str(msg_id)+"_"+get_datetime(): {"status": status,"status_cd":status_cd,"message":message, "origin":origin, "message_id": msg_id, "timestamp":datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
     log_ref = db.collection('voiceClone_tg_logs').document(db_document_name)
     func.createLog(log_ref, log_response)
 
