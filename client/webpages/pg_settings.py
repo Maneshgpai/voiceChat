@@ -88,6 +88,7 @@ def set_character_setting(char_id):
         "prompt_tail": st.session_state.prompt_tail,
         "character_name": st.session_state.character_name,
         "character_descr":st.session_state.character_descr,
+        "welcome_msg":st.session_state.welcome_msg,
         "voice_id":st.session_state.voice_id,
         "language": st.session_state.language,
         "verbosity": st.session_state.verbosity,
@@ -197,6 +198,7 @@ def validate_character_setting():
 def render_setting_pg(action, context):
     character_name  = context['character_name']
     character_descr = context.get('character_descr', '<Not provided!>')
+    welcome_msg = context['welcome_msg']
     voice_id = context.get('voice_id', '<Not provided!>')
     language  = context['language']
     model  = context['model']
@@ -225,6 +227,7 @@ def render_setting_pg(action, context):
         character_descr = ""
         prompt = ""
         user_context = ""
+        welcome_msg = ""
 
     ## Set on load values for dropdowns
     # dfsdf
@@ -266,6 +269,7 @@ def render_setting_pg(action, context):
             
             st.text_area("Character description (only for UI)",value=character_descr, key="character_descr", label_visibility="visible", help="Short Description of the character.")
             
+            st.text_area("Welcome Message",value=welcome_msg, key="welcome_msg",label_visibility="visible", help="Default = Welcome message suited to the Character, in their own language. Tell who the character is, what can they do. Tell that they can text or send voice message.")
             st.text_area("Background & context of the character",value=user_context, key="user_context",label_visibility="visible", help="Default = User's background, story, personal details etc")
         
         ## Setting LLM Parameters: model and temperature

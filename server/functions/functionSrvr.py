@@ -11,6 +11,8 @@ load_dotenv()
 default_setting = json.loads(os.getenv("DEFAULT_CHARACTER_SETTING"))
 # encoding = tiktoken.get_encoding("cl100k_base")
 
+def get_datetime():
+    return (str(datetime.now())).replace('.','').replace(':','').replace(' ','').replace('-','')
 
 def set_default_settings(voice_id):
     db = firestore.Client.from_service_account_json("firestore_key.json")
@@ -43,9 +45,6 @@ def get_voice_setting(voice_id, db):
 #             return []
 #     except Exception as e:
 #         error = "Error: {}".format(str(e))
-#         log_response = {"status": "TG_Bot/functionSrvr/get_voice_setting: error","status_cd":400, "message": error,"timestamp":{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
-#         log_ref = db.collection('voiceClone_log').document(document_id)
-#         createLog(log_ref, log_response)
 #         return error
 
 def get_tg_chat_history(document_id, db, msg_id):
@@ -62,7 +61,7 @@ def get_tg_chat_history(document_id, db, msg_id):
     except Exception as e:
         error = "Error: {}".format(str(e))
         # print("*** ERROR *** TG_Bot/functionSrvr/get_tg_chat_history > Error ",error)
-        log_response = {str(msg_id)+"_"+str(datetime.now()): {"status": "error","status_cd":400,"message":error, "origin":"get_tg_chat_history", "message_id": msg_id, "timestamp":datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
+        log_response = {str(msg_id)+"_"+get_datetime(): {"status": "error","status_cd":400,"message":error, "origin":"get_tg_chat_history", "message_id": msg_id, "timestamp":datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
         log_ref = db.collection('voiceClone_tg_logs').document(document_id)
         createLog(log_ref, log_response)
         return error
@@ -90,7 +89,7 @@ def set_tg_user_data(db_document_name, user_id, update, db, msg_id):
     # except Exception as e:
     #     error = "Error: {}".format(str(e))
     #     print("*** ERROR *** TG_Bot/functionSrvr/set_tg_user_data > Error in updating 'voiceClone_tg_update' ",error)
-    #     log_response = {str(msg_id)+"_"+str(datetime.now()): {"status": "error","status_cd":400,"message":error, "origin":"set_tg_user_data.voiceClone_tg_update", "message_id": msg_id, "timestamp":datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
+    #     log_response = {str(msg_id)+"_"+get_datetime(): {"status": "error","status_cd":400,"message":error, "origin":"set_tg_user_data.voiceClone_tg_update", "message_id": msg_id, "timestamp":datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
     #     log_ref = db.collection('voiceClone_tg_logs').document(db_document_name)
     #     createLog(log_ref, log_response)
     try:
@@ -118,7 +117,7 @@ def set_tg_user_data(db_document_name, user_id, update, db, msg_id):
     except Exception as e:
         error = "Error: {}".format(str(e))
         # print("*** ERROR *** TG_Bot/functionSrvr/set_tg_user_data > Error in updating 'voiceClone_tg_users'",error)
-        log_response = {str(msg_id)+"_"+str(datetime.now()): {"status": "error","status_cd":400,"message":error, "origin":"set_tg_user_data.voiceClone_tg_users", "message_id": msg_id, "timestamp":datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
+        log_response = {str(msg_id)+"_"+get_datetime(): {"status": "error","status_cd":400,"message":error, "origin":"set_tg_user_data.voiceClone_tg_users", "message_id": msg_id, "timestamp":datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
         log_ref = db.collection('voiceClone_tg_logs').document(db_document_name)
         createLog(log_ref, log_response)
 
@@ -139,7 +138,7 @@ def get_tg_char_setting(db_document_name,char_id, db, msg_id):
     except Exception as e:
         error = "Error: {}".format(str(e))
         print("*** ERROR *** TG_Bot/functionSrvr/get_tg_char_setting > ",error)
-        log_response = {str(msg_id)+"_"+str(datetime.now()): {"status": "error","status_cd":400,"message":error, "origin":"get_tg_char_setting", "message_id": msg_id, "timestamp":datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
+        log_response = {str(msg_id)+"_"+get_datetime(): {"status": "error","status_cd":400,"message":error, "origin":"get_tg_char_setting", "message_id": msg_id, "timestamp":datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
         log_ref = db.collection('voiceClone_tg_logs').document(db_document_name)
         createLog(log_ref, log_response)
     return char_setting
@@ -170,6 +169,6 @@ def calculate_tokens(model, input_text, db, db_document_name, msg_id):
     except Exception as e:
         error = "Error: {}".format(str(e))
         print("*** ERROR *** TG_Bot/functionSrvr/get_tg_char_setting > ",error)
-        log_response = {str(msg_id)+"_"+str(datetime.now()): {"status": "error","status_cd":400,"message":error, "origin":"calculate_tokens", "message_id": msg_id, "timestamp":datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
+        log_response = {str(msg_id)+"_"+get_datetime(): {"status": "error","status_cd":400,"message":error, "origin":"calculate_tokens", "message_id": msg_id, "timestamp":datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
         log_ref = db.collection('voiceClone_tg_logs').document(db_document_name)
         createLog(log_ref, log_response)
