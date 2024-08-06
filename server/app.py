@@ -317,12 +317,11 @@ def start(update, context):
 
     context.bot.send_message(chat_id=update.effective_chat.id, text=character_settings['welcome_msg'])
 
-    ## Creating new / Updating existing user info in DB ##
     set_tg_user_data(db_document_name,user_id, update, db, update.message.message_id)
-
-
-    log_msg = f"Started BOT for first time!"
-    log(update.message.message_id,"logging",200,log_msg,"start",db,db_document_name)
+    message_hist = get_tg_chat_history(db_document_name, db, update.message.message_id)
+    message_hist.append({"role": "assistant", "content": character_settings['welcome_msg'], "content_type": "text","response_status":"Success", "timestamp": datetime.now(ist), "update.update_id": update.update_id, "update.message.message_id": update.message.message_id})
+    update_chat_hist(message_hist,db_document_name, update.message.message_id)
+    log(update.message.message_id,"logging",200,f"Started BOT for first time!","start",db,db_document_name)
 
 
 # Main function to start the bot
