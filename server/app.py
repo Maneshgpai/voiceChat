@@ -340,7 +340,7 @@ def main() -> None:
 dispatcher = Dispatcher(bot, None, workers=8, use_context=True)
 dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
 dispatcher.add_handler(MessageHandler(Filters.voice, handle_voice))
-dispatcher.add_handle wr(CommandHandler("start", start))
+dispatcher.add_handler(CommandHandler("start", start))
 dispatcher.add_error_handler(error_handler)
 ## dispatcher.add_handler(CommandHandler("menu", menu))
 ## dispatcher.add_handler(CallbackQueryHandler(button))
