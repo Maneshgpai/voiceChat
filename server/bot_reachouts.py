@@ -56,9 +56,13 @@ db = firestore.Client.from_service_account_json("firestore_key.json")
 
 ## reachout parameters
 latest_messages_to_check = os.getenv("REACHOUT_LATEST_MSG_TO_CHECK")
+print(f"latest_messages_to_check:{type(latest_messages_to_check)}")
 reachout_max_limit = os.getenv("REACHOUT_MAX_LIMIT")
+print(f"reachout_max_limit:{type(reachout_max_limit)}")
 reachout_chat_min_timeinterval_minutes = os.getenv("REACHOUT_CHAT_MIN_TIMEINTERVAL_MIN")
+print(f"reachout_chat_min_timeinterval_minutes:{type(reachout_chat_min_timeinterval_minutes)}")
 charid_bottoken = os.getenv("REACHOUT_CHARID_BOT_TOKEN")
+print(f"charid_bottoken:{type(charid_bottoken)}")
 
 def get_datetime():
     return (str(datetime.now())).replace('.','').replace(':','').replace(' ','').replace('-','')
