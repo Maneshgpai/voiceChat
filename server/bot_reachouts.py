@@ -166,16 +166,23 @@ def fetch_latest_messages():
 
     return output, 
 def get_reachout_query():
-    reachout_query = f""" The time now is {datetime.now(ist).strftime("%I:%M %p")}. You are a character from India with the context profile given to you. You are conversing with user and the chat history is also given to you.\
-    Your aim is to evoke interest and curiosity in the user, by keeping them engaged. To keep them engaged, you have to understand their interest and as per your context, you will pick from any of the below to start an engaging conversation. Be as imaginative as possible.\
-        The rules are the engaging response should be in accordance to your character and context, it should be random and different than what is in the conversation history and it should never be only questions for the user.\
-            Your options for engaging the user are as follows.\
-                - Light greeting based on the mood of user's last comment (Greeting could be Good morning /Good afternoon / Good night based on the time. OR Kaise ho / Kya chal raha hain?)\
-                - Asking getting to know you questions: It could be about Work, Culture, Festivals, Food, Family, Friends, Bollywood, Sports or Travel related.\
-                - Asking Ice-breakers: What's your favorite animal? or If you could only wear one color forever, which would you choose?\
-                - Juicy questions: What's the worst advice you've ever gotten? or Who has been a big influence on you?\
-                - Open-ended questions: What's one movie that made you cry? or What's one quality you hope to change about yourself?\
-                - Gossip/ riddle/ joke/ titbits/ short story"""
+    reachout_query = f""" You are from India. Your background is available in the 'system prompt' given here. You are conversing with the user and the chat history is also here.\
+    Your aim is to evoke interest and curiosity in the user, by keeping them engaged. To keep them engaged, you have to understand their interest and as per your context, you will pick from any of the below to start an engaging conversation. Be as imaginative as possible.
+    
+    Rules of the response:
+    1. The response should be highly engaging for the user.
+    2. The response should be strictly in accordance to your character and context.
+    3. It should only be a point to engage user in conversation.\
+    
+    Your options for engaging the user are as follows. You can decide which one to use to increase the egagement, as per the time right now {datetime.now(ist)}. \
+    - Check if the chat history has a content/ subject which will be interesting enough to initate a conversation. You are allowed to do this only if the subject is enough interesting to be talked abaout again. You will think like a good friend of the user and then judge this.
+    - If not the chat history, the take any of the below options ramdomly and suited the current time:
+        1. Light greeting based on the mood of user's last comment (Greeting could be Good morning /Good afternoon / Good night based on the time. OR Kaise ho / Kya chal raha hain?)\
+        2. Asking getting to know you questions: It could be about Work, Culture, Festivals, Food, Family, Friends, Bollywood, Sports or Travel related.\
+        3. Asking Ice-breakers: What's your favorite animal? or If you could only wear one color forever, which would you choose?\
+        4. Juicy questions: What's the worst advice you've ever gotten? or Who has been a big influence on you?\
+        5. Open-ended questions: What's one movie that made you cry? or What's one quality you hope to change about yourself?\
+        6. Gossip/ riddle/ joke/ titbits/ short story"""
     return reachout_query
 def update_reachout_hist(text,text_or_voice,db_document_name):
     try:
@@ -194,6 +201,7 @@ def main():
     skipped_for_users = 0
     user_chats = fetch_latest_messages()
     user_chat = user_chats[0]
+    log_message = []
     for user, chats in user_chat.items():
         db_document_name = user
         array = user.split("_")
@@ -221,8 +229,8 @@ def main():
             system_prompt = textresponse.get_system_prompt(char_setting, latest_content_type)
             message_list.append({"role": "user", "content": get_reachout_query(), "timestamp": datetime.now(timezone('Asia/Kolkata'))})
             reachout_response = get_reachout_response(system_prompt, message_list, db_document_name, latest_content_type)
-        
-            print(f"\n\nDATA FOR USER {tg_user_id} ({db_document_name}):\nChatting with character {char_setting['character_name']} with char_id {char_id}\nUser last chat was at {last_messaged_on}; Which was {chat_timeinterval_minutes} minutes back \nUser was last reached out consequently {consecutive_reachout_count} times. 4 is max \nBased on the above two, should I reachout? {reachout_yn}\nUser's latest chats (incl reachout query as the latest response) are \n{pd.DataFrame(message_list)}\nUser messaged last time in {latest_content_type} format\nReachout response is\n{reachout_response}\n")
+
+            log_message.append({db_document_name : [f"{tg_user_id} chatting with character {char_setting['character_name']} with char_id {char_id}\nUser last chat was at {last_messaged_on}; Which was {chat_timeinterval_minutes} minutes back \nUser was last reached out consequently {consecutive_reachout_count} times.\nRules of reachout are that there should be a minimu {reachout_chat_min_timeinterval_minutes} minutes between chats and only send reachout {reachout_max_limit} times.\nBased on the above two, should I reachout? {reachout_yn}\nUser messaged last time in {latest_content_type} format\nReachout response is\n{reachout_response}\n"]})
 
             message_hist = func.get_tg_chat_history(db_document_name, db, "reachout")
             message_hist.append({"role": "user", "content": reachout_response, "content_type": latest_content_type, "timestamp": datetime.now(timezone('Asia/Kolkata')), 'reachout': True})
@@ -241,7 +249,7 @@ def main():
             skipped_for_users += 1
             print(f"\n\nSkip reachout for {tg_user_id} ({db_document_name}):\n")
     
-    update_reachout_hist(f"Reachout ended. Run for {run_for_users} users. Skipped for {skipped_for_users} users","","reachout_runlog")
+    update_reachout_hist(f"Reachout ended. Run for {run_for_users} users. Skipped for {skipped_for_users} users",log_message,"reachout_runlog")
 
 if __name__ == "__main__":
     current_time_ist = datetime.now(ist).time()
