@@ -117,6 +117,14 @@ def get_reachout_response(system_prompt,message_hist, db_document_name, voice_or
         error = "Error: {}".format(str(e))
         print(f"response:{response}")
         log("error",400,error,voice_or_text+".get_reachout_response",db_document_name)
+def convert_to_datetime(timestamp):
+    if isinstance(timestamp, str):
+        try:
+            # Convert the string to a datetime object
+            return datetime.strptime(timestamp, '%Y-%m-%d %H:%M:%S.%f%z')
+        except ValueError:
+            return datetime.strptime(timestamp, '%Y-%m-%d %H:%M:%S%z')
+    return timestamp
 def fetch_latest_messages():
     all_docs = []
     collection_ref = db.collection('voiceClone_tg_chats_test_reachout')
@@ -130,10 +138,32 @@ def fetch_latest_messages():
                 if 'timestamp' in message and isinstance(message['timestamp'], datetime):
                     message['timestamp'] += timedelta(hours=5, minutes=30)
             all_docs.append({'doc_id': doc_id, 'messages': messages})
+    print(f"******** Processing for {doc_id} ********")
+    # all_docs.sort(key=lambda x: max(msg['timestamp'] for msg in x['messages']), reverse=True)
+    docs_with_latest_timestamps = []
+    # Iterate over each document in all_docs
+    i = 0
+    for doc in all_docs:
+        i += 1
+        # Find the latest timestamp in the messages of the current document
+        print(type(message['timestamp'] for message in doc['messages']))
+        latest_timestamp = max(message['timestamp'] for message in doc['messages'])
+        print(f"log{i}")
+        print(latest_timestamp)
+        # Append a tuple of (latest_timestamp, document) to the list
+        docs_with_latest_timestamps.append((latest_timestamp, doc))
+        # print(docs_with_latest_timestamps)
 
-    all_docs.sort(key=lambda x: max(msg['timestamp'] for msg in x['messages']), reverse=True)
+    print("log2")
+    # Sort the list of tuples by the latest timestamp in descending order
+    docs_with_latest_timestamps.sort(key=lambda x: x[0], reverse=True)
+
+    # Extract the sorted documents from the tuples
+    print("log3")
+    all_docs_sorted = [doc for _, doc in docs_with_latest_timestamps]
     latest_docs = all_docs[:3]
-
+    print("log4")
+    
     output = {}
     for doc in latest_docs:
         sorted_messages = sorted(doc['messages'], key=lambda x: x['timestamp'], reverse=True)
@@ -174,7 +204,7 @@ def get_reachout_query():
     2. The response should be strictly in accordance to your character and context.
     3. It should only be a point to engage user in conversation.\
     
-    Your options for engaging the user are as follows. You can decide which one to use to increase the egagement, as per the time right now {datetime.now(ist)}. \
+    Your options for engaging the user are as follows. You can decide which one to use to increase the egagement, as per the time right now {datetime.now(ist).strftime("%I:%M %p")}. \
     - Check if the chat history has a content/ subject which will be interesting enough to initate a conversation. You are allowed to do this only if the subject is enough interesting to be talked abaout again. You will think like a good friend of the user and then judge this.
     - If not the chat history, the take any of the below options ramdomly and suited the current time:
         1. Light greeting based on the mood of user's last comment (Greeting could be Good morning /Good afternoon / Good night based on the time. OR Kaise ho / Kya chal raha hain?)\
@@ -255,7 +285,6 @@ if __name__ == "__main__":
     current_time_ist = datetime.now(ist).time()
     start_time = datetime.strptime("00:30", "%H:%M").time()
     end_time = datetime.strptime("05:30", "%H:%M").time()
-    
     ## CRON expression to run every 3 hours irrespective of IST, as the Render server does not run on IST.
     ##  0 */3 * * *
     ## Explanation:
