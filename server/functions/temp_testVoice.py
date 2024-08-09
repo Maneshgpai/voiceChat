@@ -10,7 +10,7 @@ load_dotenv()
 api_key=os.getenv("ELEVENLABS_API_KEY")
 client = ElevenLabs(api_key=api_key)
 ist = timezone(timedelta(hours=5, minutes=30))
-timestamp = datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')
+timestamp = datetime.now(ist)
 
 model = "eleven_multilingual_v2"
 

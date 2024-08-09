@@ -40,7 +40,6 @@ def login_prompt():
     if st.session_state.status == "incorrect":
         st.warning("Incorrect password. Please try again.")
 def validate_voice_id():
-    print(f"pg_settings > validate_voice_id > {datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')} Validating Voice ID: {st.session_state.voice_id}")
     url = f"https://api.elevenlabs.io/v1/voices/{st.session_state.voice_id}"
     headers = {
         "Accept": "application/json",
@@ -57,7 +56,6 @@ def validate_voice_id():
         # st.session_state["voice_name"] = voice_name
         st.session_state["voice_id_disabled"] = True
         st.session_state["voice_id_val"] = st.session_state.voice_id
-        print(f"pg_settings > validate_voice_id > {datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')} Voice ID VALIDATED")
     else:
         st.session_state["voice_id_disabled"] = False
         st.warning("Invalid Voice ID. Please try again.")
@@ -103,7 +101,7 @@ def set_character_setting(char_id):
     if char_id == 'default_char_id':
         print("pg_settings >> set_character_setting > Creating document with auto generated doc id")
         db.collection('voiceClone_characters').document().set({
-            "last_updated_on": datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S'),
+            "last_updated_on": datetime.now(ist),
             "name":st.session_state.character_name,
             "character_descr":st.session_state.character_descr,
             "voice_id":st.session_state.voice_id,
@@ -111,7 +109,7 @@ def set_character_setting(char_id):
     else:
         print(f"pg_settings >> set_character_setting > Creating document with {char_id} as doc id")
         db.collection('voiceClone_characters').document(char_id).set({
-            "last_updated_on": datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S'),
+            "last_updated_on": datetime.now(ist),
             "name":st.session_state.character_name,
             "character_descr":st.session_state.character_descr,
             "voice_id":st.session_state.voice_id,
@@ -251,7 +249,6 @@ def render_setting_pg(action, context):
         index_voice_name = voice_df[voice_df['Voice ID'] == voice_id].index[0]
     except Exception as e:
         error = "Error: {}".format(str(e))
-        print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}**********pg_setting >> Error in fetching Voice ID >> ERROR {error}")
         index_voice_name = 0
     
     ## Populate setting form
@@ -412,7 +409,6 @@ else:
 
         edit_existing_char = st.button("Edit")
         if edit_existing_char:
-            print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}Selected EDIT character")
             result = df.loc[df['Character'] == char_name, 'ID']
             char_id = result.iloc[0]
             character_setting = get_char_setting(char_id)
@@ -430,7 +426,6 @@ else:
             with st.spinner('Loading...'):
                 st.session_state["char_id"] = "default_char_id"
                 st.session_state["action_setting"] = "create_new_char"
-                print("Selected Create New character:",datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S'))
                 setting_pg("create_new_char", 'default_char_id')
                 st.rerun()
 

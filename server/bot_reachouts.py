@@ -35,7 +35,7 @@
 
 from pytz import timezone
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone as tz
 from dotenv import load_dotenv
 import telegram
 import json
@@ -62,20 +62,18 @@ charid_bottoken = json.loads(os.getenv("REACHOUT_CHARID_BOT_TOKEN"))
 def get_datetime():
     return (str(datetime.now())).replace('.','').replace(':','').replace(' ','').replace('-','')
 def log(status,status_cd,message,origin,db_document_name):
-    log_response = {"reachout"+"_"+get_datetime(): {"status": status,"status_cd":status_cd,"message":message, "origin":origin, "reachout": True, "timestamp":datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
+    log_response = {"reachout"+"_"+get_datetime(): {"status": status,"status_cd":status_cd,"message":message, "origin":origin, "reachout": True, "timestamp":datetime.now(ist)}}
     log_ref = db.collection('voiceClone_tg_logs').document(db_document_name)
     func.createLog(log_ref, log_response)
 def update_chat_hist(message_hist,db_document_name, msg_id):
     try:
-        chat_ref = db.collection('voiceClone_tg_chats_test_reachout').document(db_document_name)
+        chat_ref = db.collection('voiceClone_tg_chats').document(db_document_name)
         if not chat_ref.get().exists:
             chat_ref.set({'messages': []})
         chat_ref.update({"messages": firestore.ArrayUnion(message_hist)})
     except Exception as e:
         error = "Error: {}".format(str(e))
-        log_response = {str(msg_id)+"_"+get_datetime(): {"status": "error","status_cd":400,"message":error, "origin":"update_chat_hist", "message_id": msg_id,"timestamp":datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
-        log_ref = db.collection('voiceClone_tg_logs').document(db_document_name)
-        func.createLog(log_ref, log_response)
+        log("error",400,error,"reachout.update_chat_hist",db_document_name)
 def sendtgtext(token, tg_user_id, text, message_hist, db_document_name ):
     try:
         bot = telegram.Bot(token=token)
@@ -85,7 +83,7 @@ def sendtgtext(token, tg_user_id, text, message_hist, db_document_name ):
         update_reachout_hist(text,'text',db_document_name)
     except Exception as e:
         error = "Error: {}".format(str(e))
-        log("error",400,error,"text"+".reachout.sendtgtext",db_document_name)
+        log("error",400,error,"text.reachout.sendtgtext",db_document_name)
 def sendtgvoice(token, tg_user_id, voice, text, message_hist, db_document_name):
     try:
         bot = telegram.Bot(token=token)
@@ -115,86 +113,76 @@ def get_reachout_response(system_prompt,message_hist, db_document_name, voice_or
         return full_response
     except Exception as e:
         error = "Error: {}".format(str(e))
-        print(f"response:{response}")
+        # print(f"response:{response}")
         log("error",400,error,voice_or_text+".get_reachout_response",db_document_name)
-def convert_to_datetime(timestamp):
-    if isinstance(timestamp, str):
-        try:
-            # Convert the string to a datetime object
-            return datetime.strptime(timestamp, '%Y-%m-%d %H:%M:%S.%f%z')
-        except ValueError:
-            return datetime.strptime(timestamp, '%Y-%m-%d %H:%M:%S%z')
+def convert_ts(timestamp):
+    # print(f"timestamp:{timestamp}")
+    # print(f"type:{type(timestamp)}")
+    if not(isinstance(timestamp, datetime)):
+        format = '%Y-%m-%d %H:%M:%S'
+        dt = datetime.strptime(timestamp, format)
+        timestamp = dt.replace(tzinfo=tz.utc)
     return timestamp
+def sort_messages_by_ts(all_docs):
+    docs_with_latest_timestamps = []
+    for doc in all_docs:
+        latest_timestamp = max(convert_ts(message['timestamp']) for message in doc['messages'])
+        docs_with_latest_timestamps.append((latest_timestamp, doc))
+    docs_with_latest_timestamps.sort(key=lambda x: x[0], reverse=True)
+    # Extract the sorted documents from the tuples
+    # all_docs_sorted = [doc for _, doc in docs_with_latest_timestamps]
+    latest_docs = all_docs[:3]
+    return latest_docs
 def fetch_latest_messages():
     all_docs = []
-    collection_ref = db.collection('voiceClone_tg_chats_test_reachout')
+    collection_ref = db.collection('voiceClone_tg_chats')
     for doc in collection_ref.stream():
         doc_id = doc.id
         doc_data = doc.to_dict()
-        
         if 'messages' in doc_data:
             messages = doc_data['messages']
             for message in messages:
                 if 'timestamp' in message and isinstance(message['timestamp'], datetime):
                     message['timestamp'] += timedelta(hours=5, minutes=30)
             all_docs.append({'doc_id': doc_id, 'messages': messages})
-    print(f"******** Processing for {doc_id} ********")
-    # all_docs.sort(key=lambda x: max(msg['timestamp'] for msg in x['messages']), reverse=True)
-    docs_with_latest_timestamps = []
-    # Iterate over each document in all_docs
-    i = 0
-    for doc in all_docs:
-        i += 1
-        # Find the latest timestamp in the messages of the current document
-        print(type(message['timestamp'] for message in doc['messages']))
-        latest_timestamp = max(message['timestamp'] for message in doc['messages'])
-        print(f"log{i}")
-        print(latest_timestamp)
-        # Append a tuple of (latest_timestamp, document) to the list
-        docs_with_latest_timestamps.append((latest_timestamp, doc))
-        # print(docs_with_latest_timestamps)
-
-    print("log2")
-    # Sort the list of tuples by the latest timestamp in descending order
-    docs_with_latest_timestamps.sort(key=lambda x: x[0], reverse=True)
-
-    # Extract the sorted documents from the tuples
-    print("log3")
-    all_docs_sorted = [doc for _, doc in docs_with_latest_timestamps]
-    latest_docs = all_docs[:3]
-    print("log4")
     
-    output = {}
-    for doc in latest_docs:
-        sorted_messages = sorted(doc['messages'], key=lambda x: x['timestamp'], reverse=True)
-        latest_messages = sorted_messages[:latest_messages_to_check]
-        
-        latest_content_type = latest_messages[0].get('content_type', 'text')
-        last_messaged_on = latest_messages[0]['timestamp']
+        try:
+            latest_docs = sort_messages_by_ts(all_docs)
+            output = {}
+            for doc in latest_docs:         
+                sorted_messages = sorted(doc['messages'], key=lambda x: convert_ts(x['timestamp']), reverse=True)
+                latest_messages = sorted_messages[:latest_messages_to_check]
+                latest_content_type = latest_messages[0].get('content_type', 'text')
+                last_messaged_on = latest_messages[0]['timestamp']
 
-        # Count consecutive 'reachout' = true
-        reachout_count = 0
-        for message in latest_messages:
-            if message.get('reachout', False):
-                reachout_count += 1
-            else:
-                break
+                # Count consecutive 'reachout' = true
+                reachout_count = 0
+                for message in latest_messages:
+                    if message.get('reachout', False):
+                        reachout_count += 1
+                    else:
+                        break
 
-        # Exclude specified fields
-        for message in latest_messages:
-            message.pop('content_type', None)
-            message.pop('update.update_id', None)
-            message.pop('update.message.message_id', None)
-            message.pop('response_status', None)
+                # Exclude specified fields
+                for message in latest_messages:
+                    message.pop('content_type', None)
+                    message.pop('update.update_id', None)
+                    message.pop('update.message.message_id', None)
+                    message.pop('response_status', None)
 
-        output[doc['doc_id']] = {
-            'messages': latest_messages,
-            'reachout_count': reachout_count,
-            'latest_content_type': latest_content_type,
-            'last_messaged_on': last_messaged_on
-        }
+                output[doc['doc_id']] = {
+                    'messages': latest_messages,
+                    'reachout_count': reachout_count,
+                    'latest_content_type': latest_content_type,
+                    'last_messaged_on': last_messaged_on
+                }
+        except Exception as e:
+            error = "Error: {}".format(str(e))
+            print(error)
+            # log("error",400,error,"reachout.fetch_latest_messages",db_document_name)
 
-    return output, 
+    print("")
+    return output
 def get_reachout_query():
     reachout_query = f""" You are from India. Your background is available in the 'system prompt' given here. You are conversing with the user and the chat history is also here.\
     Your aim is to evoke interest and curiosity in the user, by keeping them engaged. To keep them engaged, you have to understand their interest and as per your context, you will pick from any of the below to start an engaging conversation. Be as imaginative as possible.
@@ -216,7 +204,7 @@ def get_reachout_query():
     return reachout_query
 def update_reachout_hist(text,text_or_voice,db_document_name):
     try:
-        response = {"reachout"+"_"+get_datetime(): {"message": text, "content_type":text_or_voice, "timestamp":datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
+        response = {"reachout"+"_"+get_datetime(): {"message": text, "content_type":text_or_voice, "timestamp":datetime.now(ist)}}
         chat_ref = db.collection('voiceClone_tg_reachout').document(db_document_name)
         doc = chat_ref.get()
         if doc.exists:
@@ -227,9 +215,11 @@ def update_reachout_hist(text,text_or_voice,db_document_name):
         error = "Error: {}".format(str(e))
         log("error",400,error,"update_reachout_hist",db_document_name)
 def main():
+    print(f"\n\n\n")
     run_for_users = 0
     skipped_for_users = 0
     user_chats = fetch_latest_messages()
+    # print(f"user_chats.count:{len(user_chats)}")
     user_chat = user_chats[0]
     log_message = []
     for user, chats in user_chat.items():
@@ -244,14 +234,14 @@ def main():
 
         date1_utc = datetime.now(timezone('Asia/Kolkata'))
         date2_utc = last_messaged_on.astimezone(timezone('Asia/Kolkata'))- timedelta(hours=5, minutes=30)
-        print(f"last_messaged_on:{last_messaged_on}, date2_utc:{date2_utc}")
+        # print(f"last_messaged_on:{last_messaged_on}, date2_utc:{date2_utc}")
         chat_timeinterval_minutes = round(abs( (date1_utc - date2_utc).total_seconds()) / 60)
         
         reachout_yn = True
         if consecutive_reachout_count >= reachout_max_limit or chat_timeinterval_minutes < reachout_chat_min_timeinterval_minutes:
             reachout_yn = False
 
-        print(f"Should I reachout - {reachout_yn}. Because user has {consecutive_reachout_count} consecutive reachouts (max is {reachout_max_limit}), has last chatted {chat_timeinterval_minutes} minutes back (min gap should be {reachout_chat_min_timeinterval_minutes})\n")
+        print(f"Should I reachout to {tg_user_id} chatting with {char_id} (db_document_name:{db_document_name})- {reachout_yn}. Because user has {consecutive_reachout_count} consecutive reachouts (max is {reachout_max_limit}), has last chatted {chat_timeinterval_minutes} minutes back (min gap should be {reachout_chat_min_timeinterval_minutes})")
 
         if reachout_yn == True:
             run_for_users +=1
@@ -275,10 +265,12 @@ def main():
                     sendtgvoice(charid_bottoken.get(char_id), tg_user_id, voice_file, reachout_response, message_hist, db_document_name)
             else:
                 sendtgtext(charid_bottoken.get(char_id), tg_user_id, reachout_response, message_hist, db_document_name)
+            print(f"\n\n\n")
         else:
             skipped_for_users += 1
-            print(f"\n\nSkip reachout for {tg_user_id} ({db_document_name}):\n")
-    
+            print(f"Skip reachout for {tg_user_id} ({db_document_name})")
+            print(f"\n\n\n")
+
     update_reachout_hist(f"Reachout ended. Run for {run_for_users} users. Skipped for {skipped_for_users} users",log_message,"reachout_runlog")
 
 if __name__ == "__main__":

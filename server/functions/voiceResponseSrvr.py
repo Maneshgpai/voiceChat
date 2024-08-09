@@ -12,7 +12,7 @@ load_dotenv()
 client = ElevenLabs(api_key=os.getenv("ELEVENLABS_API_KEY"))
 
 def generateVoice(context, input_text,voice_id):
-    # print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')} Voice generation started")    
+    # print(f"{datetime.now(ist)} Voice generation started")    
     voice_settings = VoiceSettings(
         stability=context['voice_stability'],
         similarity_boost=context['voice_similarity_boost'],
@@ -60,24 +60,24 @@ def generateVoice(context, input_text,voice_id):
 #     # play_audio_stream(audio_stream)
 #     return audio_stream
 def get_voice_response(voice_setting, full_response,filename, db, db_document_name, msg_id):
-    # print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')} voiceResponseSrvr > get_voice_response: Started generating voice...")
+    # print(f"{datetime.now(ist)} voiceResponseSrvr > get_voice_response: Started generating voice...")
     try:
         audio = generateVoice(voice_setting,full_response,voice_setting['voice_id'])
-        # print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')} voiceResponseSrvr > get_voice_response: Successfully generated voice.")
+        # print(f"{datetime.now(ist)} voiceResponseSrvr > get_voice_response: Successfully generated voice.")
     except Exception as e:
         error = "Error: {}".format(str(e))
-        log_response = {str(msg_id)+"_"+str(datetime.now()): {"status": "error","status_cd":400,"message":error, "origin":"get_voice_response.generateVoice", "message_id": msg_id, "timestamp":datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
+        log_response = {str(msg_id)+"_"+str(datetime.now()): {"status": "error","status_cd":400,"message":error, "origin":"get_voice_response.generateVoice", "message_id": msg_id, "timestamp":datetime.now(ist)}}
         log_ref = db.collection('voiceClone_tg_logs').document(db_document_name)
         func.createLog(log_ref, log_response)
 
-    # print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')} voiceResponseSrvr > get_voice_response: Saving audio file...")
+    # print(f"{datetime.now(ist)} voiceResponseSrvr > get_voice_response: Saving audio file...")
     try:
         save(audio, filename)
-        print(f"{datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')} voiceResponseSrvr > get_voice_response: Successfully saved audio file in ",filename)
+        print(f"{datetime.now(ist)} voiceResponseSrvr > get_voice_response: Successfully saved audio file in ",filename)
     except Exception as e:
         error = "Error: {}".format(str(e))
         # print("*** ERROR *** TG_Bot/voiceResponseSrvr/get_voice_response > Error in saving Audio file",error)
-        log_response = {str(msg_id)+"_"+str(datetime.now()): {"status": "error","status_cd":400,"message":error, "origin":"get_voice_response.save_audio", "message_id": msg_id, "timestamp":datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
+        log_response = {str(msg_id)+"_"+str(datetime.now()): {"status": "error","status_cd":400,"message":error, "origin":"get_voice_response.save_audio", "message_id": msg_id, "timestamp":datetime.now(ist)}}
         log_ref = db.collection('voiceClone_tg_logs').document(db_document_name)
         func.createLog(log_ref, log_response)
         return False
