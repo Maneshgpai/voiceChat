@@ -124,64 +124,65 @@ def convert_ts(timestamp):
         timestamp = dt.replace(tzinfo=tz.utc)
     return timestamp
 def sort_messages_by_ts(all_docs):
-    docs_with_latest_timestamps = []
-    for doc in all_docs:
-        latest_timestamp = max(convert_ts(message['timestamp']) for message in doc['messages'])
-        docs_with_latest_timestamps.append((latest_timestamp, doc))
-    docs_with_latest_timestamps.sort(key=lambda x: x[0], reverse=True)
-    # Extract the sorted documents from the tuples
+    all_docs.sort(key=lambda x: max(convert_ts(msg['timestamp']) for msg in x['messages']), reverse=True)
+    # latest_docs = all_docs[:3]
+
+    # docs_with_latest_timestamps = []
+    # for doc in all_docs:
+    #     latest_timestamp = max(convert_ts(message['timestamp']) for message in doc['messages'])
+    #     docs_with_latest_timestamps.append((latest_timestamp, doc))
+    # docs_with_latest_timestamps.sort(key=lambda x: x[0], reverse=True)
+    # # Extract the sorted documents from the tuples
     # all_docs_sorted = [doc for _, doc in docs_with_latest_timestamps]
-    latest_docs = all_docs[:3]
-    return latest_docs
+    # # latest_docs = all_docs[:3]
+    return all_docs
 def fetch_latest_messages():
     all_docs = []
     collection_ref = db.collection('voiceClone_tg_chats')
+
     for doc in collection_ref.stream():
         doc_id = doc.id
         doc_data = doc.to_dict()
+        # print(f"Processing {doc_id}")
         if 'messages' in doc_data:
             messages = doc_data['messages']
             for message in messages:
                 if 'timestamp' in message and isinstance(message['timestamp'], datetime):
                     message['timestamp'] += timedelta(hours=5, minutes=30)
+                message.pop('content_type', None)
+                message.pop('update.update_id', None)
+                message.pop('update.message.message_id', None)
+                message.pop('response_status', None)
             all_docs.append({'doc_id': doc_id, 'messages': messages})
+
+    # print(f"all_docs: {all_docs}")
+        
+    latest_docs = sort_messages_by_ts(all_docs)
+
+    # print(f"latest_docs: {latest_docs}")
     
-        try:
-            latest_docs = sort_messages_by_ts(all_docs)
-            output = {}
-            for doc in latest_docs:         
-                sorted_messages = sorted(doc['messages'], key=lambda x: convert_ts(x['timestamp']), reverse=True)
-                latest_messages = sorted_messages[:latest_messages_to_check]
-                latest_content_type = latest_messages[0].get('content_type', 'text')
-                last_messaged_on = latest_messages[0]['timestamp']
+    output = {}
+    for doc in latest_docs:
+        sorted_messages = sorted(doc['messages'], key=lambda x: convert_ts(x['timestamp']), reverse=True)
+        latest_messages = sorted_messages[:latest_messages_to_check]
+        latest_content_type = latest_messages[0].get('content_type', 'text')
+        last_messaged_on = latest_messages[0]['timestamp']
 
-                # Count consecutive 'reachout' = true
-                reachout_count = 0
-                for message in latest_messages:
-                    if message.get('reachout', False):
-                        reachout_count += 1
-                    else:
-                        break
+        # Count consecutive 'reachout' = true
+        reachout_count = 0
+        for message in latest_messages:
+            if message.get('reachout', False):
+                reachout_count += 1
+            else:
+                break
 
-                # Exclude specified fields
-                for message in latest_messages:
-                    message.pop('content_type', None)
-                    message.pop('update.update_id', None)
-                    message.pop('update.message.message_id', None)
-                    message.pop('response_status', None)
-
-                output[doc['doc_id']] = {
-                    'messages': latest_messages,
-                    'reachout_count': reachout_count,
-                    'latest_content_type': latest_content_type,
-                    'last_messaged_on': last_messaged_on
-                }
-        except Exception as e:
-            error = "Error: {}".format(str(e))
-            print(error)
-            # log("error",400,error,"reachout.fetch_latest_messages",db_document_name)
-
-    print("")
+        output[doc['doc_id']] = {
+            'messages': latest_messages,
+            'reachout_count': reachout_count,
+            'latest_content_type': latest_content_type,
+            'last_messaged_on': last_messaged_on
+        }
+    # print(f"type of output: {type(output)}")
     return output
 def get_reachout_query():
     reachout_query = f""" You are from India. Your background is available in the 'system prompt' given here. You are conversing with the user and the chat history is also here.\
@@ -219,10 +220,11 @@ def main():
     run_for_users = 0
     skipped_for_users = 0
     user_chats = fetch_latest_messages()
-    # print(f"user_chats.count:{len(user_chats)}")
-    user_chat = user_chats[0]
+    # print(f"user_chats:{user_chats}")
+    # user_chat = user_chats[0]
     log_message = []
-    for user, chats in user_chat.items():
+    for user, chats in user_chats.items():
+        print(f"Processing {user}")
         db_document_name = user
         array = user.split("_")
         tg_user_id = array[0]
@@ -241,7 +243,10 @@ def main():
         if consecutive_reachout_count >= reachout_max_limit or chat_timeinterval_minutes < reachout_chat_min_timeinterval_minutes:
             reachout_yn = False
 
-        print(f"Should I reachout to {tg_user_id} chatting with {char_id} (db_document_name:{db_document_name})- {reachout_yn}. Because user has {consecutive_reachout_count} consecutive reachouts (max is {reachout_max_limit}), has last chatted {chat_timeinterval_minutes} minutes back (min gap should be {reachout_chat_min_timeinterval_minutes})")
+        print(f"Should I reachout to {tg_user_id} chatting with {char_id} (db_document_name:{db_document_name})- {reachout_yn}. User has {consecutive_reachout_count} consecutive reachouts (max is {reachout_max_limit}), has last chatted {chat_timeinterval_minutes} minutes back (min gap should be {reachout_chat_min_timeinterval_minutes})")
+
+
+        log_message.append({db_document_name : [f"{tg_user_id} chatting with character {char_setting['character_name']} with char_id {char_id} (db_document_name:{db_document_name})\nUser last chat was at {last_messaged_on}; Which was {chat_timeinterval_minutes} minutes back \nUser was last reached out consequently {consecutive_reachout_count} times.\nRules of reachout are that there should be a minimum {reachout_chat_min_timeinterval_minutes} minutes between chats and only send reachout {reachout_max_limit} times.\nBased on the above two, should I reachout? {reachout_yn}\nUser messaged last time in {latest_content_type} format"]})
 
         if reachout_yn == True:
             run_for_users +=1
@@ -249,8 +254,6 @@ def main():
             system_prompt = textresponse.get_system_prompt(char_setting, latest_content_type)
             message_list.append({"role": "user", "content": get_reachout_query(), "timestamp": datetime.now(timezone('Asia/Kolkata'))})
             reachout_response = get_reachout_response(system_prompt, message_list, db_document_name, latest_content_type)
-
-            log_message.append({db_document_name : [f"{tg_user_id} chatting with character {char_setting['character_name']} with char_id {char_id}\nUser last chat was at {last_messaged_on}; Which was {chat_timeinterval_minutes} minutes back \nUser was last reached out consequently {consecutive_reachout_count} times.\nRules of reachout are that there should be a minimu {reachout_chat_min_timeinterval_minutes} minutes between chats and only send reachout {reachout_max_limit} times.\nBased on the above two, should I reachout? {reachout_yn}\nUser messaged last time in {latest_content_type} format\nReachout response is\n{reachout_response}\n"]})
 
             message_hist = func.get_tg_chat_history(db_document_name, db, "reachout")
             message_hist.append({"role": "user", "content": reachout_response, "content_type": latest_content_type, "timestamp": datetime.now(timezone('Asia/Kolkata')), 'reachout': True})
