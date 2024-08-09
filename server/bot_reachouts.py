@@ -55,13 +55,9 @@ db = firestore.Client.from_service_account_json("firestore_key.json")
 
 ## reachout parameters
 latest_messages_to_check = int(os.getenv("REACHOUT_LATEST_MSG_TO_CHECK"))
-print(f"latest_messages_to_check:{type(latest_messages_to_check)}")
 reachout_max_limit = int(os.getenv("REACHOUT_MAX_LIMIT"))
-print(f"reachout_max_limit:{type(reachout_max_limit)}")
 reachout_chat_min_timeinterval_minutes = int(os.getenv("REACHOUT_CHAT_MIN_TIMEINTERVAL_MIN"))
-print(f"reachout_chat_min_timeinterval_minutes:{type(reachout_chat_min_timeinterval_minutes)}")
 charid_bottoken = json.loads(os.getenv("REACHOUT_CHARID_BOT_TOKEN"))
-print(f"charid_bottoken:{type(charid_bottoken)}")
 
 def get_datetime():
     return (str(datetime.now())).replace('.','').replace(':','').replace(' ','').replace('-','')
@@ -210,13 +206,14 @@ def main():
 
         date1_utc = datetime.now(timezone('Asia/Kolkata'))
         date2_utc = last_messaged_on.astimezone(timezone('Asia/Kolkata'))- timedelta(hours=5, minutes=30)
+        print(f"last_messaged_on:{last_messaged_on}, date2_utc:{date2_utc}")
         chat_timeinterval_minutes = round(abs( (date1_utc - date2_utc).total_seconds()) / 60)
         
         reachout_yn = True
         if consecutive_reachout_count >= reachout_max_limit or chat_timeinterval_minutes < reachout_chat_min_timeinterval_minutes:
             reachout_yn = False
 
-        print(f"Should I reachout - {reachout_yn}. Because user has {consecutive_reachout_count} consecutive reachouts, has last chatted {chat_timeinterval_minutes} minutes back\n")
+        print(f"Should I reachout - {reachout_yn}. Because user has {consecutive_reachout_count} consecutive reachouts (max is {reachout_max_limit}), has last chatted {chat_timeinterval_minutes} minutes back (min gap should be {reachout_chat_min_timeinterval_minutes})\n")
 
         if reachout_yn == True:
             run_for_users +=1
@@ -243,6 +240,7 @@ def main():
         else:
             skipped_for_users += 1
             print(f"\n\nSkip reachout for {tg_user_id} ({db_document_name}):\n")
+    
     update_reachout_hist(f"Reachout ended. Run for {run_for_users} users. Skipped for {skipped_for_users} users","","reachout_runlog")
 
 if __name__ == "__main__":
