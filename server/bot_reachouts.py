@@ -44,7 +44,6 @@ import pandas as pd
 from functions import functionSrvr as func
 from functions import textResponseSrvr as textresponse
 from functions import voiceResponseSrvr as voiceresponse
-import app as mainfunc
 from openai import OpenAI
 from dotenv import load_dotenv
 import os
@@ -94,7 +93,7 @@ def sendtgvoice(token, tg_user_id, voice, text, message_hist, db_document_name):
         bot.send_chat_action(chat_id=tg_user_id,action=telegram.ChatAction.RECORD_AUDIO)
         with open(voice, 'rb') as voice_file:
             bot.send_voice(chat_id=tg_user_id, voice=voice_file)
-        mainfunc.update_chat_hist(message_hist,db_document_name, "reachout")
+        update_chat_hist(message_hist,db_document_name, "reachout")
         update_reachout_hist(text,'voice',db_document_name)
     except Exception as e:
         error = "Error: {}".format(str(e))
