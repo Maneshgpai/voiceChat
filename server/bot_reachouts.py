@@ -190,8 +190,10 @@ def update_reachout_hist(text,text_or_voice,db_document_name):
             chat_ref.set(response)
     except Exception as e:
         error = "Error: {}".format(str(e))
-        log("error",400,error,"update_chat_hist",db_document_name)
+        log("error",400,error,"update_reachout_hist",db_document_name)
 def main():
+    run_for_users = 0
+    skipped_for_users = 0
     user_chats = fetch_latest_messages()
     user_chat = user_chats[0]
     for user, chats in user_chat.items():
@@ -215,6 +217,7 @@ def main():
         print(f"Should I reachout - {reachout_yn}. Because user has {consecutive_reachout_count} consecutive reachouts, has last chatted {chat_timeinterval_minutes} minutes back\n")
 
         if reachout_yn == True:
+            run_for_users +=1
             char_setting = func.get_tg_char_setting(db_document_name, char_id, db, 'reachout')
             system_prompt = textresponse.get_system_prompt(char_setting, latest_content_type)
             message_list.append({"role": "user", "content": get_reachout_query(), "timestamp": datetime.now(timezone('Asia/Kolkata'))})
@@ -236,7 +239,25 @@ def main():
             else:
                 sendtgtext(charid_bottoken.get(char_id), tg_user_id, reachout_response, message_hist, db_document_name)
         else:
+            skipped_for_users += 1
             print(f"\n\nSkip reachout for {tg_user_id} ({db_document_name}):\n")
+    update_reachout_hist(f"Reachout ended. Run for {run_for_users} users. Skipped for {skipped_for_users} users","","reachout_runlog")
 
 if __name__ == "__main__":
-    main()
+    current_time_ist = datetime.now(ist).time()
+    start_time = datetime.strptime("00:30", "%H:%M").time()
+    end_time = datetime.strptime("05:30", "%H:%M").time()
+    
+    ## CRON expression to run every 3 hours irrespective of IST, as the Render server does not run on IST.
+    ##  0 */3 * * *
+    ## Explanation:
+        # 0: At minute 0 (start of the hour).
+        # */3: Every 3 hours.
+        # *: Every day of the month.
+        # *: Every month.
+        # *: Every day of the week.
+    
+    ## Run program if the current time is not between 12:30 AM and 5:30 AM IST
+    if not (start_time <= current_time_ist <= end_time):
+        update_reachout_hist("Reachout started","","reachout_runlog")
+        main()
