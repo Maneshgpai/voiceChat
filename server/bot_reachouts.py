@@ -35,18 +35,17 @@
 
 from pytz import timezone
 import os
-from dotenv import load_dotenv, find_dotenv
-from datetime import datetime, timedelta #, timezone
+from datetime import datetime, timedelta
+from dotenv import load_dotenv
 import telegram
-import os
+import json
 from google.cloud import firestore
 import pandas as pd
 from functions import functionSrvr as func
 from functions import textResponseSrvr as textresponse
 from functions import voiceResponseSrvr as voiceresponse
 from openai import OpenAI
-from dotenv import load_dotenv
-import os
+
 
 load_dotenv()
 openai_api_key = os.getenv("OPENAI_API_KEY")
@@ -55,13 +54,13 @@ ist = timezone("Asia/Kolkata")
 db = firestore.Client.from_service_account_json("firestore_key.json")
 
 ## reachout parameters
-latest_messages_to_check = os.getenv("REACHOUT_LATEST_MSG_TO_CHECK")
+latest_messages_to_check = int(os.getenv("REACHOUT_LATEST_MSG_TO_CHECK"))
 print(f"latest_messages_to_check:{type(latest_messages_to_check)}")
-reachout_max_limit = os.getenv("REACHOUT_MAX_LIMIT")
+reachout_max_limit = int(os.getenv("REACHOUT_MAX_LIMIT"))
 print(f"reachout_max_limit:{type(reachout_max_limit)}")
-reachout_chat_min_timeinterval_minutes = os.getenv("REACHOUT_CHAT_MIN_TIMEINTERVAL_MIN")
+reachout_chat_min_timeinterval_minutes = int(os.getenv("REACHOUT_CHAT_MIN_TIMEINTERVAL_MIN"))
 print(f"reachout_chat_min_timeinterval_minutes:{type(reachout_chat_min_timeinterval_minutes)}")
-charid_bottoken = os.getenv("REACHOUT_CHARID_BOT_TOKEN")
+charid_bottoken = json.loads(os.getenv("REACHOUT_CHARID_BOT_TOKEN"))
 print(f"charid_bottoken:{type(charid_bottoken)}")
 
 def get_datetime():
