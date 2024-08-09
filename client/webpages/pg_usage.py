@@ -36,13 +36,6 @@ def process_messages(messages):
         if 'timestamp' in processed_message:
             firestore_timestamp = processed_message['timestamp']
             processed_message['timestamp'] = convert_ts(firestore_timestamp)
-            # if isinstance(firestore_timestamp, datetime):
-            #     firestore_timestamp = firestore_timestamp + timedelta(hours=5, minutes=30)                
-            #     processed_message['timestamp'] = firestore_timestamp.replace(tzinfo=None)
-            # else:
-            #     format = '%Y-%m-%d %H:%M:%S'
-            #     dt = datetime.strptime(firestore_timestamp, format)
-            #     processed_message['timestamp'] = dt.replace(tzinfo=None)
         processed_messages.append(processed_message)
     return processed_messages
 

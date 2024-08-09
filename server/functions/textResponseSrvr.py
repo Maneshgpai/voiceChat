@@ -318,9 +318,7 @@ def get_openai_response(model, system_message, message_hist, db, db_document_nam
         log_response = {str(msg_id)+"_"+str(datetime.now()): {"status": "error","status_cd":400,"message":error, "origin":voice_or_text+".get_openai_response","message_id":msg_id,"timestamp":datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
         log_ref = db.collection('voiceClone_tg_logs').document(db_document_name)
         func.createLog(log_ref, log_response)
-def get_agent_response(query, voice_settings, message_hist, db, db_document_name,msg_id, voice_or_text):
-    model  = voice_settings['model']
-    temp = voice_settings['temperature']
+def get_system_prompt(voice_settings, voice_or_text):
     prompt  = voice_settings['prompt']
     negative_prompt  = voice_settings['negative_prompt']
     response_rules = voice_settings['response_rules']
@@ -348,7 +346,12 @@ def get_agent_response(query, voice_settings, message_hist, db, db_document_name
                 +f"Your responses should be {verbosity}."
     if not(user_context == "Nothing defined yet") or not(user_context == ""):
         final_prompt = final_prompt + f"A brief background about you is given as below:"+user_context
-    
+    return final_prompt
+
+def get_agent_response(query, voice_settings, message_hist, db, db_document_name,msg_id, voice_or_text):
+    final_prompt = get_system_prompt(voice_settings, voice_or_text)
+    model  = voice_settings['model']
+
     full_response = ""
     if model == "gpt-4o" or model == "gpt-4o-mini":
         system_message = [{"role": "system", "content": final_prompt}]
@@ -359,7 +362,6 @@ def get_agent_response(query, voice_settings, message_hist, db, db_document_name
             log_response = {str(msg_id)+"_"+str(datetime.now()): {"status": "error","status_cd":400,"message":error, "origin":voice_or_text+".get_agent_response", "message_id": msg_id, "timestamp":datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S')}}
             log_ref = db.collection('voiceClone_tg_logs').document(db_document_name)
             func.createLog(log_ref, log_response)
-    ## These model names are from     
     elif model == "llama 3" or model == "llama 3.1":
         full_response = get_replicate_response(voice_settings['model'], query, final_prompt, message_hist, db, db_document_name, voice_settings, msg_id, voice_or_text)
 

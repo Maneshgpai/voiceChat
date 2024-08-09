@@ -1,0 +1,2 @@
+## Purpose of this is to keep user's profile, keep account of their interests/thoughts/moods etc
+## This is done in the background, by going through user conversations and doing a personality assessment.

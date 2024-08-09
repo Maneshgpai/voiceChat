@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 load_dotenv(find_dotenv())
 ist = timezone(timedelta(hours=5, minutes=30))
 db = firestore.Client.from_service_account_json("firestore_key.json")
-
+env = os.getenv("ENV")
 TOKEN = os.getenv("BOT_TELEGRAM_API_KEY")
 char_id = os.getenv("BOT_CHAR_ID")
 bot_webhook_url = os.getenv("BOT_WEBHOOK_URL")
@@ -106,7 +106,7 @@ def get_voice_response(character_settings, text_response,file_name, db, db_docum
         func.createLog(log_ref, log_response)
     return file_created_status
 
-## Adding chat history to Firebase DB 
+## Adding chat history to Firebase DB
 def update_chat_hist(message_hist,db_document_name, msg_id):
     try:
         chat_ref = db.collection('voiceClone_tg_chats').document(db_document_name)
@@ -336,17 +336,20 @@ def main() -> None:
     updater.idle()
 
 ## Create a dispatcher
-dispatcher = Dispatcher(bot, None, workers=8, use_context=True)
-dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
-dispatcher.add_handler(MessageHandler(Filters.voice, handle_voice))
-dispatcher.add_handler(CommandHandler("start", start))
-dispatcher.add_error_handler(error_handler)
-## dispatcher.add_handler(CommandHandler("menu", menu))
-## dispatcher.add_handler(CallbackQueryHandler(button))
+if (env != 'localhost'):
+    dispatcher = Dispatcher(bot, None, workers=8, use_context=True)
+    dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
+    dispatcher.add_handler(MessageHandler(Filters.voice, handle_voice))
+    dispatcher.add_handler(CommandHandler("start", start))
+    dispatcher.add_error_handler(error_handler)
+    ## dispatcher.add_handler(CommandHandler("menu", menu))
+    ## dispatcher.add_handler(CallbackQueryHandler(button))
 
 # Set webhook
 bot.set_webhook(url=bot_webhook_url+'/{}'.format(TOKEN))
 
 if __name__ == '__main__':
-    # main()
-    app.run(host='0.0.0.0', port=5000, debug=False)
+    if (env == 'localhost'):
+        main()
+    else:
+        app.run(host='0.0.0.0', port=5000, debug=False)

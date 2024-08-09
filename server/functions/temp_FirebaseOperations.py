@@ -102,4 +102,7 @@ def update_timestamps(collection_name):
         doc_ref.update({'messages': messages})
     print("Finished updating all documents!")
 # update_timestamps('voiceClone_chats')
-duplicate_collection('session_2024-07-27','session_2024-07-27_bkp')
+# duplicate_collection('voiceClone_tg_chats','voiceClone_tg_chats_test_reachout')
+
+move_document('voiceClone_tg_chats', 'voiceClone_tg_chats_test_reachout', '6697940905_KojdgNzrBNJO8CyQgr5g')
+move_document('voiceClone_tg_chats', 'voiceClone_tg_chats_test_reachout', '6697940905_jyNYGKS4xNjls2YbfFvV')
