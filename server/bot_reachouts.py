@@ -246,7 +246,7 @@ def main():
         print(f"Should I reachout to {tg_user_id} chatting with {char_id} (db_document_name:{db_document_name})- {reachout_yn}. User has {consecutive_reachout_count} consecutive reachouts (max is {reachout_max_limit}), has last chatted {chat_timeinterval_minutes} minutes back (min gap should be {reachout_chat_min_timeinterval_minutes})")
 
 
-        log_message.append({db_document_name : [f"{tg_user_id} chatting with character {char_setting['character_name']} with char_id {char_id} (db_document_name:{db_document_name})\nUser last chat was at {last_messaged_on}; Which was {chat_timeinterval_minutes} minutes back \nUser was last reached out consequently {consecutive_reachout_count} times.\nRules of reachout are that there should be a minimum {reachout_chat_min_timeinterval_minutes} minutes between chats and only send reachout {reachout_max_limit} times.\nBased on the above two, should I reachout? {reachout_yn}\nUser messaged last time in {latest_content_type} format"]})
+        log_message.append({db_document_name : [f"{tg_user_id} chatting with character with char_id {char_id} (db_document_name:{db_document_name})\nUser last chat was at {last_messaged_on}; Which was {chat_timeinterval_minutes} minutes back \nUser was last reached out consequently {consecutive_reachout_count} times.\nRules of reachout are that there should be a minimum {reachout_chat_min_timeinterval_minutes} minutes between chats and only send reachout {reachout_max_limit} times.\nBased on the above two, should I reachout? {reachout_yn}\nUser messaged last time in {latest_content_type} format"]})
 
         if reachout_yn == True:
             run_for_users +=1
