@@ -4,3 +4,4 @@ python-dotenv
 google-cloud-firestore
 firebase-admin
 nest_asyncio
+pygsheets

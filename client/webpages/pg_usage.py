@@ -36,13 +36,6 @@ def process_messages(messages):
         if 'timestamp' in processed_message:
             firestore_timestamp = processed_message['timestamp']
             processed_message['timestamp'] = convert_ts(firestore_timestamp)
-            # if isinstance(firestore_timestamp, datetime):
-            #     firestore_timestamp = firestore_timestamp + timedelta(hours=5, minutes=30)                
-            #     processed_message['timestamp'] = firestore_timestamp.replace(tzinfo=None)
-            # else:
-            #     format = '%Y-%m-%d %H:%M:%S'
-            #     dt = datetime.strptime(firestore_timestamp, format)
-            #     processed_message['timestamp'] = dt.replace(tzinfo=None)
         processed_messages.append(processed_message)
     return processed_messages
 
@@ -173,7 +166,7 @@ def export_file(df1,s1,df2,s2,df3,s3,df4,s4):
     wks_write.frozen_rows = 1
 
     # print("Exporting to file...")
-    # file_path = 'usage_rpt/telegram_usage_report_'+datetime.now().strftime('%Y-%m-%d %H:%M:%S')+'.xlsx'
+    # file_path = 'usage_rpt/telegram_usage_report_'+datetime.now()+'.xlsx'
     # with pd.ExcelWriter(file_path) as writer:
     #     df1.to_excel(writer, sheet_name=s1, index=False)
     #     df2.to_excel(writer, sheet_name=s2, index=False)
