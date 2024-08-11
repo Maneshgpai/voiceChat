@@ -279,7 +279,7 @@ def error_handler(update: Update, context: CallbackContext) -> None:
     db_document_name = str(update.message.from_user.id)+'_'+char_id
     try:
         raise context.error
-    except NetworkError:
+    except NetworkError as e:
         # Wait before retrying to handle transient network issues more gracefully
         logger.warning('Network error occurred. Retrying in 15 seconds...')
         log_response = {str(update.message.message_id)+"_"+get_datetime(): {"status": "error","status_cd":400,"message":e, "origin":"error_handler/NetworkError", "message_id": update.message.message_id, "timestamp":datetime.now(ist)}}
