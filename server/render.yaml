@@ -1,0 +1,43 @@
+# Exported from Render on 2024-08-12T14:40:34Z
+services:
+- type: web
+  name: zoyamitrrsbot
+  runtime: python
+  repo: https://github.com/Maneshgpai/voiceChat
+  branch: production
+  plan: starter
+  envVars:
+  - key: REPLICATE_API_TOKEN
+    sync: false
+  - key: PYTHON_VERSION
+    sync: false
+  - key: OPENAI_API_KEY
+    sync: false
+  - key: HUGGINGFACE_API_KEY
+    sync: false
+  - key: GROQ_API_KEY
+    sync: false
+  - key: GOOGLE_API_KEY
+    sync: false
+  - key: ENV
+    sync: false
+  - key: ELEVENLABS_API_KEY
+    sync: false
+  - key: DEFAULT_VOICE_ID
+    sync: false
+  - key: DEFAULT_CHARACTER_SETTING
+    sync: false
+  - key: DEFAULT_CHARACTER_NAME
+    sync: false
+  - key: BOT_WEBHOOK_URL
+    sync: false
+  - key: BOT_TELEGRAM_API_KEY
+    sync: false
+  - key: BOT_CHAR_ID
+    sync: false
+  region: singapore
+  buildCommand: pip install --upgrade pip && pip install -r requirements.txt
+  startCommand: gunicorn --bind 0.0.0.0:5000 -w 5 --threads 5 wsgi:app
+  autoDeploy: false
+  rootDir: ./server
+version: "1"
