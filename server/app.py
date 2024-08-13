@@ -213,6 +213,26 @@ def handle_voice(update: Update, context: CallbackContext) -> None:
     log_msg = f"handle_voice: Finished replying"
     log(update.message.message_id,"logging",200,log_msg,"voice.handle_voice",db,db_document_name)
 
+    ## Remove the audio files from server
+    try:
+        os.remove(user_file_name)
+        print(f"Removed {user_file_name}")
+    except Exception as e:
+        error = "Error: {}".format(str(e))
+        print(f"{error} while removing {user_file_name}")
+    try:
+        os.remove(assistant_file_name)
+        print(f"Removed {assistant_file_name}")
+    except Exception as e:
+        error = "Error: {}".format(str(e))
+        print(f"{error} while removing {assistant_file_name}")
+    try:
+        os.remove(temp_voice_file)
+        print(f"Removed {temp_voice_file}")
+    except Exception as e:
+        error = "Error: {}".format(str(e))
+        print(f"{error} while removing {temp_voice_file}")
+
 ## Define the message handler for user queries
 def handle_message(update: Update, context: CallbackContext) -> None:
     text_response = "Thank you, aapke msg ke liye. Thoda sa sabr karo, I will be back soon!"
