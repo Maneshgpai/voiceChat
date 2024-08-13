@@ -163,4 +163,5 @@ test_data
 *.ogg
 *.xlsx
 *.csv
+*.txt
 # firestore_key.json

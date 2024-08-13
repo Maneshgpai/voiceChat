@@ -124,7 +124,14 @@ def convert_ts(timestamp):
         timestamp = dt.replace(tzinfo=tz.utc)
     return timestamp
 def sort_messages_by_ts(all_docs):
-    all_docs.sort(key=lambda x: max(convert_ts(msg['timestamp']) for msg in x['messages']), reverse=True)
+    # print(f"************len(all_docs): {len(all_docs)}")
+    # for doc in all_docs:
+    #     print(doc['doc_id'])
+    #     # print(doc['messages'])
+    #     for msg in doc['messages']:
+    #         print(convert_ts(msg.get('timestamp','')))
+
+    all_docs.sort(key=lambda x: max(convert_ts(msg.get('timestamp','')) for msg in x['messages']), reverse=True)
     # latest_docs = all_docs[:3]
 
     # docs_with_latest_timestamps = []
@@ -143,7 +150,6 @@ def fetch_latest_messages():
     for doc in collection_ref.stream():
         doc_id = doc.id
         doc_data = doc.to_dict()
-        # print(f"Processing {doc_id}")
         if 'messages' in doc_data:
             messages = doc_data['messages']
             for message in messages:
@@ -153,13 +159,11 @@ def fetch_latest_messages():
                 message.pop('update.update_id', None)
                 message.pop('update.message.message_id', None)
                 message.pop('response_status', None)
-            all_docs.append({'doc_id': doc_id, 'messages': messages})
 
-    # print(f"all_docs: {all_docs}")
-        
+            if len(messages) != 0:
+                all_docs.append({'doc_id': doc_id, 'messages': messages})
+
     latest_docs = sort_messages_by_ts(all_docs)
-
-    # print(f"latest_docs: {latest_docs}")
     
     output = {}
     for doc in latest_docs:
@@ -185,23 +189,39 @@ def fetch_latest_messages():
     # print(f"type of output: {type(output)}")
     return output
 def get_reachout_query():
-    reachout_query = f""" You are from India. Your background is available in the 'system prompt' given here. You are conversing with the user and the chat history is also here.\
-    Your aim is to evoke interest and curiosity in the user, by keeping them engaged. To keep them engaged, you have to understand their interest and as per your context, you will pick from any of the below to start an engaging conversation. Be as imaginative as possible.
+    # reachout_query1 = f""" You are from India. Your background is available in the 'system prompt' given here. You are conversing with the user and the chat history is also here.\
+    # Your aim is to evoke interest and curiosity in the user, by keeping them engaged. To keep them engaged, you have to understand their interest and as per your context, you will pick from any of the below to start an engaging conversation. Be as imaginative as possible.
     
-    Rules of the response:
-    1. The response should be highly engaging for the user.
-    2. The response should be strictly in accordance to your character and context.
-    3. It should only be a point to engage user in conversation.\
+    # Rules of the response:
+    # 1. The response should be highly engaging for the user.
+    # 2. The response should be strictly in accordance to your character and context.
+    # 3. It should only be a point to engage user in conversation.\
     
-    Your options for engaging the user are as follows. You can decide which one to use to increase the egagement, as per the time right now {datetime.now(ist).strftime("%I:%M %p")}. \
-    - Check if the chat history has a content/ subject which will be interesting enough to initate a conversation. You are allowed to do this only if the subject is enough interesting to be talked abaout again. You will think like a good friend of the user and then judge this.
-    - If not the chat history, the take any of the below options ramdomly and suited the current time:
-        1. Light greeting based on the mood of user's last comment (Greeting could be Good morning /Good afternoon / Good night based on the time. OR Kaise ho / Kya chal raha hain?)\
-        2. Asking getting to know you questions: It could be about Work, Culture, Festivals, Food, Family, Friends, Bollywood, Sports or Travel related.\
-        3. Asking Ice-breakers: What's your favorite animal? or If you could only wear one color forever, which would you choose?\
-        4. Juicy questions: What's the worst advice you've ever gotten? or Who has been a big influence on you?\
-        5. Open-ended questions: What's one movie that made you cry? or What's one quality you hope to change about yourself?\
-        6. Gossip/ riddle/ joke/ titbits/ short story"""
+    # Your options for engaging the user are as follows. You can decide which one to use to increase the egagement, as per the time right now {datetime.now(ist).strftime("%I:%M %p")}. \
+    # - Check if the chat history has a content/ subject which will be interesting enough to initate a conversation. You are allowed to do this only if the subject is enough interesting to be talked abaout again. You will think like a good friend of the user and then judge this.
+    # - If not the chat history, the take any of the below options ramdomly and suited the current time:
+    #     1. Light greeting based on the mood of user's last comment (Greeting could be Good morning /Good afternoon / Good night based on the time. OR Kaise ho / Kya chal raha hain?)\
+    #     2. Asking getting to know you questions: It could be about Work, Culture, Festivals, Food, Family, Friends, Bollywood, Sports or Travel related.\
+    #     3. Asking Ice-breakers: What's your favorite animal? or If you could only wear one color forever, which would you choose?\
+    #     4. Juicy questions: What's the worst advice you've ever gotten? or Who has been a big influence on you?\
+    #     5. Open-ended questions: What's one movie that made you cry? or What's one quality you hope to change about yourself?\
+    #     6. Gossip/ riddle/ joke/ titbits/ short story"""
+
+    reachout_query = f"""Your mission is to keep the user engaged by sparking their interest and curiosity. You have access to the chat history and background context provided, which you can use to guide your responses.
+Objective: Engage the user in a conversation that is highly interesting and relevant, following these key rules:
+    1 Be Engaging: Your response should captivate the user's attention.
+    2 Stay in Character: Your response must align with your designated persona and the context provided.
+    3 Initiate Conversation: The goal is to start a conversation that keeps the user involved.
+Options for Engagement:
+    1 Review Chat History: If there's a topic from the chat history that's particularly engaging, revisit it. Think like a close friend and assess if it's worth discussing again.
+    2 If Not Using Chat History: Choose one of the following strategies based on the current time ({datetime.now(ist).time()}):
+        ◦ Light Greeting: Tailor your greeting to the user's last mood or the current time (e.g., "Good morning," "Kaise ho?").
+        ◦ Fun Elements: Consider adding a riddle, joke, short story, or gossip to spice up the conversation.
+        ◦ Getting to Know You: Ask about work, culture, festivals, food, family, friends, Bollywood, sports, or travel.
+        ◦ Ice-breakers: Pose a fun question like, "What's your favorite animal?" or "If you could wear one color forever, which would it be?"
+        ◦ Juicy Questions: Stir interest with questions like, "What's the worst advice you've ever received?" or "Who has influenced you the most?"
+    3 Open-ended Questions: Encourage deeper conversation with prompts like, "What's one movie that made you cry?" or "What's one quality you hope to change about yourself?"""
+
     return reachout_query
 def update_reachout_hist(text,text_or_voice,db_document_name):
     try:
@@ -243,7 +263,7 @@ def main():
         if consecutive_reachout_count >= reachout_max_limit or chat_timeinterval_minutes < reachout_chat_min_timeinterval_minutes:
             reachout_yn = False
 
-        print(f"Should I reachout to {tg_user_id} chatting with {char_id} (db_document_name:{db_document_name})- {reachout_yn}. User has {consecutive_reachout_count} consecutive reachouts (max is {reachout_max_limit}), has last chatted {chat_timeinterval_minutes} minutes back (min gap should be {reachout_chat_min_timeinterval_minutes})")
+        print(f"{tg_user_id} chatting with character with char_id {char_id} (db_document_name:{db_document_name})\nUser last chat was at {last_messaged_on}; Which was {chat_timeinterval_minutes} minutes back \nUser was last reached out consequently {consecutive_reachout_count} times.\nRules of reachout are that there should be a minimum {reachout_chat_min_timeinterval_minutes} minutes between chats and only send reachout {reachout_max_limit} times.\nBased on the above two, should I reachout? {reachout_yn}\nUser messaged last time in {latest_content_type} format")
 
 
         log_message.append({db_document_name : [f"{tg_user_id} chatting with character with char_id {char_id} (db_document_name:{db_document_name})\nUser last chat was at {last_messaged_on}; Which was {chat_timeinterval_minutes} minutes back \nUser was last reached out consequently {consecutive_reachout_count} times.\nRules of reachout are that there should be a minimum {reachout_chat_min_timeinterval_minutes} minutes between chats and only send reachout {reachout_max_limit} times.\nBased on the above two, should I reachout? {reachout_yn}\nUser messaged last time in {latest_content_type} format"]})
@@ -265,8 +285,10 @@ def main():
                 if file_created_status == False:
                     response_status = "Error creating audio file."
                 else:
+                    # print("################## SENT REACHOUT VOICE MESSAGE!!!")
                     sendtgvoice(charid_bottoken.get(char_id), tg_user_id, voice_file, reachout_response, message_hist, db_document_name)
             else:
+                # print("################## SENT REACHOUT TEXT MESSAGE!!!")
                 sendtgtext(charid_bottoken.get(char_id), tg_user_id, reachout_response, message_hist, db_document_name)
             print(f"\n\n\n")
         else:
