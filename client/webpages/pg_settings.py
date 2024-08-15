@@ -202,8 +202,8 @@ def validate_character_setting():
 def render_setting_pg(action, context):
     character_name  = context['character_name']
     character_descr = context.get('character_descr', '<Not provided!>')
-    bot_token = context['bot_token'],
-    reachout_prompt = context['reachout_prompt'],
+    bot_token = context['bot_token']
+    reachout_prompt = context['reachout_prompt']
     welcome_msg = context['welcome_msg']
     voice_id = context.get('voice_id', '<Not provided!>')
     language  = context['language']
