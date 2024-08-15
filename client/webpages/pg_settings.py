@@ -86,6 +86,8 @@ def set_character_setting(char_id):
         "prompt_tail": st.session_state.prompt_tail,
         "character_name": st.session_state.character_name,
         "character_descr":st.session_state.character_descr,
+        "bot_token":st.session_state.bot_token,
+        "reachout_prompt":st.session_state.reachout_prompt,
         "welcome_msg":st.session_state.welcome_msg,
         "voice_id":st.session_state.voice_id,
         "language": st.session_state.language,
@@ -95,7 +97,7 @@ def set_character_setting(char_id):
         "voice_similarity_boost": st.session_state.voice_similarity_boost,
         "voice_style": st.session_state.voice_style,
         "voice_use_speaker_boost": st.session_state.voice_use_speaker_boost}
-    print(f"pg_settings >> set_character_setting > Setting Updated CHaracter Settings")
+    print(f"pg_settings >> set_character_setting > Setting Updated Character Settings")
     st.session_state["character_setting"] = new_voice_setting
 
     if char_id == 'default_char_id':
@@ -191,11 +193,17 @@ def validate_character_setting():
         return "Background & context field should not be empty"
     elif st.session_state.prompt == "":
         return "Prompt field should not be empty"
+    elif st.session_state.bot_token == "":
+        return "Populate the Telegram token associated with this character"
+    elif st.session_state.reachout_prompt    == "":
+        return "Reach out prompt should not be empty"
     else:
         return True
 def render_setting_pg(action, context):
     character_name  = context['character_name']
     character_descr = context.get('character_descr', '<Not provided!>')
+    bot_token = context['bot_token'],
+    reachout_prompt = context['reachout_prompt'],
     welcome_msg = context['welcome_msg']
     voice_id = context.get('voice_id', '<Not provided!>')
     language  = context['language']
@@ -225,6 +233,8 @@ def render_setting_pg(action, context):
         character_descr = ""
         prompt = ""
         user_context = ""
+        bot_token = ""
+        reachout_prompt = ""
         welcome_msg = ""
 
     ## Set on load values for dropdowns
@@ -252,7 +262,7 @@ def render_setting_pg(action, context):
         index_voice_name = 0
     
     ## Populate setting form
-    with st.form("setting_form", border=False): 
+    with st.form("setting_form", border=False):
         ## Setting user specifics: Language and user background 
         ## Get all voice details from DB
         with st.expander("Name and background", expanded=False, icon=":material/manage_accounts:"):
@@ -268,7 +278,12 @@ def render_setting_pg(action, context):
             
             st.text_area("Welcome Message",value=welcome_msg, key="welcome_msg",label_visibility="visible", help="Default = Welcome message suited to the Character, in their own language. Tell who the character is, what can they do. Tell that they can text or send voice message.")
             st.text_area("Background & context of the character",value=user_context, key="user_context",label_visibility="visible", help="Default = User's background, story, personal details etc")
-        
+
+
+        with st.expander("Reachout Prompt & TG Token", expanded=False, icon=":material/manage_accounts:"):
+            st.text_area("Reachout Prompt",value=reachout_prompt, key="reachout_prompt", label_visibility="visible", help="Prompt for reachouts.")
+            st.text_input("Telegram token", value=bot_token, key="bot_token", help="Telegram token for the character")
+
         ## Setting LLM Parameters: model and temperature
         with st.expander("Models", expanded=False, icon=":material/psychology:"):
             st.selectbox("LLM", dropdown_val_model, index=index_model, key="model",label_visibility="visible", help="Cheapest is gpt-4o-mini")

@@ -104,8 +104,48 @@ def update_timestamps(collection_name):
 # update_timestamps('voiceClone_chats')
 # duplicate_collection('voiceClone_tg_chats','voiceClone_tg_chats_bkp20240809')
 
-move_document('voiceClone_tg_chats', 'voiceClone_tg_chats_test_reachout', '6697940905_A8pNNpS9S5ytKTs7XsZY')
 
+def get_character_dtls():
+    print("Downloading Character data...")
+    collection_ref = db.collection('voiceClone_characters')
+    docs = collection_ref.stream()
+    charid_bottoken = []
+    charid_prompt = []
+    for doc in docs:
+        doc_id = doc.id
+        charid_bottoken_doc = {}
+        charid_prompt_doc = {}
+        settings = doc.to_dict().pop('setting', {})
+        for key, value in settings.items():
+            if key == "bot_token":
+                charid_bottoken_doc[doc_id] = value
+            if key == "reachout_prompt":
+                charid_prompt_doc[doc_id] = value
+        charid_bottoken.append(charid_bottoken_doc)
+        charid_prompt.append(charid_prompt_doc)
+
+    return charid_bottoken, charid_prompt
+
+
+charid_bottoken, charid_prompt = get_character_dtls()
+# charid_bottoken = json.loads(os.getenv("REACHOUT_CHARID_BOT_TOKEN")) #{"uPJUM2kXjdnpkphuCPeO":"6936690207:AAFibJC2nm1xgPk0JOC6Ag9BJ10KZHuVcMM"}
+# charid_prompt = json.loads(os.getenv("REACHOUT_CHARID_BOT_TOKEN"))#{"uPJUM2kXjdnpkphuCPeO":"Reachout prompt..."}
+print(f"charid_bottoken:{charid_bottoken}")
+print(f"charid_prompt:{charid_prompt}")
+
+
+for key, value in enumerate(charid_bottoken):
+    for k, v in value.items():
+        if k == '1EfPNzsBf9c6L3FE96m2':
+            bot_token = v
+
+for key, value in enumerate(charid_prompt):
+    for k, v in value.items():
+        if k == '1EfPNzsBf9c6L3FE96m2':
+            reachout_prompt = v
+
+print(bot_token, reachout_prompt)
+# move_document('voiceClone_tg_chats', 'voiceClone_tg_chats_test_reachout', '6697940905_A8pNNpS9S5ytKTs7XsZY')
 
 # move_document('voiceClone_tg_chats', 'voiceClone_tg_chats_test_reachout', '6733334932_A8pNNpS9S5ytKTs7XsZY')
 # move_document('voiceClone_tg_chats', 'voiceClone_tg_chats_test_reachout', '6733334932_KojdgNzrBNJO8CyQgr5g')
