@@ -325,7 +325,7 @@ def main():
         else:
             reachout_yn = False
 
-        # print(f"{tg_user_id} chatting with character with char_id {char_id} (db_document_name:{db_document_name})\nUser last chat was at {last_messaged_on}; Which was {chat_timeinterval_minutes} minutes back \nUser was last reached out consequently {consecutive_reachout_count} times.\nRules of reachout are that there should be a minimum {reachout_chat_min_timeinterval_minutes} minutes between chats and only send reachout {reachout_max_limit} times.\nBased on the above two, should I reachout? {reachout_yn}\nUser messaged last time in {latest_content_type} format")
+        print(f"{tg_user_id} chatting with character with char_id {char_id} (db_document_name:{db_document_name})\nUser last chat was at {last_messaged_on}; Which was {chat_timeinterval_minutes} minutes back \nUser was last reached out consequently {consecutive_reachout_count} times.\nRules of reachout are that there should be a minimum {reachout_chat_min_timeinterval_minutes} minutes between chats and only send reachout {reachout_max_limit} times.\nBased on the above two, should I reachout? {reachout_yn}\nUser messaged last time in {latest_content_type} format")
 
 
         log_message.append({db_document_name : [f"{tg_user_id} chatting with character with char_id {char_id} (db_document_name:{db_document_name})\nUser last chat was at {last_messaged_on}; Which was {chat_timeinterval_minutes} minutes back \nUser was last reached out consequently {consecutive_reachout_count} times.\nRules of reachout are that there should be a minimum {reachout_chat_min_timeinterval_minutes} minutes between chats and only send reachout {reachout_max_limit} times.\nBased on the above two, should I reachout? {reachout_yn}\nUser messaged last time in {latest_content_type} format"]})
@@ -340,12 +340,12 @@ def main():
                     if k == char_id:
                         reachout_prompt = v
             reachout_prompt = reachout_prompt + f"""\nThe time now is {datetime.now(ist).time()}"""
-            # print(f"################## Reachout prompt:{reachout_prompt}")
+            print(f"################## Reachout prompt:{reachout_prompt}")
 
 
             message_list.append({"role": "user", "content": reachout_prompt, "timestamp": datetime.now(timezone('Asia/Kolkata'))})
             reachout_response = get_reachout_response(system_prompt, message_list, db_document_name, latest_content_type)
-            # print(f"################## reachout_response:{reachout_response}")
+            print(f"################## reachout_response:{reachout_response}")
             message_hist = func.get_tg_chat_history(db_document_name, db, "reachout")
             message_hist.append({"role": "user", "content": reachout_response, "content_type": latest_content_type, "timestamp": datetime.now(timezone('Asia/Kolkata')), 'reachout': True})
 
@@ -355,7 +355,7 @@ def main():
                 for k, v in value.items():
                     if k == char_id:
                         bot_token = v
-            # print(f"################## bot_token:{bot_token}")
+            print(f"################## bot_token:{bot_token}")
 
             if latest_content_type == 'voice':
                 voice_file = 'reachout_audio.ogg'
@@ -370,7 +370,7 @@ def main():
             print(f"\n\n\n")
         else:
             skipped_for_users += 1
-            # print(f"Skip reachout for {tg_user_id} ({db_document_name})")
+            print(f"Skip reachout for {tg_user_id} ({db_document_name})")
             print(f"\n\n\n")
 
     update_reachout_hist(f"Reachout ended. Run for {run_for_users} users. Skipped for {skipped_for_users} users",log_message,"reachout_runlog")
