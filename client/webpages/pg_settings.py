@@ -175,6 +175,7 @@ def get_char_setting(char_id):
         setting = doc.to_dict()
         for k, v in setting.items():
             if k == 'setting':
+                print(v)
                 char_setting = v
     else:
         print("pg_settings >> get_char_setting > New Character. Fetching default voice settings from config files")
@@ -202,8 +203,8 @@ def validate_character_setting():
 def render_setting_pg(action, context):
     character_name  = context['character_name']
     character_descr = context.get('character_descr', '<Not provided!>')
-    bot_token = context['bot_token'],
-    reachout_prompt = context['reachout_prompt'],
+    bot_token = context['bot_token']
+    reachout_prompt = context['reachout_prompt']
     welcome_msg = context['welcome_msg']
     voice_id = context.get('voice_id', '<Not provided!>')
     language  = context['language']
@@ -278,7 +279,6 @@ def render_setting_pg(action, context):
             
             st.text_area("Welcome Message",value=welcome_msg, key="welcome_msg",label_visibility="visible", help="Default = Welcome message suited to the Character, in their own language. Tell who the character is, what can they do. Tell that they can text or send voice message.")
             st.text_area("Background & context of the character",value=user_context, key="user_context",label_visibility="visible", help="Default = User's background, story, personal details etc")
-
 
         with st.expander("Reachout Prompt & TG Token", expanded=False, icon=":material/manage_accounts:"):
             st.text_area("Reachout Prompt",value=reachout_prompt, key="reachout_prompt", label_visibility="visible", help="Prompt for reachouts.")
