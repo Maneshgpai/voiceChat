@@ -1,38 +1,3 @@
-# Reachout Program:
-# Purpose: Increase engagement of the user with bots
-# How is it achieved? Keep reaching out with greetings/followup with past conversation/interesting content using llama3.1
-# Chain of thought:
-# For every user-character combination:
-# 1. Based on the last conversation (latest 6 chats) between user/bot
-# 2. Fetch last "reachout" msg
-# 3. Fetch personality assessment record (future enhancement)
-#   Check if the last conversation was more than 1 hr OR if it is last reachout, then was it more than 6 hrs
-# If No, skip to next user
-# If Yes, do any of the below in random order. Use Voice or Text in random order:
-# FIrst check if last conversation can be a conversation starter:
-# If yes, share a comment based on the last conversation. 
-# If no, send as per most suited per the user's personality assessment and which is different than last reachout:
-# - Getting to know you questions: Bollywood, Sports/Cricket, Food, Work, Culture & festivals, Travel, Family & Friends related. Wat could be some questions which relate with our TAM, without being creepy?
-# - Ice-breakers: What's your favorite animal? or If you could only wear one color forever, which would you choose?
-# - Juicy questions: What's the worst advice you've ever gotten? or Who has been a big influence on you?
-# - Open-ended questions: What's one movie that made you cry? or What's one quality you hope to change about yourself?
-# - Light greeting based on the mood of user's last comment (Greeting could be GM/GA/GN or Kaise ho, Kya chal raha hain?)
-# - If it is is any time like 7am/1pm/9pm, send a greeting (GM/GA/GN)
-# - Gossip/ riddle/ joke/ titbits/ short story based on the bot's character
-# - Keep a track of these reachout within chat history
-
-# Test cases
-# Logical:
-    # Don't run between 2am to 5am
-    # Is it triggering if last message was less than 6 hours ago
-    # Is it triggering even after last 4 consecutive "reachout"
-    # Is it triggering as per voice or text as per the last content_type
-    # Are voiceClone_tg_chats populating correctly
-    # Are voiceClone_tg_logs populating correctly
-    # Are voiceClone_tg_reachout populating correctly
-# Functional:
-    # Are reachouts relevant & interesting, as per character?
-
 from pytz import timezone
 import os
 from datetime import datetime, timedelta, timezone as tz
@@ -46,8 +11,6 @@ from functions import textResponseSrvr as textresponse
 from functions import voiceResponseSrvr as voiceresponse
 from openai import OpenAI
 import replicate
-
-
 
 load_dotenv()
 openai_api_key = os.getenv("OPENAI_API_KEY")
@@ -91,6 +54,7 @@ def sendtgvoice(token, tg_user_id, voice, text, message_hist, db_document_name):
         # bot.send_chat_action(chat_id=tg_user_id,action=telegram.ChatAction.RECORD_AUDIO)
         with open(voice, 'rb') as voice_file:
             bot.send_voice(chat_id=tg_user_id, voice=voice_file)
+        bot.send_message(chat_id=tg_user_id, text=text)
         update_chat_hist(message_hist,db_document_name, "reachout")
         update_reachout_hist(text,'voice',db_document_name)
     except Exception as e:
@@ -181,10 +145,10 @@ def fetch_latest_messages():
             for message in messages:
                 if 'timestamp' in message and isinstance(message['timestamp'], datetime):
                     message['timestamp'] += timedelta(hours=5, minutes=30)
-                message.pop('content_type', None)
-                message.pop('update.update_id', None)
-                message.pop('update.message.message_id', None)
-                message.pop('response_status', None)
+                # message.pop('content_type', None)
+                # message.pop('update.update_id', None)
+                # message.pop('update.message.message_id', None)
+                # message.pop('response_status', None)
 
             if len(messages) != 0:
                 all_docs.append({'doc_id': doc_id, 'messages': messages})
@@ -205,6 +169,12 @@ def fetch_latest_messages():
                 reachout_count += 1
             else:
                 break
+        
+        for message in latest_messages:
+            message.pop('content_type', None)
+            message.pop('update.update_id', None)
+            message.pop('update.message.message_id', None)
+            message.pop('response_status', None)
 
         output[doc['doc_id']] = {
             'messages': latest_messages,
@@ -214,42 +184,6 @@ def fetch_latest_messages():
         }
     # print(f"type of output: {type(output)}")
     return output
-
-# def get_reachout_query():
-#     # reachout_query1 = f""" You are from India. Your background is available in the 'system prompt' given here. You are conversing with the user and the chat history is also here.\
-#     # Your aim is to evoke interest and curiosity in the user, by keeping them engaged. To keep them engaged, you have to understand their interest and as per your context, you will pick from any of the below to start an engaging conversation. Be as imaginative as possible.
-    
-#     # Rules of the response:
-#     # 1. The response should be highly engaging for the user.
-#     # 2. The response should be strictly in accordance to your character and context.
-#     # 3. It should only be a point to engage user in conversation.\
-    
-#     # Your options for engaging the user are as follows. You can decide which one to use to increase the egagement, as per the time right now {datetime.now(ist).strftime("%I:%M %p")}. \
-#     # - Check if the chat history has a content/ subject which will be interesting enough to initate a conversation. You are allowed to do this only if the subject is enough interesting to be talked abaout again. You will think like a good friend of the user and then judge this.
-#     # - If not the chat history, the take any of the below options ramdomly and suited the current time:
-#     #     1. Light greeting based on the mood of user's last comment (Greeting could be Good morning /Good afternoon / Good night based on the time. OR Kaise ho / Kya chal raha hain?)\
-#     #     2. Asking getting to know you questions: It could be about Work, Culture, Festivals, Food, Family, Friends, Bollywood, Sports or Travel related.\
-#     #     3. Asking Ice-breakers: What's your favorite animal? or If you could only wear one color forever, which would you choose?\
-#     #     4. Juicy questions: What's the worst advice you've ever gotten? or Who has been a big influence on you?\
-#     #     5. Open-ended questions: What's one movie that made you cry? or What's one quality you hope to change about yourself?\
-#     #     6. Gossip/ riddle/ joke/ titbits/ short story"""
-
-#     reachout_query = f"""Your mission is to keep the user engaged by sparking their interest and curiosity. You have access to the chat history and background context provided, which you can use to guide your responses.
-# Objective: Engage the user in a conversation that is highly interesting and relevant, following these key rules:
-#     1 Be Engaging: Your response should captivate the user's attention.
-#     2 Stay in Character: Your response must align with your designated persona and the context provided.
-#     3 Initiate Conversation: The goal is to start a conversation that keeps the user involved.
-# Options for Engagement:
-#     1 Review Chat History: If there's a topic from the chat history that's particularly engaging, revisit it. Think like a close friend and assess if it's worth discussing again.
-#     2 If Not Using Chat History: Choose one of the following strategies based on the current time ({datetime.now(ist).time()}):
-#         ◦ Light Greeting: Tailor your greeting to the user's last mood or the current time (e.g., "Good morning," "Kaise ho?").
-#         ◦ Fun Elements: Consider adding a riddle, joke, short story, or gossip to spice up the conversation.
-#         ◦ Getting to Know You: Ask about work, culture, festivals, food, family, friends, Bollywood, sports, or travel.
-#         ◦ Ice-breakers: Pose a fun question like, "What's your favorite animal?" or "If you could wear one color forever, which would it be?"
-#         ◦ Juicy Questions: Stir interest with questions like, "What's the worst advice you've ever received?" or "Who has influenced you the most?"
-#     3 Open-ended Questions: Encourage deeper conversation with prompts like, "What's one movie that made you cry?" or "What's one quality you hope to change about yourself?"""
-#     return reachout_query
-
 def update_reachout_hist(text,text_or_voice,db_document_name):
     try:
         response = {"reachout"+"_"+get_datetime(): {"message": text, "content_type":text_or_voice, "timestamp":datetime.now(ist)}}
@@ -291,18 +225,21 @@ def main():
 
     ## Fetch TG_Tokens and reachout_prompt for every character
     charid_bottoken, charid_prompt = get_character_dtls()
-    # charid_bottoken = json.loads(os.getenv("REACHOUT_CHARID_BOT_TOKEN"))
-    # charid_prompt = json.loads(os.getenv("REACHOUT_CHARID_BOT_TOKEN"))
+
+    # bot_char_id = os.getenv("BOT_CHAR_ID")
+    # print(f"Running reachout for bot {bot_char_id}")
 
     user_chats = fetch_latest_messages()
     log_message = []
     for user, chats in user_chats.items():
-        print(f"Processing {user}")
         db_document_name = user
         array = user.split("_")
         tg_user_id = array[0]
         char_id = array[1]
 
+        ## Run this specific to the character
+        # if char_id == bot_char_id:
+        print(f"Processing {user}")
         message_list = chats['messages']
         consecutive_reachout_count = chats['reachout_count']
         latest_content_type = chats['latest_content_type']
@@ -317,15 +254,13 @@ def main():
         if consecutive_reachout_count >= reachout_max_limit or chat_timeinterval_minutes < reachout_chat_min_timeinterval_minutes:
             reachout_yn = False
 
-        ## Comment for GO LIVE
-        # if tg_user_id == '7142807432' or tg_user_id == '6733334932':
+        # Comment for GO LIVE
+        # if tg_user_id == '6697940905': # or tg_user_id == '7142807432' or tg_user_id == '6733334932':
         #     reachout_yn = True
         # else:
         #     reachout_yn = False
 
-        print(f"{tg_user_id} chatting with character with char_id {char_id} (db_document_name:{db_document_name})\nUser last chat was at {last_messaged_on}; Which was {chat_timeinterval_minutes} minutes back \nUser was last reached out consequently {consecutive_reachout_count} times.\nRules of reachout are that there should be a minimum {reachout_chat_min_timeinterval_minutes} minutes between chats and only send reachout {reachout_max_limit} times.\nBased on the above two, should I reachout? {reachout_yn}\nUser messaged last time in {latest_content_type} format")
-
-
+        # print(f"{tg_user_id} chatting with character with char_id {char_id} (db_document_name:{db_document_name})\nUser last chat was at {last_messaged_on}; Which was {chat_timeinterval_minutes} minutes back \nUser was last reached out consequently {consecutive_reachout_count} times.\nRules of reachout are that there should be a minimum {reachout_chat_min_timeinterval_minutes} minutes between chats and only send reachout {reachout_max_limit} times.\nBased on the above two, should I reachout? {reachout_yn}\nUser messaged last time in {latest_content_type} format")
         log_message.append({db_document_name : [f"{tg_user_id} chatting with character with char_id {char_id} (db_document_name:{db_document_name})\nUser last chat was at {last_messaged_on}; Which was {chat_timeinterval_minutes} minutes back \nUser was last reached out consequently {consecutive_reachout_count} times.\nRules of reachout are that there should be a minimum {reachout_chat_min_timeinterval_minutes} minutes between chats and only send reachout {reachout_max_limit} times.\nBased on the above two, should I reachout? {reachout_yn}\nUser messaged last time in {latest_content_type} format"]})
 
         if reachout_yn == True:
@@ -340,14 +275,12 @@ def main():
             reachout_prompt = reachout_prompt + f"""\nThe time now is {datetime.now(ist).time()}"""
             print(f"################## Reachout prompt:{reachout_prompt}")
 
-
             message_list.append({"role": "user", "content": reachout_prompt, "timestamp": datetime.now(timezone('Asia/Kolkata'))})
             reachout_response = get_reachout_response(system_prompt, message_list, db_document_name, latest_content_type)
             reachout_response = reachout_response.replace("\n"," ")
             print(f"################## reachout_response:{reachout_response}")
             message_hist = func.get_tg_chat_history(db_document_name, db, "reachout")
             message_hist.append({"role": "user", "content": reachout_response, "content_type": latest_content_type, "timestamp": datetime.now(timezone('Asia/Kolkata')), 'reachout': True})
-
 
             bot_token = ""
             for key, value in enumerate(charid_bottoken):
