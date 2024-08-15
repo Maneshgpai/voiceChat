@@ -77,10 +77,10 @@ def update_chat_hist(message_hist,db_document_name, msg_id):
         log("error",400,error,"reachout.update_chat_hist",db_document_name)
 def sendtgtext(token, tg_user_id, text, message_hist, db_document_name ):
     try:
-        print("TEXT MESSAGE SENT")
-        # bot = telegram.Bot(token=token)
-        # bot.send_chat_action(chat_id=tg_user_id,action=telegram.ChatAction.TYPING)
-        # bot.send_message(chat_id=tg_user_id, text=text)
+        # print("TEXT MESSAGE SENT")
+        bot = telegram.Bot(token=token)
+        bot.send_chat_action(chat_id=tg_user_id,action=telegram.ChatAction.TYPING)
+        bot.send_message(chat_id=tg_user_id, text=text)
         update_chat_hist(message_hist,db_document_name, "reachout")
         update_reachout_hist(text,'text',db_document_name)
     except Exception as e:
@@ -88,11 +88,11 @@ def sendtgtext(token, tg_user_id, text, message_hist, db_document_name ):
         log("error",400,error,"text.reachout.sendtgtext",db_document_name)
 def sendtgvoice(token, tg_user_id, voice, text, message_hist, db_document_name):
     try:
-        print("VOICE MESSAGE SENT")
-        # bot = telegram.Bot(token=token)
-        # bot.send_chat_action(chat_id=tg_user_id,action=telegram.ChatAction.RECORD_AUDIO)
-        # with open(voice, 'rb') as voice_file:
-        #     bot.send_voice(chat_id=tg_user_id, voice=voice_file)
+        # print("VOICE MESSAGE SENT")
+        bot = telegram.Bot(token=token)
+        bot.send_chat_action(chat_id=tg_user_id,action=telegram.ChatAction.RECORD_AUDIO)
+        with open(voice, 'rb') as voice_file:
+            bot.send_voice(chat_id=tg_user_id, voice=voice_file)
         update_chat_hist(message_hist,db_document_name, "reachout")
         update_reachout_hist(text,'voice',db_document_name)
     except Exception as e:
@@ -173,10 +173,7 @@ def sort_messages_by_ts(all_docs):
     return all_docs
 def fetch_latest_messages():
     all_docs = []
-    if os.getenv("ENV") == 'dev':
-        collection_ref = db.collection('voiceClone_tg_chats_test_reachout')
-    else:
-        collection_ref = db.collection('voiceClone_tg_chats')
+    collection_ref = db.collection('voiceClone_tg_chats')
 
     for doc in collection_ref.stream():
         doc_id = doc.id
@@ -322,12 +319,19 @@ def main():
         if consecutive_reachout_count >= reachout_max_limit or chat_timeinterval_minutes < reachout_chat_min_timeinterval_minutes:
             reachout_yn = False
 
-        print(f"{tg_user_id} chatting with character with char_id {char_id} (db_document_name:{db_document_name})\nUser last chat was at {last_messaged_on}; Which was {chat_timeinterval_minutes} minutes back \nUser was last reached out consequently {consecutive_reachout_count} times.\nRules of reachout are that there should be a minimum {reachout_chat_min_timeinterval_minutes} minutes between chats and only send reachout {reachout_max_limit} times.\nBased on the above two, should I reachout? {reachout_yn}\nUser messaged last time in {latest_content_type} format")
+        ## Comment for GO LIVE
+        if tg_user_id == '6697940905' or tg_user_id == '6733334932':
+            reachout_yn = True
+        else:
+            reachout_yn = False
+
+        # print(f"{tg_user_id} chatting with character with char_id {char_id} (db_document_name:{db_document_name})\nUser last chat was at {last_messaged_on}; Which was {chat_timeinterval_minutes} minutes back \nUser was last reached out consequently {consecutive_reachout_count} times.\nRules of reachout are that there should be a minimum {reachout_chat_min_timeinterval_minutes} minutes between chats and only send reachout {reachout_max_limit} times.\nBased on the above two, should I reachout? {reachout_yn}\nUser messaged last time in {latest_content_type} format")
 
 
         log_message.append({db_document_name : [f"{tg_user_id} chatting with character with char_id {char_id} (db_document_name:{db_document_name})\nUser last chat was at {last_messaged_on}; Which was {chat_timeinterval_minutes} minutes back \nUser was last reached out consequently {consecutive_reachout_count} times.\nRules of reachout are that there should be a minimum {reachout_chat_min_timeinterval_minutes} minutes between chats and only send reachout {reachout_max_limit} times.\nBased on the above two, should I reachout? {reachout_yn}\nUser messaged last time in {latest_content_type} format"]})
 
         if reachout_yn == True:
+            reachout_prompt = ""
             run_for_users +=1
             char_setting = func.get_tg_char_setting(db_document_name, char_id, db, 'reachout')
             system_prompt = textresponse.get_system_prompt(char_setting, latest_content_type)
@@ -335,21 +339,23 @@ def main():
                 for k, v in value.items():
                     if k == char_id:
                         reachout_prompt = v
-            reachout_prompt = reachout_prompt + f"""\nThe time not is {datetime.now(ist).time()}"""
-            print(f"################## Reachout prompt:{reachout_prompt}")
+            reachout_prompt = reachout_prompt + f"""\nThe time now is {datetime.now(ist).time()}"""
+            # print(f"################## Reachout prompt:{reachout_prompt}")
 
 
             message_list.append({"role": "user", "content": reachout_prompt, "timestamp": datetime.now(timezone('Asia/Kolkata'))})
             reachout_response = get_reachout_response(system_prompt, message_list, db_document_name, latest_content_type)
-            print(f"################## reachout_response:{reachout_response}")
+            # print(f"################## reachout_response:{reachout_response}")
             message_hist = func.get_tg_chat_history(db_document_name, db, "reachout")
             message_hist.append({"role": "user", "content": reachout_response, "content_type": latest_content_type, "timestamp": datetime.now(timezone('Asia/Kolkata')), 'reachout': True})
 
+
+            bot_token = ""
             for key, value in enumerate(charid_bottoken):
                 for k, v in value.items():
                     if k == char_id:
                         bot_token = v
-            print(f"################## bot_token:{bot_token}")
+            # print(f"################## bot_token:{bot_token}")
 
             if latest_content_type == 'voice':
                 voice_file = 'reachout_audio.ogg'
@@ -364,14 +370,14 @@ def main():
             print(f"\n\n\n")
         else:
             skipped_for_users += 1
-            print(f"Skip reachout for {tg_user_id} ({db_document_name})")
+            # print(f"Skip reachout for {tg_user_id} ({db_document_name})")
             print(f"\n\n\n")
 
     update_reachout_hist(f"Reachout ended. Run for {run_for_users} users. Skipped for {skipped_for_users} users",log_message,"reachout_runlog")
 
 if __name__ == "__main__":
     current_time_ist = datetime.now(ist).time()
-    start_time = datetime.strptime("04:30", "%H:%M").time()
+    start_time = datetime.strptime("12:30", "%H:%M").time()
     end_time = datetime.strptime("05:30", "%H:%M").time()
     ## CRON expression to run every 3 hours irrespective of IST, as the Render server does not run on IST.
     ##  0 */3 * * *
