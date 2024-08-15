@@ -77,9 +77,8 @@ def update_chat_hist(message_hist,db_document_name, msg_id):
         log("error",400,error,"reachout.update_chat_hist",db_document_name)
 def sendtgtext(token, tg_user_id, text, message_hist, db_document_name ):
     try:
-        # print("TEXT MESSAGE SENT")
         bot = telegram.Bot(token=token)
-        bot.send_chat_action(chat_id=tg_user_id,action=telegram.ChatAction.TYPING)
+        # bot.send_chat_action(chat_id=tg_user_id,action=telegram.ChatAction.TYPING)
         bot.send_message(chat_id=tg_user_id, text=text)
         update_chat_hist(message_hist,db_document_name, "reachout")
         update_reachout_hist(text,'text',db_document_name)
@@ -88,9 +87,8 @@ def sendtgtext(token, tg_user_id, text, message_hist, db_document_name ):
         log("error",400,error,"text.reachout.sendtgtext",db_document_name)
 def sendtgvoice(token, tg_user_id, voice, text, message_hist, db_document_name):
     try:
-        # print("VOICE MESSAGE SENT")
         bot = telegram.Bot(token=token)
-        bot.send_chat_action(chat_id=tg_user_id,action=telegram.ChatAction.RECORD_AUDIO)
+        # bot.send_chat_action(chat_id=tg_user_id,action=telegram.ChatAction.RECORD_AUDIO)
         with open(voice, 'rb') as voice_file:
             bot.send_voice(chat_id=tg_user_id, voice=voice_file)
         update_chat_hist(message_hist,db_document_name, "reachout")
@@ -320,10 +318,10 @@ def main():
             reachout_yn = False
 
         ## Comment for GO LIVE
-        if tg_user_id == '6697940905' or tg_user_id == '6733334932':
-            reachout_yn = True
-        else:
-            reachout_yn = False
+        # if tg_user_id == '7142807432' or tg_user_id == '6733334932':
+        #     reachout_yn = True
+        # else:
+        #     reachout_yn = False
 
         print(f"{tg_user_id} chatting with character with char_id {char_id} (db_document_name:{db_document_name})\nUser last chat was at {last_messaged_on}; Which was {chat_timeinterval_minutes} minutes back \nUser was last reached out consequently {consecutive_reachout_count} times.\nRules of reachout are that there should be a minimum {reachout_chat_min_timeinterval_minutes} minutes between chats and only send reachout {reachout_max_limit} times.\nBased on the above two, should I reachout? {reachout_yn}\nUser messaged last time in {latest_content_type} format")
 
@@ -345,6 +343,7 @@ def main():
 
             message_list.append({"role": "user", "content": reachout_prompt, "timestamp": datetime.now(timezone('Asia/Kolkata'))})
             reachout_response = get_reachout_response(system_prompt, message_list, db_document_name, latest_content_type)
+            reachout_response = reachout_response.replace("\n"," ")
             print(f"################## reachout_response:{reachout_response}")
             message_hist = func.get_tg_chat_history(db_document_name, db, "reachout")
             message_hist.append({"role": "user", "content": reachout_response, "content_type": latest_content_type, "timestamp": datetime.now(timezone('Asia/Kolkata')), 'reachout': True})
