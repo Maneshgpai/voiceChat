@@ -186,3 +186,38 @@ if generate_report:
             error = "Error: {}".format(str(e))
             st.error(error)
 
+st.divider()
+st.html("""<a href="#" onclick="openTelegramBot()">Chat with Jaya</a>
+
+<script>
+function openTelegramBot() {
+    var userAgent = navigator.userAgent || navigator.vendor || window.opera;
+
+    // Link to your bot
+    var botLink = "https://t.me/jaya_mitrrs_bot";
+
+    // Links to Telegram in Google Play and Apple App Store
+    var androidStoreLink = "https://play.google.com/store/apps/details?id=org.telegram.messenger";
+    var iosStoreLink = "https://apps.apple.com/app/telegram-messenger/id686449807";
+
+    if (/android/i.test(userAgent)) {
+        // Try to open the Telegram bot directly
+        window.location.href = botLink;
+        // Redirect to Google Play Store if the Telegram app is not installed
+        setTimeout(function() {
+            window.location.href = androidStoreLink;
+        }, 2000);  // 2-second delay
+    } else if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) {
+        // Try to open the Telegram bot directly
+        window.location.href = botLink;
+        // Redirect to Apple App Store if the Telegram app is not installed
+        setTimeout(function() {
+            window.location.href = iosStoreLink;
+        }, 2000);  // 2-second delay
+    } else {
+        // For other devices (desktop or unsupported devices)
+        window.location.href = botLink;
+    }
+}
+</script>
+""")
