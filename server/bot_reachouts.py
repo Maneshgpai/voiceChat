@@ -323,7 +323,7 @@ def main():
 
 if __name__ == "__main__":
     current_time_ist = datetime.now(ist).time()
-    start_time = datetime.strptime("12:30", "%H:%M").time()
+    start_time = datetime.strptime("00:30", "%H:%M").time()
     end_time = datetime.strptime("05:30", "%H:%M").time()
     ## CRON expression to run every 3 hours irrespective of IST, as the Render server does not run on IST.
     ##  0 */3 * * *
@@ -334,7 +334,7 @@ if __name__ == "__main__":
         # *: Every month.
         # *: Every day of the week.
     
-    ## Run program if the current time is not between 12:30 AM and 5:30 AM IST
-    if not (start_time <= current_time_ist <= end_time):
+    ## Run program if the current time is not between 00:30 AM and 5:30 AM IST
+    if not(start_time <= current_time_ist <= end_time):
         update_reachout_hist("Reachout started","","reachout_runlog")
         main()
