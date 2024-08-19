@@ -14,6 +14,7 @@ if "firestore_db" not in st.session_state:
 else:
     db = st.session_state["firestore_db"]
 google_client = pygsheets.authorize(service_file="firestore_key.json")
+spreadsheet_id = os.getenv("USAGE_RPT_SPREADSHEET_ID")
 
 
 def convert_ts(timestamp):
@@ -40,6 +41,7 @@ def process_messages(messages):
     return processed_messages
 
 def download_tg_users():
+    st.write("Downloading User data...")
     collection_ref = db.collection('voiceClone_tg_users')
     docs = collection_ref.stream()
     data = []
@@ -51,13 +53,12 @@ def download_tg_users():
         doc_data['tg_user_id'] = array[0]
         doc_data['char_id'] = array[1]
         data.append(doc_data)
-    columns = ['document_id', 'tg_user_id', 'char_id', 'created_on', 'first_name', 'id', 'is_bot', 'language_code', 'last_chatted_on', 'last_name', 'last_updated_on', 'username']
+    columns = ['document_id', 'tg_user_id', 'char_id', 'created_on', 'first_name', 'id', 'is_bot', 'language_code', 'last_chatted_on', 'last_name', 'last_updated_on', 'username', 'status', 'status_change_dt']
     df = pd.DataFrame(data, columns=columns)
-    print("Downloading User data...")
     return df
 
 def download_tg_characters():
-    print("Downloading Character data...")
+    st.write("Downloading Character data...")
     collection_ref = db.collection('voiceClone_characters')
     docs = collection_ref.stream()
     data = []
@@ -75,7 +76,7 @@ def download_tg_characters():
     return df
 
 def download_tg_chat():
-    print("Downloading chat data...")
+    st.write("Downloading chat data...")
     collection_ref = db.collection('voiceClone_tg_chats')
     docs = collection_ref.stream()
     data = []
@@ -90,12 +91,12 @@ def download_tg_chat():
             message['tg_user_id'] = array[0]
             message['char_id'] = array[1]
             data.append(message)
-    columns = ['document_id', 'tg_user_id', 'char_id', 'content', 'timestamp', 'role', 'content_type', 'response_status','update.message.message_id','update.update_id']
+    columns = ['document_id', 'tg_user_id', 'char_id', 'content', 'timestamp', 'role', 'content_type','reachout', 'response_status','update.message.message_id','update.update_id']
     df = pd.DataFrame(data, columns=columns)
     return df
 
 def download_tg_logs():
-    print("Downloading log data...")
+    st.write("Downloading log data...")
     data = []
     collection_ref = db.collection('voiceClone_tg_logs')
     for doc in collection_ref.stream():
@@ -137,33 +138,76 @@ def download_tg_logs():
     df = pd.DataFrame(data, columns=columns)
     return df
 
-def export_file(df1,s1,df2,s2,df3,s3,df4,s4):
-    spreadsheet_id = os.getenv("USAGE_RPT_SPREADSHEET_ID")
+def download_tg_reachout():
+    st.write("Downloading reachout data...")
+    data = []
+    collection_ref = db.collection('voiceClone_tg_reachout')
+    for doc in collection_ref.stream():
+        if not(doc.id == "reachout_runlog"):
+            doc_id = doc.id
+            array = doc_id.split("_")
+            tg_user_id = array[0]
+            char_id = array[1]
+            doc_data = doc.to_dict()
+            for key, value in doc_data.items():
+                if value.get('timestamp') or value.get('message') or value.get('content_type'):
+                    data.append({
+                        'document_id': doc_id,
+                        'tg_user_id': tg_user_id,
+                        'char_id': char_id,
+                        'message': value.get('message', None),
+                        'content_type': value.get('content_type', None),
+                        'timestamp': convert_ts(value.get('timestamp', None)),
+                    })
+                else:
+                    for k,v in value.items():
+                        # print(f"doc_id: {doc_id}\nk:{k}\nv:{v}\n\n")
+                        data.append({
+                            'document_id': doc_id,
+                            'tg_user_id': tg_user_id,
+                            'char_id': char_id,
+                            'message': v.get('message', None),
+                            'content_type': v.get('content_type', None),
+                            'timestamp': convert_ts(v.get('timestamp', None)),
+                        })
+    columns = ['document_id', 'tg_user_id', 'char_id', 'message', 'content_type', 'timestamp']
+    df = pd.DataFrame(data, columns=columns)
+    return df
+
+
+def export_file(df1,s1,df2,s2,df3,s3,df4,s4,df5,s5):
     sh = google_client.open_by_key(spreadsheet_id)
-    
+    st.write("Exporting data to Google sheet")
     # sh.add_worksheet(s1)
     wks_write = sh.worksheet_by_title(s1)
     wks_write.clear('A1',None,'*')
     wks_write.set_dataframe(df1, (1,1), encoding='utf-8', fit=True)
     wks_write.frozen_rows = 1
-
+    print("Finished user data export")
     # sh.add_worksheet(s2)
     wks_write = sh.worksheet_by_title(s2)
     wks_write.clear('A1',None,'*')
     wks_write.set_dataframe(df2, (1,1), encoding='utf-8', fit=True)
     wks_write.frozen_rows = 1
-
+    print("Finished character data export")
     # sh.add_worksheet(s3)
     wks_write = sh.worksheet_by_title(s3)
     wks_write.clear('A1',None,'*')
     wks_write.set_dataframe(df3, (1,1), encoding='utf-8', fit=True)
     wks_write.frozen_rows = 1
-
+    print("Finished chat data export")
     # sh.add_worksheet(s4)
     wks_write = sh.worksheet_by_title(s4)
     wks_write.clear('A1',None,'*')
     wks_write.set_dataframe(df4, (1,1), encoding='utf-8', fit=True)
     wks_write.frozen_rows = 1
+    print("Finished error logs data export")
+    # sh.add_worksheet(s5)
+    wks_write = sh.worksheet_by_title(s5)
+    wks_write.clear('A1',None,'*')
+    wks_write.set_dataframe(df5, (1,1), encoding='utf-8', fit=True)
+    wks_write.frozen_rows = 1
+    print("Finished reachout_history data export")
 
     # print("Exporting to file...")
     # file_path = 'usage_rpt/telegram_usage_report_'+datetime.now()+'.xlsx'
@@ -177,11 +221,12 @@ def export_file(df1,s1,df2,s2,df3,s3,df4,s4):
 st.subheader(f"Generate Usage Report")
 generate_report = st.button("Generate Usage Report")
 if generate_report:
-    with st.spinner('Generating report...'):
+    # with st.spinner('Generating report...'):
+    with st.status("Generating report...", expanded=True):
         try:
-            flag = export_file(download_tg_users(),'users',download_tg_characters(),'characters',download_tg_chat(),'chats',download_tg_logs(),'error_logs')
+            flag = export_file(download_tg_users(),'users',download_tg_characters(),'characters',download_tg_chat(),'chats',download_tg_logs(),'error_logs',download_tg_reachout(),'reachout_history')
             if (flag):
-                st.success("Report generated: https://docs.google.com/spreadsheets/d/1PxbQlTAcl2qRTAXu8MU7M0IF0uWjgS_9gJhQMTvHupA/edit?usp=sharing")
+                st.success("Report generated: https://docs.google.com/spreadsheets/d/"+spreadsheet_id+"/edit?usp=sharing")
         except Exception as e:
             error = "Error: {}".format(str(e))
             st.error(error)
