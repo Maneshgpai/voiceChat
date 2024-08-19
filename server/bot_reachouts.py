@@ -41,25 +41,25 @@ def update_chat_hist(message_hist,db_document_name, msg_id):
 
 def sendtgtext(token, tg_user_id, text, message_hist, db_document_name ):
     bot = telegram.Bot(token=token)
-    # try:
-    #     bot.send_message(chat_id=tg_user_id, text=text)
-    #     update_chat_hist(message_hist,db_document_name, "reachout")
-    #     update_reachout_hist(text,'text',db_document_name)
-    # except Exception as e:
-    #     error = "Error: {}".format(str(e))
-    #     log("error",400,error,"text.reachout.sendtgtext",db_document_name)
+    try:
+        bot.send_message(chat_id=tg_user_id, text=text)
+        update_chat_hist(message_hist,db_document_name, "reachout")
+        update_reachout_hist(text,'text',db_document_name)
+    except Exception as e:
+        error = "Error: {}".format(str(e))
+        log("error",400,error,"text.reachout.sendtgtext",db_document_name)
 
 def sendtgvoice(token, tg_user_id, voice, text, message_hist, db_document_name):
     bot = telegram.Bot(token=token)
-    # try:
-    #     with open(voice, 'rb') as voice_file:
-    #         bot.send_voice(chat_id=tg_user_id, voice=voice_file)
-    #     bot.send_message(chat_id=tg_user_id, text=text)
-    #     update_chat_hist(message_hist,db_document_name, "reachout")
-    #     update_reachout_hist(text,'voice',db_document_name)
-    # except Exception as e:
-    #     error = "Error: {}".format(str(e))
-    #     log("error",400,error,"voice"+".reachout.sendtgvoice",db_document_name)
+    try:
+        with open(voice, 'rb') as voice_file:
+            bot.send_voice(chat_id=tg_user_id, voice=voice_file)
+        bot.send_message(chat_id=tg_user_id, text=text)
+        update_chat_hist(message_hist,db_document_name, "reachout")
+        update_reachout_hist(text,'voice',db_document_name)
+    except Exception as e:
+        error = "Error: {}".format(str(e))
+        log("error",400,error,"voice"+".reachout.sendtgvoice",db_document_name)
 
 def get_reachout_response(system_prompt,message_hist, db_document_name, voice_or_text):
     try:
