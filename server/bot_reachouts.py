@@ -269,11 +269,11 @@ def main():
                 reachout_yn = False
 
             # Comment for GO LIVE
-            if db_document_name == '7142807432_bPm741abegxqm3t7rfeB': #tg_user_id == '6697940905' or tg_user_id == '7142807432' or tg_user_id == '6733334932':
-                reachout_yn = True
-                print(f"{tg_user_id} chatting with character with char_id {char_id} (db_document_name:{db_document_name})\nUser last chat was at {last_messaged_on}; Which was {chat_timeinterval_minutes} minutes back \nUser was last reached out consequently {consecutive_reachout_count} times.\nRules of reachout are that there should be a minimum {reachout_chat_min_timeinterval_minutes} minutes between chats and only send reachout {reachout_max_limit} times.\nBased on the above two, should I reachout? {reachout_yn}\nUser messaged last time in {latest_content_type} format")
-            else:
-                reachout_yn = False
+            # if db_document_name == '7142807432_bPm741abegxqm3t7rfeB': #tg_user_id == '6697940905' or tg_user_id == '7142807432' or tg_user_id == '6733334932':
+            #     reachout_yn = True
+            #     print(f"{tg_user_id} chatting with character with char_id {char_id} (db_document_name:{db_document_name})\nUser last chat was at {last_messaged_on}; Which was {chat_timeinterval_minutes} minutes back \nUser was last reached out consequently {consecutive_reachout_count} times.\nRules of reachout are that there should be a minimum {reachout_chat_min_timeinterval_minutes} minutes between chats and only send reachout {reachout_max_limit} times.\nBased on the above two, should I reachout? {reachout_yn}\nUser messaged last time in {latest_content_type} format")
+            # else:
+            #     reachout_yn = False
 
             log_message.append({db_document_name : [f"{tg_user_id} chatting with character with char_id {char_id} (db_document_name:{db_document_name})\nUser last chat was at {last_messaged_on}; Which was {chat_timeinterval_minutes} minutes back \nUser was last reached out consequently {consecutive_reachout_count} times.\nRules of reachout are that there should be a minimum {reachout_chat_min_timeinterval_minutes} minutes between chats and only send reachout {reachout_max_limit} times.\nBased on the above two, should I reachout? {reachout_yn}\nUser messaged last time in {latest_content_type} format"], "timestamp": datetime.now(timezone('Asia/Kolkata')) })
 
