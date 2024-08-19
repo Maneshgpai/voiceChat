@@ -341,7 +341,7 @@ def get_system_prompt(voice_settings, voice_or_text):
     else:
         lang_prompt = f"You have to respond in {language} language."
 
-    final_prompt = f"Your name is {character_name} and you are from India."\
+    final_prompt = f"Your name is {character_name} and you are from India. It is {datetime.now(ist)} now in India. Always be aware of the time with respect to your context, while replying."\
         +lang_prompt+". "+prompt+". "+response_rules+". "+negative_prompt+". "+prompt_tail+". "\
                 +f"Your responses should be {verbosity}."
     if not(user_context == "Nothing defined yet") or not(user_context == ""):

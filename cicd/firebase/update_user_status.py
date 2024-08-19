@@ -1,4 +1,6 @@
-from google.cloud import firestore
+# from google.cloud import firestore
+import firebase_admin
+from firebase_admin import credentials, firestore
 from datetime import datetime, timedelta, timezone
 import os
 import json
@@ -9,7 +11,11 @@ import telegram
 
 ist = timezone(timedelta(hours=5, minutes=30))
 load_dotenv()
-db = firestore.Client.from_service_account_json("firestore_key.json")
+# db = firestore.Client.from_service_account_json("firestore_key.json")
+
+cred_prod = credentials.Certificate("./cred_cert/prod_serviceAccountKey.json")
+firebase_admin.initialize_app(cred_prod, name='prod')
+db = firestore.client(app=firebase_admin.get_app('prod'))
 
 def get_character_dtls():
     print("Downloading Character data...")
