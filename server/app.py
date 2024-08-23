@@ -238,24 +238,24 @@ def handle_message(update: Update, context: CallbackContext) -> None:
     text_response = "Thank you, aapke msg ke liye. Thoda sa sabr karo, I will be back soon!"
     user_id = str(update.message.from_user.id)
     db_document_name = user_id+'_'+char_id
-
+    print("log 1")
     log_msg = f"handle_message: Received text message"
     log(update.message.message_id,"logging",200,log_msg,"text.handle_message",db,db_document_name)
-
+    print("log 2")
     ## Creating new / Updating existing user info in DB ##
     set_tg_user_data(db_document_name,user_id, update, db, update.message.message_id)
-
+    print("log 3")
     ## Fetching chat history ##
     message_hist = get_tg_chat_history(db_document_name, db, update.message.message_id)
-
+    print("log 4")
     ## Fetching character settings ##
     character_settings = get_tg_char_setting(db_document_name,char_id, db, update.message.message_id)
-
+    print("log 5")
     ## Fetch LLM Response
     query = update.message.text
     query_timestamp = update.message.date
     message_hist.append({"role": "user", "content": query, "content_type": "text", "timestamp": query_timestamp, "update.update_id": update.update_id, "update.message.message_id": update.message.message_id})
-
+    print(f"******* app.py > character_settings['model']:{character_settings['model']}")
     text_response = get_agent_response(query, query_timestamp, character_settings, message_hist, db_document_name, update.message.message_id, "text")
 
     ## Call Google Translate if needed 

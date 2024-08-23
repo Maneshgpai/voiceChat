@@ -15,4 +15,3 @@ replicate
 tenacity
 transformers
 pandas
-pygsheets

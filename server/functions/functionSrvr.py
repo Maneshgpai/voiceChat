@@ -143,6 +143,7 @@ def set_tg_user_data(db_document_name, user_id, update, db, msg_id):
 def get_tg_char_setting(db_document_name,char_id, db, msg_id):
     char_setting = {}
     try:
+        print(f"In functionSrvr.py >> get_tg_char_setting > char_id:{char_id}, db_document_name:{db_document_name}")
         setting = db.collection('voiceClone_characters').document(char_id)
         doc = setting.get()
         if doc.exists:

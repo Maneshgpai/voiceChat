@@ -230,9 +230,11 @@ def get_groq_response(system_prompt, message_hist, db, db_document_name, voice_s
 @retry(stop=stop_after_attempt(3), wait=wait_fixed(5), retry=retry_if_exception_type(ConnectionError))
 def get_replicate_response(model, query, system_prompt, message_hist, db, db_document_name, voice_settings, msg_id, voice_or_text):
     try:
+        print(f"*********** model:{model}")
         replicate_model = replicate_models.get(model, "llama 3")
         final_prompt = system_prompt.replace("\n","\\n")
         query = query.replace("\n","\\n")
+        print(f"*********** replicate_model:{replicate_model}")
         
         new_message_hist = fetch_optimized_chat_hist_for_llama(message_hist)
         

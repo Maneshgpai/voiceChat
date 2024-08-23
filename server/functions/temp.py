@@ -1,81 +1,91 @@
-from google.cloud import firestore
-from datetime import datetime, timedelta, timezone
-import os
-import json
-from dotenv import load_dotenv
-from transformers import AutoTokenizer
-import telegram
-# import tiktoken
+# pip install SQLAlchemy pandas
+# pip install "cloud-sql-python-connector[pg8000]"
 
-ist = timezone(timedelta(hours=5, minutes=30))
-load_dotenv()
+import sqlalchemy
+
+from google.cloud.sql.connector import Connector
+from firebase_admin import credentials, firestore
+from datetime import datetime, timedelta, timedelta
+import pandas as pd
+from dotenv import load_dotenv, find_dotenv
+import os
+
+load_dotenv(find_dotenv())
 db = firestore.Client.from_service_account_json("firestore_key.json")
 
-def get_character_dtls():
-    print("Downloading Character data...")
-    collection_ref = db.collection('voiceClone_characters')
+GOOGLE_APPLICATION_CREDENTIALS="firestore_key.json"
+connector = Connector()
+
+def convert_ts(timestamp):
+    # print(f"timestamp:{timestamp}")
+    if isinstance(timestamp, datetime):
+        # print(f"Data type is datetime!")
+        timestamp += timedelta(hours=5, minutes=30)                
+        timestamp = timestamp.replace(tzinfo=None)
+    else:
+        # print(f"Data type is string!")
+        format = '%Y-%m-%d %H:%M:%S'
+        dt = datetime.strptime(timestamp, format)
+        timestamp = dt.replace(tzinfo=None)
+    return timestamp
+
+def process_messages(messages):
+    processed_messages = []
+    for message in messages:
+        processed_message = message.copy()
+        if 'timestamp' in processed_message:
+            firestore_timestamp = processed_message['timestamp']
+            processed_message['timestamp'] = convert_ts(firestore_timestamp)
+        processed_messages.append(processed_message)
+    return processed_messages
+
+def getconn():
+    conn = connector.connect(
+        "chatmate-3fdd8:asia-south1-a:mitrrs-analytics",  # Your AlloyDB instance connection name
+        "pg8000",  # DB driver to be used
+        user="mitrrs_analyst",  # e.g., 'postgres'
+        password="Analyst@560029",
+        db="postgres"  # Database name
+    )
+    return conn
+
+def create_connection():
+    # Create a SQLAlchemy engine using the connector
+    engine = sqlalchemy.create_engine(
+        "postgresql+pg8000://",
+        creator=getconn
+    )
+
+    # Test connection
+    connection = engine.connect()
+    print("Connection successful")
+    connection.close()
+    return engine
+
+def download_tg_chat():
+    collection_ref = db.collection('voiceClone_tg_chats')
     docs = collection_ref.stream()
-    charid_bottoken = []
-    charid_prompt = []
+    data = []
     for doc in docs:
         doc_id = doc.id
-        charid_bottoken_doc = {}
-        charid_prompt_doc = {}
-        settings = doc.to_dict().pop('setting', {})
-        for key, value in settings.items():
-            if key == "bot_token":
-                charid_bottoken_doc[doc_id] = value
-            if key == "reachout_prompt":
-                charid_prompt_doc[doc_id] = value
-        charid_bottoken.append(charid_bottoken_doc)
-        charid_prompt.append(charid_prompt_doc)
-    return charid_bottoken, charid_prompt
+        doc_data = doc.to_dict()
+        messages = doc_data.get('messages', [])
+        processed_messages = process_messages(messages)        
+        for message in processed_messages:
+            message['document_id'] = doc_id
+            array = doc_id.split("_")
+            message['tg_user_id'] = array[0]
+            message['char_id'] = array[1]
+            data.append(message)
+    columns = ['document_id', 'tg_user_id', 'char_id', 'content', 'timestamp', 'role', 'content_type','reachout', 'response_status','update.message.message_id','update.update_id']
+    df = pd.DataFrame(data, columns=columns)
+    return df
 
-def update_user_status(document_name,user_status):
-    doc_ref = db.collection('voiceClone_tg_users').document(document_name)
-    doc = doc_ref.get()
-    user_data = {'status': user_status,'status_change_dt': datetime.now(ist)}
-    doc_ref.update(user_data)
 
-def set_user_status(bot_token,tg_user_id,document_name):
-    user_status = 'inactive'
-    try:
-        # print(f"Checking user status for {document_name}")
-        bot = telegram.Bot(token=bot_token)
-        bot.send_chat_action(chat_id=tg_user_id,action=telegram.ChatAction.TYPING)
-        user_status = 'active'
-        update_user_status(document_name,user_status)
-    except telegram.error.Unauthorized:
-        user_status = 'blocked_bot'
-        update_user_status(document_name,user_status)
-    except telegram.error.BadRequest as e:
-        if "chat not found" in str(e):
-            user_status = 'deleted_bot'
-            update_user_status(document_name,user_status)
-    except Exception as e:
-        error = "Error: {}".format(str(e))
-        if "Invalid token" in str(e):
-            user_status = 'invalid_token'
-            update_user_status(document_name,user_status)
-        else:
-            user_status = str(e)
-        print("check_user_active >> error:",error)
-    
-    if user_status == 'inactive':
-        update_user_status(document_name,user_status)
-    print(f"Updating user {document_name} as {user_status}")
+# Assuming df is your DataFrame
+df = download_tg_chat()
+engine = create_connection()
+df.to_sql('chats', engine, if_exists='replace', index=False)
 
-charid_bottoken, charid_prompt = get_character_dtls()
-collection_ref = db.collection("voiceClone_tg_users")
-docs = collection_ref.stream()
-for doc in docs:
-    document_name = doc.id
-    array = document_name.split("_")
-    tg_user_id = array[0]
-    char_id = array[1]
-    for key, value in enumerate(charid_bottoken):
-        for k, v in value.items():
-            if k == char_id:
-                bot_token = v
-    # print(f"Checking status for bot {bot_token} for {document_name}")
-    set_user_status(bot_token,tg_user_id,document_name)
+# Optional: Close the connection
+engine.dispose()

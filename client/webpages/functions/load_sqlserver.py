@@ -1,0 +1,85 @@
+import os
+from google.cloud.sql.connector import Connector
+import sqlalchemy
+from dotenv import load_dotenv, find_dotenv
+
+load_dotenv()
+connector = Connector()
+
+def getconn():
+    conn = connector.connect(
+        os.environ.get("INSTANCE_CONNECTION_NAME"),
+        "pytds",
+        user=os.environ.get("DB_USER"),
+        password=os.environ.get("DB_PASS"),
+        db=os.environ.get("DB_NAME")
+    )
+    return conn
+pool = sqlalchemy.create_engine(
+    "mssql+pytds://",
+    creator=getconn,
+)
+
+def load_tg_chat(df):
+    try:
+        df.to_sql('voiceClone_tg_chats', con = pool, if_exists = 'append', chunksize = 1000, index=False)
+        print("Inserted data into voiceClone_tg_chats!")
+        connector.close()
+        return "Chats data loaded to analytics DB"
+    except Exception as e:
+        error = "Chats data load : Error: {}".format(str(e))
+        return error
+
+def load_tg_users(df):
+    try:
+        df['created_on_date'] = df['created_on'].dt.date
+        df['created_on_time'] = df['created_on'].dt.time
+        df = df.drop(columns=['created_on'])
+        df = df.drop(columns=['last_chatted_on'])
+        df = df.drop(columns=['last_updated_on'])
+        df = df.drop(columns=['status_change_dt'])
+        df.to_sql('voiceClone_tg_users', con = pool, if_exists = 'append', chunksize = 1000, index=False)
+        print("Inserted data into voiceClone_tg_users!")
+        connector.close()
+        return "User data loaded to analytics DB"
+    except Exception as e:
+        error = "User data load : Error: {}".format(str(e))
+        return error
+
+def load_tg_characters(df):
+    try:
+        df = df[['char_id', 'character_name']].copy()
+        df.to_sql('voiceClone_characters', con = pool, if_exists = 'append', chunksize = 1000, index=False)
+        print("Inserted data into voiceClone_characters!")
+        connector.close()
+        return "Character data loaded to analytics DB"
+    except Exception as e:
+        error = "Character data load : Error: {}".format(str(e))
+        return error
+
+def load_tg_logs(df):
+    try:
+        df['log_date'] = df['timestamp'].dt.date
+        df['log_time'] = df['timestamp'].dt.time
+        df = df.drop(columns=['timestamp'])
+        df.to_sql('voiceClone_tg_logs', con = pool, if_exists = 'append', chunksize = 1000, index=False)
+        print("Inserted data into voiceClone_tg_logs!")
+        connector.close()
+        return "Log data loaded to analytics DB"
+    except Exception as e:
+        error = "Log data load : Error: {}".format(str(e))
+        return error
+
+def load_tg_reachouts(df):
+    try:
+        df['reachout_date'] = df['timestamp'].dt.date
+        df['reachout_time'] = df['timestamp'].dt.time
+        df = df.drop(columns=['timestamp'])
+        df.to_sql('voiceClone_tg_reachout', con = pool, if_exists = 'append', chunksize = 1000, index=False)
+        print("Inserted data into voiceClone_tg_reachout!")
+        connector.close()
+        return "Reachout data loaded to analytics DB"
+    except Exception as e:
+        error = "Reachout data load : Error: {}".format(str(e))
+        return error
+

@@ -319,7 +319,7 @@ def main():
             skipped_for_users += 1
             print(f"User {tg_user_id} ({db_document_name}) is not active. Skip reachout.")
 
-    update_reachout_hist(f"Reachout ended. Run for {run_for_users} users. Skipped for {skipped_for_users} users",log_message,"reachout_runlog")
+    # update_reachout_hist(f"Reachout ended. Run for {run_for_users} users. Skipped for {skipped_for_users} users",log_message,"reachout_runlog")
 
 if __name__ == "__main__":
     current_time_ist = datetime.now(ist).time()
@@ -336,5 +336,5 @@ if __name__ == "__main__":
     
     ## Run program if the current time is not between 00:30 AM and 5:30 AM IST
     if not(start_time <= current_time_ist <= end_time):
-        update_reachout_hist("Reachout started","","reachout_runlog")
+        # update_reachout_hist("Reachout started","","reachout_runlog")
         main()
