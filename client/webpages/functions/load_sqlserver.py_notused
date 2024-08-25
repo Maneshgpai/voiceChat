@@ -2,6 +2,7 @@ import os
 from google.cloud.sql.connector import Connector
 import sqlalchemy
 from dotenv import load_dotenv, find_dotenv
+from sqlalchemy.types import NVARCHAR
 
 load_dotenv()
 connector = Connector()
@@ -19,10 +20,19 @@ pool = sqlalchemy.create_engine(
     "mssql+pytds://",
     creator=getconn,
 )
-
 def load_tg_chat(df):
     try:
+        print
+        mycursor = getconn().cursor()
+        sql = "DELETE FROM voiceClone_tg_chats"
+        mycursor.execute(sql)
+        getconn().commit()
+
+        df['content'] = df['content'].str.replace('\n', '')
+        df['content'] = df['content'].str.slice(0,1000)
+        df['response_status'] = df['response_status'].str.slice(0,255)
         df.to_sql('voiceClone_tg_chats', con = pool, if_exists = 'append', chunksize = 1000, index=False)
+
         print("Inserted data into voiceClone_tg_chats!")
         connector.close()
         return "Chats data loaded to analytics DB"
@@ -83,3 +93,4 @@ def load_tg_reachouts(df):
         error = "Reachout data load : Error: {}".format(str(e))
         return error
 
+    

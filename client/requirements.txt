@@ -7,6 +7,3 @@ nest_asyncio
 pygsheets
 pandas
 pygsheets
-SQLAlchemy
-cloud-sql-python-connector
-sqlalchemy-pytds

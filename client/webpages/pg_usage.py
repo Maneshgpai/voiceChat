@@ -59,12 +59,12 @@ def download_tg_users():
         data.append(doc_data)
     columns = ['document_id', 'tg_user_id', 'char_id', 'created_on', 'first_name', 'id', 'is_bot', 'language_code', 'last_chatted_on', 'last_name', 'last_updated_on', 'username', 'status', 'status_change_dt']
     df = pd.DataFrame(data, columns=columns)
-    st.write("Exporting to SQL DB...")
-    status = loaddb.load_tg_users(df)
-    if "error" in status.lower():
-        st.error(status)
-    else:
-        st.success(status)
+    # st.write("Exporting to SQL DB...")
+    # status = loaddb.load_tg_users(df)
+    # if "error" in status.lower():
+    #     st.error(status)
+    # else:
+    #     st.success(status)
 
     return df
 
@@ -86,12 +86,12 @@ def download_tg_characters():
     columns = ['char_id', 'character_descr', 'last_updated_on', 'name', 'character_name', 'frequency_penalty', 'language', 'length_penalty', 'max_tokens','min_tokens','model','negative_prompt','presence_penalty','prompt','prompt_tail','repetition_penalty','response_rules','temperature','top_k','top_p','user_context','verbosity','voice_id','voice_similarity_boost','voice_stability','voice_style','voice_use_speaker_boost']
     df = pd.DataFrame(data, columns=columns)
 
-    st.write("Exporting to SQL DB...")
-    status = loaddb.load_tg_characters(df)
-    if "error" in status.lower():
-        st.error(status)
-    else:
-        st.success(status)
+    # st.write("Exporting to SQL DB...")
+    # status = loaddb.load_tg_characters(df)
+    # if "error" in status.lower():
+    #     st.error(status)
+    # else:
+    #     st.success(status)
     return df
 
 def download_tg_chat():
@@ -111,16 +111,15 @@ def download_tg_chat():
             message['tg_user_id'] = array[0]
             message['char_id'] = array[1]
             data.append(message)
-    columns = ['document_id', 'tg_user_id', 'char_id', 'content', 'timestamp', 'role', 'content_type','reachout', 'response_status','update.message.message_id','update.update_id']
+    columns = ['document_id', 'content', 'timestamp', 'role', 'content_type', 'reachout', 'response_status','update.message.message_id','update.update_id']
     df = pd.DataFrame(data, columns=columns)
     df.rename(columns={'update.message.message_id': 'message_id', 'update.update_id': 'update_id'}, inplace=True)
-    st.write("Exporting to SQL DB...")
-    status = loaddb.load_tg_chat(df)
-    if "error" in status.lower():
-        st.error(status)
-    else:
-        st.success(status)
-
+    # st.write("Exporting to SQL DB...")
+    # status = loaddb.load_tg_chat(df)
+    # if "error" in status.lower():
+    #     st.error(status)
+    # else:
+    #     st.success(status)
     return df
 
 def download_tg_logs():
@@ -166,12 +165,12 @@ def download_tg_logs():
     columns = ['document_id', 'tg_user_id', 'char_id', 'message', 'message_id', 'origin', 'status', 'status_cd', 'timestamp']
     df = pd.DataFrame(data, columns=columns)
 
-    st.write("Exporting to SQL DB...")
-    status = loaddb.load_tg_logs(df)
-    if "error" in status.lower():
-        st.error(status)
-    else:
-        st.success(status)
+    # st.write("Exporting to SQL DB...")
+    # status = loaddb.load_tg_logs(df)
+    # if "error" in status.lower():
+    #     st.error(status)
+    # else:
+    #     st.success(status)
     return df
 
 def download_tg_reachout():
@@ -209,12 +208,12 @@ def download_tg_reachout():
                         })
     columns = ['document_id', 'tg_user_id', 'char_id', 'message', 'content_type', 'timestamp']
     df = pd.DataFrame(data, columns=columns)
-    st.write("Exporting to SQL DB...")
-    status = loaddb.load_tg_reachouts(df)
-    if "error" in status.lower():
-        st.error(status)
-    else:
-        st.success(status)
+    # st.write("Exporting to SQL DB...")
+    # status = loaddb.load_tg_reachouts(df)
+    # if "error" in status.lower():
+    #     st.error(status)
+    # else:
+    #     st.success(status)
 
     return df
 
