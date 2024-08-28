@@ -126,25 +126,30 @@ def get_character_dtls():
 
     return charid_bottoken, charid_prompt
 
-
-charid_bottoken, charid_prompt = get_character_dtls()
-# charid_bottoken = json.loads(os.getenv("REACHOUT_CHARID_BOT_TOKEN")) #{"uPJUM2kXjdnpkphuCPeO":"6936690207:AAFibJC2nm1xgPk0JOC6Ag9BJ10KZHuVcMM"}
-# charid_prompt = json.loads(os.getenv("REACHOUT_CHARID_BOT_TOKEN"))#{"uPJUM2kXjdnpkphuCPeO":"Reachout prompt..."}
-print(f"charid_bottoken:{charid_bottoken}")
-print(f"charid_prompt:{charid_prompt}")
+def get_collection_count():
+    collection_ref = db.collection('voiceClone_tg_users')
+    docs = collection_ref.stream()
+    print("\n\n\nDownloading USERS from Firebase")
 
 
-for key, value in enumerate(charid_bottoken):
-    for k, v in value.items():
-        if k == '1EfPNzsBf9c6L3FE96m2':
-            bot_token = v
+# charid_bottoken, charid_prompt = get_character_dtls()
+# # charid_bottoken = json.loads(os.getenv("REACHOUT_CHARID_BOT_TOKEN")) #{"uPJUM2kXjdnpkphuCPeO":"6936690207:AAFibJC2nm1xgPk0JOC6Ag9BJ10KZHuVcMM"}
+# # charid_prompt = json.loads(os.getenv("REACHOUT_CHARID_BOT_TOKEN"))#{"uPJUM2kXjdnpkphuCPeO":"Reachout prompt..."}
+# print(f"charid_bottoken:{charid_bottoken}")
+# print(f"charid_prompt:{charid_prompt}")
 
-for key, value in enumerate(charid_prompt):
-    for k, v in value.items():
-        if k == '1EfPNzsBf9c6L3FE96m2':
-            reachout_prompt = v
 
-print(bot_token, reachout_prompt)
+# for key, value in enumerate(charid_bottoken):
+#     for k, v in value.items():
+#         if k == '1EfPNzsBf9c6L3FE96m2':
+#             bot_token = v
+
+# for key, value in enumerate(charid_prompt):
+#     for k, v in value.items():
+#         if k == '1EfPNzsBf9c6L3FE96m2':
+#             reachout_prompt = v
+
+# print(bot_token, reachout_prompt)
 # move_document('voiceClone_tg_chats', 'voiceClone_tg_chats_test_reachout', '6697940905_A8pNNpS9S5ytKTs7XsZY')
 
 # move_document('voiceClone_tg_chats', 'voiceClone_tg_chats_test_reachout', '6733334932_A8pNNpS9S5ytKTs7XsZY')

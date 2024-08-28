@@ -5,6 +5,7 @@ from dotenv import load_dotenv, find_dotenv
 import os
 # from google.cloud.sql.connector import Connector
 import sqlalchemy
+from sqlalchemy import text
 # from sqlalchemy.types import NVARCHAR
 # from sqlalchemy import create_engine
 # import pymysql
@@ -201,24 +202,18 @@ def load_tg_characters(df):
 def load_tg_chat(df):
     print("Exporting CHAT to SQL DB")
     try:
-        with pool.connect() as db_conn:
-            sql = sqlalchemy.text(
-                "truncate table voiceClone_tg_chats",
-            )
-            db_conn.execute(sql)
-            db_conn.commit()
         df['content'] = df['content'].str.replace('\n', '')
         df['content'] = df['content'].str.slice(0,1000)
         df['response_status'] = df['response_status'].str.slice(0,255)
+        df['data_loaded_on'] = now_ist
         df.to_sql('voiceClone_tg_chats', con = pool, if_exists = 'append', chunksize = 1000, index=False)
         print("Inserted data into voiceClone_tg_chats!")
 
-        try:
-            ## Loading Chat analysis
-            load_tg_chat_analytics(df)
-        except Exception as e:
-            error = "Chats Analysis data load : Error: {}".format(str(e))
-            print(error)
+        # try:
+        #     load_tg_chat_analytics(df)
+        # except Exception as e:
+        #     error = "Chats Analysis data load : Error: {}".format(str(e))
+        #     print(error)
 
         return "Chats data loaded to analytics DB"
     except Exception as e:
@@ -232,7 +227,6 @@ def load_tg_logs(df):
         df = df.drop(columns=['timestamp'])
         df.to_sql('voiceClone_tg_logs', con = pool, if_exists = 'replace', chunksize = 1000, index=False)
         print("Inserted data into voiceClone_tg_logs!")
-        connector.close()
         return "Log data loaded to analytics DB"
     except Exception as e:
         error = "Log data load : Error: {}".format(str(e))
@@ -250,10 +244,10 @@ def load_tg_reachouts(df):
     except Exception as e:
         error = "Reachout data load : Error: {}".format(str(e))
         return error
-
 def download_tg_users():
-    print("Downloading USERS from Firebase")
+    df = {}
     collection_ref = db.collection('voiceClone_tg_users')
+    print("\n\n\nDownloading USERS from Firebase")
     docs = collection_ref.stream()
     data = []
     for doc in docs:
@@ -266,7 +260,7 @@ def download_tg_users():
         data.append(doc_data)
     columns = ['document_id', 'tg_user_id', 'char_id', 'created_on', 'first_name', 'id', 'is_bot', 'language_code', 'last_chatted_on', 'last_name', 'last_updated_on', 'username', 'status', 'status_change_dt']
     df = pd.DataFrame(data, columns=columns)
-    print("Exporting to SQL DB...")
+    print(f"Loaded {len(df)} users into DF...")
     status = load_tg_users(df)
     print(status)
     return df
@@ -292,15 +286,15 @@ def download_tg_characters():
     print(status)
     return df
 def download_tg_chat():
-    print("Downloading CHAT from Firebase")
     collection_ref = db.collection('voiceClone_tg_chats')
+    print("\n\n\nDownloading CHAT messages from Firebase")
     docs = collection_ref.stream()
     data = []
     for doc in docs:
         doc_id = doc.id
         doc_data = doc.to_dict()
         messages = doc_data.get('messages', [])
-        processed_messages = process_messages(messages)        
+        processed_messages = process_messages(messages)
         for message in processed_messages:
             message['document_id'] = doc_id
             array = doc_id.split("_")
@@ -310,6 +304,20 @@ def download_tg_chat():
     columns = ['document_id', 'content', 'timestamp', 'role', 'content_type', 'reachout', 'response_status','update.message.message_id','update.update_id']
     df = pd.DataFrame(data, columns=columns)
     df.rename(columns={'update.message.message_id': 'message_id', 'update.update_id': 'update_id'}, inplace=True)
+
+    ## Logic for Incremental loading
+    with pool.connect() as connection:
+        result = connection.execute(text('SELECT max(data_loaded_on) FROM voiceClone_tg_chats'))
+        for row in result:
+            last_data_loaded_on = row[0]
+    df['timestamp'] = pd.to_datetime(df['timestamp'])
+    df = df[df['timestamp'] > last_data_loaded_on]
+
+    ## Adding current timestamp for incremental rows
+    now_ist = now_utc.astimezone(ist_timezone)
+    df['data_loaded_on'] = now_ist
+
+    print(f"Loaded {len(df)} chat messages into DF...")
     status = load_tg_chat(df)
     print(status)
     return df
@@ -433,7 +441,7 @@ def export_file(df1,s1,df3,s3,df5,s5):
 
 df_users = download_tg_users()
 # df_characters = download_tg_characters()
-# df_chat = download_tg_chat()
+df_chat = download_tg_chat()
 # df_reachout = download_tg_reachout()
 # df_logs = download_tg_logs()
 
@@ -443,3 +451,6 @@ df_users = download_tg_users()
 # flag = export_file(df_users,'users',df_chat,'chats')
 # if (flag):
 #     print("Report generated: https://docs.google.com/spreadsheets/d/"+spreadsheet_id+"/edit?usp=sharing")
+
+
+
