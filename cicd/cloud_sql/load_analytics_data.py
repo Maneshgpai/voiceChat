@@ -281,7 +281,7 @@ def load_tg_users(df):
         df['created_on_time'] = df['created_on'].dt.time
         df = df.drop(columns=['created_on'])
         df = df.drop(columns=['last_chatted_on'])
-        df = df.drop(columns=['last_updated_on'])
+        # df = df.drop(columns=['last_updated_on'])
         df = df.drop(columns=['status_change_dt'])
         df.to_sql('voiceClone_tg_users', con = pool, if_exists = 'replace', chunksize = 1000, index=False)
         print("Inserted data into voiceClone_tg_users!")
@@ -635,12 +635,12 @@ def export_file():
 
 # df_characters = download_tg_characters()
 # df_users = download_tg_users()
-df_chat = download_tg_chat()
+# df_chat = download_tg_chat()
 # df_reachout = download_tg_reachout()
-# df_logs = download_tg_logs()
+df_logs = download_tg_logs()
 
 # flag = export_file(df_users,'users',df_characters,'characters',df_chat,'chats',df_logs,'error_logs',df_reachout,'reachout_history')
-flag = export_file()
+# flag = export_file()
 # if (flag):
 #     print("Report generated: https://docs.google.com/spreadsheets/d/"+spreadsheet_id+"/edit?usp=sharing")
 
