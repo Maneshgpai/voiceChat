@@ -24,9 +24,9 @@ def createCollection(collection_name):
     db_prod.collection(collection_name).document().set({})
     print(collection_name," created successfully.")
 
-# copyCollectionWithDocuments("voiceClone_characters")
-# copyCollectionWithDocuments("voiceClone_voices")
-# createCollection("voiceClone_tg_users")
+# copyCollectionWithDocuments("profile")
+# copyCollectionWithDocuments("voice")
+# createCollection("user")
 # createCollection("voiceClone_tg_reachout")
-# createCollection("voiceClone_tg_logs")
+# createCollection("log")
 # createCollection("voiceClone_tg_chats")

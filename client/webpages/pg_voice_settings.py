@@ -8,7 +8,7 @@ import pandas as pd
 load_dotenv()
 
 if "firestore_db" not in st.session_state:
-    db = firestore.Client.from_service_account_json("firestore_key.json")
+    db = firestore.Client.from_service_account_json("firestore_key_agent.json")
 else:
     db = st.session_state["firestore_db"]
 if "status" not in st.session_state:
@@ -26,7 +26,7 @@ def login_prompt():
     if st.session_state.status == "incorrect":
         st.warning("Incorrect password. Please try again.")
 def get_all_voices():
-    users_ref = db.collection('voiceClone_voices')
+    users_ref = db.collection('voice')
     docs = users_ref.stream()
     user_data = []
     for doc in docs:
@@ -47,7 +47,7 @@ def update_voice(doc_id,voice_id,voice_name,voice_gender,voice_age,voice_ethnici
     print(f"****************** doc_id:{doc_id}, voice_id:{voice_id}, voice_name:{voice_name}")
     print()
     try:
-        db.collection('voiceClone_voices').document(doc_id).set({
+        db.collection('voice').document(doc_id).set({
         "last_updated_on": datetime.now(ist),
         "name":voice_name,
         "gender":voice_gender,
@@ -72,7 +72,7 @@ def get_voice(voice_id):
     try:
         result = all_voice_df.loc[all_voice_df['Voice Id'] == voice_id, 'doc_id']
         document_id = result.iloc[0]
-        setting = db.collection('voiceClone_voices').document(document_id)
+        setting = db.collection('voice').document(document_id)
         doc = setting.get()
         if doc.exists:
             v_dict = doc.to_dict()

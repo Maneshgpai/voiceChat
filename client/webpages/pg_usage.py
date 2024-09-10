@@ -10,10 +10,10 @@ import os
 load_dotenv(find_dotenv())
 
 if "firestore_db" not in st.session_state:
-    db = firestore.Client.from_service_account_json("firestore_key.json")
+    db = firestore.Client.from_service_account_json("firestore_key_agent.json")
 else:
     db = st.session_state["firestore_db"]
-google_client = pygsheets.authorize(service_file="firestore_key.json")
+google_client = pygsheets.authorize(service_file="firestore_key_agent.json")
 spreadsheet_id = os.getenv("USAGE_RPT_SPREADSHEET_ID")
 
 
@@ -42,7 +42,7 @@ def process_messages(messages):
 
 def download_tg_users():
     st.write("Downloading User data...")
-    collection_ref = db.collection('voiceClone_tg_users')
+    collection_ref = db.collection('user')
     docs = collection_ref.stream()
     data = []
     for doc in docs:
@@ -59,7 +59,7 @@ def download_tg_users():
 
 def download_tg_characters():
     st.write("Downloading Character data...")
-    collection_ref = db.collection('voiceClone_characters')
+    collection_ref = db.collection('profile')
     docs = collection_ref.stream()
     data = []
     for doc in docs:
@@ -98,7 +98,7 @@ def download_tg_chat():
 def download_tg_logs():
     st.write("Downloading log data...")
     data = []
-    collection_ref = db.collection('voiceClone_tg_logs')
+    collection_ref = db.collection('log')
     for doc in collection_ref.stream():
         doc_id = doc.id
         array = doc_id.split("_")

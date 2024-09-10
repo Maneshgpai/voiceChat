@@ -15,8 +15,6 @@ openai_api_key = os.getenv("OPENAI_API_KEY")
 voice_api_key = os.getenv("ELEVENLABS_API_KEY")
 client = OpenAI(api_key=openai_api_key)
 ist = timezone(timedelta(hours=5, minutes=30))
-groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
-API_KEY = os.environ['GOOGLE_API_KEY']
 replicate_models = {"llama 3":"meta/meta-llama-3-70b-instruct", "llama 3.1":"meta/meta-llama-3.1-405b-instruct"}
 groq_models = {"llama 3":"llama3-70b-8192", "llama 3.1":"llama-3.1-70b-versatile"}
 
@@ -25,7 +23,7 @@ def get_datetime():
 
 def log(msg_id,status,status_cd,message,origin,db,db_document_name):
     log_response = {str(msg_id)+"_"+get_datetime(): {"status": status,"status_cd":status_cd,"message":message, "origin":origin, "message_id": msg_id, "timestamp":datetime.now(ist)}}
-    log_ref = db.collection('voiceClone_tg_logs').document(db_document_name)
+    log_ref = db.collection('log').document(db_document_name)
     func.createLog(log_ref, log_response)
 
 def fetch_optimized_chat_hist_for_openai(message_hist):
@@ -86,6 +84,7 @@ def fn_reduce_message_hist(ideal_size,curr_size,message_hist):
 
 def google_translate_text(text,target_lang_cd, db, db_document_name, msg_id):
     # print(f"************** textResponseSrvr > google_translate_text > text:{text}, target_lang_cd:{target_lang_cd}")
+    API_KEY = os.environ['GOOGLE_API_KEY']
     url = "https://translation.googleapis.com/language/translate/v2" 
     params = {
             'q': text,
@@ -103,7 +102,7 @@ def google_translate_text(text,target_lang_cd, db, db_document_name, msg_id):
         translation = text
         # print("************** textResponseSrvr > google_translate_text > error:",error)
         log_response = {str(msg_id)+"_"+str(datetime.now()): {"status": "error","status_cd":400,"message":error, "origin":"google_translate_text", "message_id": msg_id, "timestamp":datetime.now(ist)}}
-        log_ref = db.collection('voiceClone_tg_logs').document(db_document_name)
+        log_ref = db.collection('log').document(db_document_name)
         func.createLog(log_ref, log_response)
 
     return translation
@@ -117,7 +116,7 @@ def translate(audio_file,msg_id, db_document_name, db):
     except Exception as e:
         error = "Error: {}".format(str(e))
         log_response = {str(msg_id)+"_"+str(datetime.now()): {"status": "error","status_cd":400,"message":error, "origin":"translate_whisper-1", "message_id": msg_id, "timestamp":datetime.now(ist)}}
-        log_ref = db.collection('voiceClone_tg_logs').document(db_document_name)
+        log_ref = db.collection('log').document(db_document_name)
         func.createLog(log_ref, log_response)
 
 def convert_voice_to_text(voice_file, system_prompt, db_document_name, db, msg_id):
@@ -141,7 +140,7 @@ def convert_voice_to_text(voice_file, system_prompt, db_document_name, db, msg_i
     except Exception as e:
         error = "Error: {}".format(str(e))
         log_response = {str(msg_id)+"_"+str(datetime.now()): {"status": "error","status_cd":400,"message":error, "origin":"convert_voice_to_text", "message_id": msg_id, "timestamp":datetime.now(ist)}}
-        log_ref = db.collection('voiceClone_tg_logs').document(db_document_name)
+        log_ref = db.collection('log').document(db_document_name)
         func.createLog(log_ref, log_response)
 
 # @retry(stop=stop_after_attempt(3), wait=wait_fixed(5), retry=retry_if_exception_type(ConnectionError))
@@ -201,12 +200,14 @@ def convert_voice_to_text(voice_file, system_prompt, db_document_name, db, msg_i
 #         error = "Error: {}".format(str(e))
 #         print("textResponseSrvr > get_huggingface_response > error:",error)
 #         log_response = {str(msg_id)+"_"+str(datetime.now()): {"status": "error","status_cd":400,"message":error, "origin":"get_huggingface_response", "message_id": msg_id, "timestamp":datetime.now(ist)}}
-#         log_ref = db.collection('voiceClone_tg_logs').document(db_document_name)
+#         log_ref = db.collection('log').document(db_document_name)
 #         func.createLog(log_ref, log_response)
 
 @retry(stop=stop_after_attempt(3), wait=wait_fixed(5), retry=retry_if_exception_type(ConnectionError))
 def get_groq_response(system_prompt, message_hist, db, db_document_name, voice_settings, msg_id, voice_or_text):
     try:
+        groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+
         groq_model = groq_models.get(voice_settings['model'].lower(), "llama 3")
         system_message = [{"role": "system", "content": system_prompt}]
 
@@ -225,7 +226,7 @@ def get_groq_response(system_prompt, message_hist, db, db_document_name, voice_s
     except Exception as e:
         error = "Error: {}".format(str(e))
         log_response = {str(msg_id)+"_"+str(datetime.now()): {"status": "error","status_cd":400,"message":error, "origin":voice_or_text+".get_groq_response", "message_id": msg_id, "timestamp":datetime.now(ist)}}
-        log_ref = db.collection('voiceClone_tg_logs').document(db_document_name)
+        log_ref = db.collection('log').document(db_document_name)
         func.createLog(log_ref, log_response)
 @retry(stop=stop_after_attempt(3), wait=wait_fixed(5), retry=retry_if_exception_type(ConnectionError))
 def get_replicate_response(model, query, system_prompt, message_hist, db, db_document_name, voice_settings, msg_id, voice_or_text):
@@ -292,7 +293,7 @@ def get_replicate_response(model, query, system_prompt, message_hist, db, db_doc
     except Exception as e:
         error = "Error: {}".format(str(e))
         log_response = {str(msg_id)+"_"+str(datetime.now()): {"status": "error","status_cd":400,"message":error, "origin":voice_or_text+".get_replicate_response", "message_id": msg_id, "timestamp":datetime.now(ist)}}
-        log_ref = db.collection('voiceClone_tg_logs').document(db_document_name)
+        log_ref = db.collection('log').document(db_document_name)
         func.createLog(log_ref, log_response)
         response = get_groq_response(system_prompt, message_hist, db, db_document_name, voice_settings,msg_id,voice_or_text)
 
@@ -316,7 +317,7 @@ def get_openai_response(model, system_message, message_hist, db, db_document_nam
     except Exception as e:
         error = "Error: {}".format(str(e))
         log_response = {str(msg_id)+"_"+str(datetime.now()): {"status": "error","status_cd":400,"message":error, "origin":voice_or_text+".get_openai_response","message_id":msg_id,"timestamp":datetime.now(ist)}}
-        log_ref = db.collection('voiceClone_tg_logs').document(db_document_name)
+        log_ref = db.collection('log').document(db_document_name)
         func.createLog(log_ref, log_response)
 def get_system_prompt(voice_settings, voice_or_text):
     prompt  = voice_settings['prompt']
@@ -360,7 +361,7 @@ def get_agent_response(query, voice_settings, message_hist, db, db_document_name
         except Exception as e:
             error = "Error: {}".format(str(e))
             log_response = {str(msg_id)+"_"+str(datetime.now()): {"status": "error","status_cd":400,"message":error, "origin":voice_or_text+".get_agent_response", "message_id": msg_id, "timestamp":datetime.now(ist)}}
-            log_ref = db.collection('voiceClone_tg_logs').document(db_document_name)
+            log_ref = db.collection('log').document(db_document_name)
             func.createLog(log_ref, log_response)
     elif model == "llama 3" or model == "llama 3.1":
         full_response = get_replicate_response(voice_settings['model'], query, final_prompt, message_hist, db, db_document_name, voice_settings, msg_id, voice_or_text)

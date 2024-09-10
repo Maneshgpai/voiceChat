@@ -10,7 +10,7 @@ import pandas as pd
 load_dotenv()
 
 if "firestore_db" not in st.session_state:
-    db = firestore.Client.from_service_account_json("firestore_key.json")
+    db = firestore.Client.from_service_account_json("firestore_key_agent.json")
 else:
     db = st.session_state["firestore_db"]
 
@@ -102,7 +102,7 @@ def set_character_setting(char_id):
 
     if char_id == 'default_char_id':
         print("pg_settings >> set_character_setting > Creating document with auto generated doc id")
-        db.collection('voiceClone_characters').document().set({
+        db.collection('profile').document().set({
             "last_updated_on": datetime.now(ist),
             "name":st.session_state.character_name,
             "character_descr":st.session_state.character_descr,
@@ -110,7 +110,7 @@ def set_character_setting(char_id):
             "setting":new_voice_setting})
     else:
         print(f"pg_settings >> set_character_setting > Creating document with {char_id} as doc id")
-        db.collection('voiceClone_characters').document(char_id).set({
+        db.collection('profile').document(char_id).set({
             "last_updated_on": datetime.now(ist),
             "name":st.session_state.character_name,
             "character_descr":st.session_state.character_descr,
@@ -167,7 +167,7 @@ def reset_voice_setting():
     return voice_stability, voice_similarity_boost, voice_style, voice_use_speaker_boost
 def get_char_setting(char_id):
     ## If exists, fetch settings from DB
-    setting = db.collection('voiceClone_characters').document(char_id)
+    setting = db.collection('profile').document(char_id)
     doc = setting.get()
     char_setting = {}
     if doc.exists:
@@ -380,7 +380,7 @@ def setting_pg(setting_action, char_id):
                 print("******************* Error in update setting")
                 st.error(validate_stat)
 def get_all_characters():
-    users_ref = db.collection('voiceClone_characters')
+    users_ref = db.collection('profile')
     docs = users_ref.stream()
     user_data = []
     for doc in docs:
@@ -392,7 +392,7 @@ def get_all_characters():
     df = pd.DataFrame(user_data, columns=['Character', 'About Me', 'ID'])
     return(df)
 def get_all_voices():
-    users_ref = db.collection('voiceClone_voices')
+    users_ref = db.collection('voice')
     docs = users_ref.stream()
     user_data = []
     for doc in docs:
@@ -417,6 +417,7 @@ else:
     print("********* Session valid, password validated. ")
     if "character_setting" not in st.session_state:
         df = get_all_characters()
+        print(f"*********** df:{df}")
         char_name = st.radio("Select existing character to edit", df['Character'].tolist(), index=0, key="character_nm", horizontal=True, label_visibility="visible")
         result = df.loc[df['Character'] == st.session_state.character_nm, 'About Me'].iloc[0]
         with st.expander(result[:30]+" ...", expanded=True):

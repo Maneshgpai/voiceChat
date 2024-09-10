@@ -9,11 +9,11 @@ import telegram
 
 ist = timezone(timedelta(hours=5, minutes=30))
 load_dotenv()
-db = firestore.Client.from_service_account_json("firestore_key.json")
+db = firestore.Client.from_service_account_json("firestore_key_agent.json")
 
 def get_character_dtls():
     print("Downloading Character data...")
-    collection_ref = db.collection('voiceClone_characters')
+    collection_ref = db.collection('profile')
     docs = collection_ref.stream()
     charid_bottoken = []
     charid_prompt = []
@@ -32,7 +32,7 @@ def get_character_dtls():
     return charid_bottoken, charid_prompt
 
 def update_user_status(document_name,user_status):
-    doc_ref = db.collection('voiceClone_tg_users').document(document_name)
+    doc_ref = db.collection('user').document(document_name)
     doc = doc_ref.get()
     user_data = {'status': user_status,'status_change_dt': datetime.now(ist)}
     doc_ref.update(user_data)
@@ -66,7 +66,7 @@ def set_user_status(bot_token,tg_user_id,document_name):
     print(f"Updating user {document_name} as {user_status}")
 
 charid_bottoken, charid_prompt = get_character_dtls()
-collection_ref = db.collection("voiceClone_tg_users")
+collection_ref = db.collection("user")
 docs = collection_ref.stream()
 for doc in docs:
     document_name = doc.id

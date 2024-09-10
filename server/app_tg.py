@@ -1,4 +1,4 @@
-import logging
+# import logging
 from flask import Flask, jsonify, request, make_response, Response, stream_with_context
 # from flask_cors import CORS
 import telegram
@@ -18,15 +18,15 @@ from google.cloud import firestore
 import shutil
 
 ## Set up logging for debugging
-logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.INFO
-)
-logger = logging.getLogger(__name__)
+# logging.basicConfig(
+#     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+#     level=logging.INFO
+# )
+# logger = logging.getLogger(__name__)
 
 load_dotenv(find_dotenv())
 ist = timezone(timedelta(hours=5, minutes=30))
-db = firestore.Client.from_service_account_json("firestore_key_agent.json")
+db = firestore.Client.from_service_account_json("./secrets/firestore_key_agent.json")
 env = os.getenv("ENV")
 TOKEN = os.getenv("BOT_TELEGRAM_API_KEY")
 char_id = os.getenv("BOT_CHAR_ID")
@@ -127,7 +127,7 @@ def handle_voice(update: Update, context: CallbackContext) -> None:
     voice_file = update.message.voice
 
     log_msg = f"handle_voice: Received audio message"
-    log(update.message.message_id,"logging",200,log_msg,"voice.handle_voice",db,db_document_name)
+    ## log(update.message.message_id,"logging",200,log_msg,"voice.handle_voice",db,db_document_name)
     
     ## Creating new / Updating existing user info in DB ##
     set_tg_user_data(db_document_name,user_id, update, db, update.message.message_id)
@@ -211,7 +211,7 @@ def handle_voice(update: Update, context: CallbackContext) -> None:
         func.createLog(log_ref, log_response)
     
     log_msg = f"handle_voice: Finished replying"
-    log(update.message.message_id,"logging",200,log_msg,"voice.handle_voice",db,db_document_name)
+    ## log(update.message.message_id,"logging",200,log_msg,"voice.handle_voice",db,db_document_name)
 
     ## Remove the audio files from server
     try:
@@ -240,7 +240,7 @@ def handle_message(update: Update, context: CallbackContext) -> None:
     db_document_name = user_id+'_'+char_id
 
     log_msg = f"handle_message: Received text message"
-    log(update.message.message_id,"logging",200,log_msg,"text.handle_message",db,db_document_name)
+    ## log(update.message.message_id,"logging",200,log_msg,"text.handle_message",db,db_document_name)
 
     ## Creating new / Updating existing user info in DB ##
     set_tg_user_data(db_document_name,user_id, update, db, update.message.message_id)
@@ -292,7 +292,7 @@ def handle_message(update: Update, context: CallbackContext) -> None:
     update_chat_hist(message_hist,db_document_name, update.message.message_id)
 
     log_msg = f"handle_message: Finished replying"
-    log(update.message.message_id,"logging",200,log_msg,"text.handle_message",db,db_document_name)
+    ## log(update.message.message_id,"logging",200,log_msg,"text.handle_message",db,db_document_name)
 
 ## Error handler for network and other common errors
 def error_handler(update: Update, context: CallbackContext) -> None:
@@ -301,18 +301,18 @@ def error_handler(update: Update, context: CallbackContext) -> None:
         raise context.error
     except NetworkError as e:
         # Wait before retrying to handle transient network issues more gracefully
-        logger.warning('Network error occurred. Retrying in 15 seconds...')
+        # logger.warning('Network error occurred. Retrying in 15 seconds...')
         log_response = {str(update.message.message_id)+"_"+get_datetime(): {"status": "error","status_cd":400,"message":e, "origin":"error_handler/NetworkError", "message_id": update.message.message_id, "timestamp":datetime.now(ist)}}
         log_ref = db.collection('log').document(db_document_name)
         func.createLog(log_ref, log_response)
         time.sleep(15)
     except TelegramError as e:
-        logger.warning(f'A Telegram error occurred: {e}')
+        # logger.warning(f'A Telegram error occurred: {e}')
         log_response = {str(update.message.message_id)+"_"+get_datetime(): {"status": "error","status_cd":400,"message":e, "origin":"error_handler/TelegramError", "message_id": update.message.message_id, "timestamp":datetime.now(ist)}}
         log_ref = db.collection('log').document(db_document_name)
         func.createLog(log_ref, log_response)
     except Exception as e:
-        logger.error(f'An unexpected error occurred: {e}')
+        # logger.error(f'An unexpected error occurred: {e}')
         log_response = {str(update.message.message_id)+"_"+get_datetime(): {"status": "error","status_cd":400,"message":e, "origin":"error_handler/Exception", "message_id": update.message.message_id, "timestamp":datetime.now(ist)}}
         log_ref = db.collection('log').document(db_document_name)
         func.createLog(log_ref, log_response)
@@ -328,17 +328,55 @@ def webhook():
 def start(update, context):
     user_id = str(update.message.from_user.id)
     db_document_name = user_id+'_'+char_id
-    print(f"Clicked start by {user_id}, talking to {char_id}")
+    # print(f"Clicked start by {user_id}, talking to {char_id}")
     ## Fetching character settings ##
     character_settings = get_tg_char_setting(db_document_name,char_id, db, update.message.message_id)
 
     context.bot.send_message(chat_id=update.effective_chat.id, text=character_settings['welcome_msg'])
 
+    ## Send "typing" response
+    context.bot.send_chat_action(
+    chat_id=update.effective_chat.id,
+    action=telegram.ChatAction.RECORD_AUDIO)
+
+    assistant_file_name = get_audio_file_location("assistant","welcomemsg", db_document_name)
+    ## Adding SSML tags for better speech rate
+    ssml_text_response = """<speak><prosody rate="x-slow" pitch="x-slow">"""+character_settings['welcome_msg']+"""</prosody></speak>"""
+    file_created_status = get_voice_response(character_settings, ssml_text_response,assistant_file_name, db, db_document_name, update.message.message_id)
+    ## Sending voice message
+    try:
+        temp_voice_file = db_document_name+".ogg"
+        shutil.copy(assistant_file_name, temp_voice_file)
+        with open(temp_voice_file, 'rb') as voice_file:
+            context.bot.send_voice(chat_id=update.message.chat_id, voice=voice_file)
+    except Exception as e:
+        error = "Error: {}".format(str(e))
+        response_status = response_status + "Error sending audio file:" + error
+        log_response = {str(update.message.message_id)+"_"+get_datetime(): {"status": "error","status_cd":400,"message":error, "origin":"handle_voice/context.bot.send_voice", "message_id": update.message.message_id,"timestamp":datetime.now(ist)}}
+        log_ref = db.collection('log').document(db_document_name)
+        func.createLog(log_ref, log_response)
+
+
     set_tg_user_data(db_document_name,user_id, update, db, update.message.message_id)
     message_hist = get_tg_chat_history(db_document_name, db, update.message.message_id)
     message_hist.append({"role": "assistant", "content": character_settings['welcome_msg'], "content_type": "text","response_status":"Success", "timestamp": datetime.now(ist), "update.update_id": update.update_id, "update.message.message_id": update.message.message_id})
     update_chat_hist(message_hist,db_document_name, update.message.message_id)
-    log(update.message.message_id,"logging",200,f"Started BOT for first time!","start",db,db_document_name)
+
+    ## Remove the audio files from server
+    try:
+        os.remove(assistant_file_name)
+        print(f"Removed {assistant_file_name}")
+    except Exception as e:
+        error = "Error: {}".format(str(e))
+        print(f"{error} while removing {assistant_file_name}")
+    try:
+        os.remove(temp_voice_file)
+        print(f"Removed {temp_voice_file}")
+    except Exception as e:
+        error = "Error: {}".format(str(e))
+        print(f"{error} while removing {temp_voice_file}")
+
+    ## log(update.message.message_id,"logging",200,f"Started BOT for first time!","start",db,db_document_name)
 
 
 # Main function to start the bot
