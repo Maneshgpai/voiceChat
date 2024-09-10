@@ -1,2 +1,2 @@
-FLASK_APP=app.py
+FLASK_APP=app_tg.py
 FLASK_ENV=production
