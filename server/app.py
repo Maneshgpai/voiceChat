@@ -36,7 +36,7 @@ bot_webhook_url = os.getenv("BOT_WEBHOOK_URL")
 bot = telegram.Bot(token=TOKEN)
 
 ## Initialize Flask app
-app_tg = Flask(__name__)
+app = Flask(__name__)
 
 def get_datetime():
     return (str(datetime.now())).replace('.','').replace(':','').replace(' ','').replace('-','')
