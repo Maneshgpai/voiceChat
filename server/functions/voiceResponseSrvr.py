@@ -7,6 +7,7 @@ import subprocess
 ist = timezone(timedelta(hours=5, minutes=30))
 import os
 from dotenv import load_dotenv
+from google.cloud import texttospeech
 load_dotenv()
 
 client = ElevenLabs(api_key=os.getenv("ELEVENLABS_API_KEY"))
@@ -82,3 +83,42 @@ def get_voice_response(voice_setting, full_response,filename, db, db_document_na
         func.createLog(log_ref, log_response)
         return False
     return True
+
+## google.cloud.texttospeech
+def get_google_tts_voice_response(voice_setting,full_response,filename, db, db_document_name, msg_id):
+    try:
+        if voice_setting['voice_id'] == "bengali_male1":
+            language_code = "bn-IN"
+            name="bn-IN-Wavenet-B"
+            ssml_gender=texttospeech.SsmlVoiceGender.MALE
+        else:
+            language_code = "bn-IN"
+            name="bn-IN-Standard-C"
+            ssml_gender=texttospeech.SsmlVoiceGender.FEMALE
+
+        client = texttospeech.TextToSpeechClient()
+        input_text = texttospeech.SynthesisInput(text=full_response)
+        voice = texttospeech.VoiceSelectionParams(
+            language_code=language_code,
+            name=name,
+            ssml_gender=ssml_gender,
+        )
+
+        audio_config = texttospeech.AudioConfig(
+            audio_encoding=texttospeech.AudioEncoding.MP3
+        )
+
+        response = client.synthesize_speech(
+            request={"input": input_text, "voice": voice, "audio_config": audio_config}
+        )
+
+        # The response's audio_content is binary.
+        with open(filename, "wb") as out:
+            out.write(response.audio_content)
+        return True
+    except Exception as e:
+        error = "Error: {}".format(str(e))
+        log_response = {str(msg_id)+"_"+str(datetime.now()): {"status": "error","status_cd":400,"message":error, "origin":"get_voice_response.generateVoice", "message_id": msg_id, "timestamp":datetime.now(ist)}}
+        log_ref = db.collection('log').document(db_document_name)
+        func.createLog(log_ref, log_response)
+        return False

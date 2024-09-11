@@ -98,7 +98,9 @@ def get_agent_response(query, query_timestamp, character_settings, message_hist,
 def get_voice_response(character_settings, text_response,file_name, db, db_document_name, msg_id):
     file_created_status = False
     try:
-        file_created_status = voiceresponse.get_voice_response(character_settings, text_response, file_name, db, db_document_name, msg_id)
+        ## google.cloud.texttospeech
+        file_created_status = voiceresponse.get_google_tts_voice_response(character_settings, text_response, file_name, db, db_document_name, msg_id)
+        # file_created_status = voiceresponse.get_voice_response(character_settings, text_response, file_name, db, db_document_name, msg_id)
     except Exception as e:
         error = "Error: {}".format(str(e))
         log_response = {str(msg_id)+"_"+get_datetime(): {"status": "error","status_cd":400,"message":error, "origin":"get_voice_response", "message_id": msg_id,"timestamp":datetime.now(ist)}}
@@ -162,8 +164,14 @@ def handle_voice(update: Update, context: CallbackContext) -> None:
 
     ## Fetch VOICE Response
     assistant_file_name = get_audio_file_location("assistant",str(voice_file.file_id), db_document_name)
-    ## Adding SSML tags for better speech rate
-    ssml_text_response = """<speak><prosody rate="x-slow" pitch="x-slow">"""+text_response+"""</prosody></speak>"""
+
+    ## google.cloud.texttospeech
+    if character_settings['voice_id'] != "bengali_male1":
+        ## Adding SSML tags for better speech rate
+        ssml_text_response = """<speak><prosody rate="x-slow" pitch="x-slow">"""+text_response+"""</prosody></speak>"""
+    else:
+        ssml_text_response = text_response
+
     file_created_status = get_voice_response(character_settings, ssml_text_response,assistant_file_name, db, db_document_name, update.message.message_id)
     if file_created_status == False:
         response_status = "Error creating audio file."
@@ -340,8 +348,14 @@ def start(update, context):
     action=telegram.ChatAction.RECORD_AUDIO)
 
     assistant_file_name = get_audio_file_location("assistant","welcomemsg", db_document_name)
-    ## Adding SSML tags for better speech rate
-    ssml_text_response = """<speak><prosody rate="x-slow" pitch="x-slow">"""+character_settings['welcome_msg']+"""</prosody></speak>"""
+
+    ## google.cloud.texttospeech
+    if character_settings['voice_id'] != "bengali_male1":
+        ## Adding SSML tags for better speech rate
+        ssml_text_response = """<speak><prosody rate="x-slow" pitch="x-slow">"""+character_settings['welcome_msg']+"""</prosody></speak>"""
+    else:
+        ssml_text_response = character_settings['welcome_msg']
+
     file_created_status = get_voice_response(character_settings, ssml_text_response,assistant_file_name, db, db_document_name, update.message.message_id)
     ## Sending voice message
     try:
