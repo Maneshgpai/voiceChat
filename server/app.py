@@ -218,10 +218,10 @@ def handle_voice(update: Update, context: CallbackContext) -> None:
         log_ref = db.collection('log').document(db_document_name)
         func.createLog(log_ref, log_response)
     
-    log_msg = f"handle_voice: Finished replying"
-    ## log(update.message.message_id,"logging",200,log_msg,"voice.handle_voice",db,db_document_name)
+    print(f"handle_voice: Finished replying")
+    # log(update.message.message_id,"logging",200,log_msg,"voice.handle_voice",db,db_document_name)
 
-    ## Remove the audio files from server
+    # Remove the audio files from server
     try:
         os.remove(user_file_name)
         print(f"Removed {user_file_name}")
@@ -360,7 +360,9 @@ def start(update, context):
     ## Sending voice message
     try:
         temp_voice_file = db_document_name+".ogg"
+        print("1***")
         shutil.copy(assistant_file_name, temp_voice_file)
+        print("2***")
         with open(temp_voice_file, 'rb') as voice_file:
             context.bot.send_voice(chat_id=update.message.chat_id, voice=voice_file)
     except Exception as e:
