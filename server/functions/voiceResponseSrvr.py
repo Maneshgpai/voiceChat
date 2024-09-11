@@ -113,8 +113,9 @@ def get_google_tts_voice_response(voice_setting,full_response,filename, db, db_d
         )
 
         # The response's audio_content is binary.
-        with open(filename, "wb") as out:
-            out.write(response.audio_content)
+        # with open(filename, "wb") as out:
+        #     out.write(response.audio_content)
+        save(response.audio_content, filename)
         return True
     except Exception as e:
         error = "Error: {}".format(str(e))
