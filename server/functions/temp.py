@@ -20,14 +20,14 @@ full_response = """নমস্কার!
 জয় মা দুর্গা!"""
 filename = "sample.ogg"
 
-if voice_setting['voice_id'] == "bengali_male1":
-    language_code = "bn-IN"
-    name="bn-IN-Wavenet-B"
-    ssml_gender=texttospeech.SsmlVoiceGender.MALE
-else:
-    language_code = "bn-IN"
-    name="bn-IN-Standard-C"
-    ssml_gender=texttospeech.SsmlVoiceGender.FEMALE
+# if voice_setting['voice_id'] == "bengali_male1":
+language_code = "bn-IN"
+name="bn-IN-Wavenet-A"
+ssml_gender=texttospeech.SsmlVoiceGender.FEMALE
+# else:
+#     language_code = "bn-IN"
+#     name="bn-IN-Standard-C"
+#     ssml_gender=texttospeech.SsmlVoiceGender.FEMALE
 
 client = texttospeech.TextToSpeechClient()
 input_text = texttospeech.SynthesisInput(text=full_response)
@@ -38,9 +38,10 @@ voice = texttospeech.VoiceSelectionParams(
 )
 
 audio_config = texttospeech.AudioConfig(
-    audio_encoding=texttospeech.AudioEncoding.MP3
+    audio_encoding=texttospeech.AudioEncoding.OGG_OPUS,
+    pitch=-12.00,
+    # speaking_rate=1
 )
-
 response = client.synthesize_speech(
     request={"input": input_text, "voice": voice, "audio_config": audio_config}
 )

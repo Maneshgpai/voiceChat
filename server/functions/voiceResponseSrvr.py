@@ -91,10 +91,17 @@ def get_google_tts_voice_response(voice_setting,full_response,filename, db, db_d
             language_code = "bn-IN"
             name="bn-IN-Wavenet-B"
             ssml_gender=texttospeech.SsmlVoiceGender.MALE
+            pitch=-12.00
+        elif voice_setting['voice_id'] == "bengali_female1":
+            language_code = "bn-IN"
+            name="bn-IN-Standard-A"
+            ssml_gender=texttospeech.SsmlVoiceGender.FEMALE
+            pitch=0
         else:
             language_code = "bn-IN"
-            name="bn-IN-Standard-C"
+            name="bn-IN-Standard-A"
             ssml_gender=texttospeech.SsmlVoiceGender.FEMALE
+            pitch=0
 
         client = texttospeech.TextToSpeechClient()
         input_text = texttospeech.SynthesisInput(text=full_response)
@@ -105,7 +112,8 @@ def get_google_tts_voice_response(voice_setting,full_response,filename, db, db_d
         )
 
         audio_config = texttospeech.AudioConfig(
-            audio_encoding=texttospeech.AudioEncoding.MP3
+            audio_encoding=texttospeech.AudioEncoding.OGG_OPUS,
+            pitch=pitch,
         )
 
         response = client.synthesize_speech(
