@@ -182,7 +182,8 @@ def get_user_info(telegram_id, db):
 def calculate_tokens(model, input_text, db, db_document_name, msg_id):
     try:
         if 'llama' in model.lower():
-            tokenizer = AutoTokenizer.from_pretrained("meta-llama/Meta-Llama-3-8B", token=os.getenv("HUGGINGFACE_API_KEY"))
+            # tokenizer = AutoTokenizer.from_pretrained("meta-llama/Meta-Llama-3-8B", token=os.getenv("HUGGINGFACE_API_KEY"))
+            tokenizer = AutoTokenizer.from_pretrained("meta-llama/Meta-Llama-3-70B", token=os.getenv("HUGGINGFACE_API_KEY"))
             tokens = tokenizer.tokenize(input_text)
             token_count = len(tokens)
         return token_count

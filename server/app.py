@@ -91,8 +91,8 @@ def get_tg_char_setting(db_document_name,char_id, db, msg_id):
 ## Fetch LLM Response ##
 def get_agent_response(query, query_timestamp, character_settings, message_hist, db_document_name, effective_msg_id, voice_or_text):
     text_response = ""
-    text_response = textresponse.get_agent_response(query, character_settings, message_hist, db, db_document_name, effective_msg_id, voice_or_text)
-    return text_response
+    text_response, cost, model = textresponse.get_agent_response(query, character_settings, message_hist, db, db_document_name, effective_msg_id, voice_or_text)
+    return text_response, cost, model
 
 ## Fetch VOICE Response ##
 def get_voice_response(character_settings, text_response,file_name, db, db_document_name, msg_id):
@@ -126,8 +126,8 @@ def handle_voice(update: Update, context: CallbackContext) -> None:
     db_document_name = user_id+'_'+char_id
     voice_file = update.message.voice
 
-    log_msg = f"handle_voice: Received audio message"
-    log(update.message.message_id,"logging",200,log_msg,"voice.handle_voice",db,db_document_name)
+    ## log_msg = f"handle_voice: Received audio message"
+    ## log(update.message.message_id,"logging",200,log_msg,"voice.handle_voice",db,db_document_name)
     
     ## Creating new / Updating existing user info in DB ##
     set_tg_user_data(db_document_name,user_id, update, db, update.message.message_id)
@@ -157,7 +157,7 @@ def handle_voice(update: Update, context: CallbackContext) -> None:
     ## Fetch LLM Response in regional language only, as regional language is pronounced correctly than Hinglish
     query_timestamp = update.message.date
     message_hist.append({"role": "user", "content": query, "content_type": "voice", "timestamp": query_timestamp, "update.update_id": update.update_id, "update.message.message_id": update.message.message_id})
-    text_response = get_agent_response(query, query_timestamp, character_settings, message_hist, db_document_name, update.message.message_id, "voice")
+    text_response, cost, model = get_agent_response(query, query_timestamp, character_settings, message_hist, db_document_name, update.message.message_id, "voice")
     response_status = "Success"
 
     ## Fetch VOICE Response
@@ -189,7 +189,7 @@ def handle_voice(update: Update, context: CallbackContext) -> None:
         log_ref = db.collection('voiceClone_tg_logs').document(db_document_name)
         func.createLog(log_ref, log_response)
 
-    message_hist.append({"role": "assistant", "content": text_response, "content_type": "voice","response_status":response_status, "timestamp": datetime.now(ist), "update.update_id": update.update_id, "update.message.message_id": update.message.message_id})
+    message_hist.append({"role": "assistant", "cost": cost, "model": model, "content": text_response, "content_type": "voice","response_status":response_status, "timestamp": datetime.now(ist), "update.update_id": update.update_id, "update.message.message_id": update.message.message_id})
     update_chat_hist(message_hist,db_document_name, update.message.message_id)
 
     ## Send "typing" response
@@ -210,8 +210,8 @@ def handle_voice(update: Update, context: CallbackContext) -> None:
         log_ref = db.collection('voiceClone_tg_logs').document(db_document_name)
         func.createLog(log_ref, log_response)
     
-    log_msg = f"handle_voice: Finished replying"
-    log(update.message.message_id,"logging",200,log_msg,"voice.handle_voice",db,db_document_name)
+    ## log_msg = f"handle_voice: Finished replying"
+    ## log(update.message.message_id,"logging",200,log_msg,"voice.handle_voice",db,db_document_name)
 
     ## Remove the audio files from server
     try:
@@ -239,8 +239,8 @@ def handle_message(update: Update, context: CallbackContext) -> None:
     user_id = str(update.message.from_user.id)
     db_document_name = user_id+'_'+char_id
     print("log 1")
-    log_msg = f"handle_message: Received text message"
-    log(update.message.message_id,"logging",200,log_msg,"text.handle_message",db,db_document_name)
+    ## log_msg = f"handle_message: Received text message"
+    ## log(update.message.message_id,"logging",200,log_msg,"text.handle_message",db,db_document_name)
     print("log 2")
     ## Creating new / Updating existing user info in DB ##
     set_tg_user_data(db_document_name,user_id, update, db, update.message.message_id)
@@ -256,7 +256,7 @@ def handle_message(update: Update, context: CallbackContext) -> None:
     query_timestamp = update.message.date
     message_hist.append({"role": "user", "content": query, "content_type": "text", "timestamp": query_timestamp, "update.update_id": update.update_id, "update.message.message_id": update.message.message_id})
     print(f"******* app.py > character_settings['model']:{character_settings['model']}")
-    text_response = get_agent_response(query, query_timestamp, character_settings, message_hist, db_document_name, update.message.message_id, "text")
+    text_response, cost, model = get_agent_response(query, query_timestamp, character_settings, message_hist, db_document_name, update.message.message_id, "text")
 
     ## Call Google Translate if needed 
     translated_text_response = ""
@@ -286,13 +286,13 @@ def handle_message(update: Update, context: CallbackContext) -> None:
     if not text_response:
         text_response = ""
     if translated_text_response == "":
-        message_hist.append({"role": "assistant", "content": text_response, "content_type": "text","response_status":text_response_status, "timestamp": datetime.now(ist), "update.update_id": update.update_id, "update.message.message_id": update.message.message_id})
+        message_hist.append({"role": "assistant","cost":cost,"model":model, "content": text_response, "content_type": "text","response_status":text_response_status, "timestamp": datetime.now(ist), "update.update_id": update.update_id, "update.message.message_id": update.message.message_id})
     else:
-        message_hist.append({"role": "assistant", "content": text_response, "translated_content": translated_text_response, "content_type": "text","response_status":text_response_status, "timestamp": datetime.now(ist), "update.update_id": update.update_id, "update.message.message_id": update.message.message_id})
+        message_hist.append({"role": "assistant","cost":cost,"model":model, "content": text_response, "translated_content": translated_text_response, "content_type": "text","response_status":text_response_status, "timestamp": datetime.now(ist), "update.update_id": update.update_id, "update.message.message_id": update.message.message_id})
     update_chat_hist(message_hist,db_document_name, update.message.message_id)
 
-    log_msg = f"handle_message: Finished replying"
-    log(update.message.message_id,"logging",200,log_msg,"text.handle_message",db,db_document_name)
+    ## log_msg = f"handle_message: Finished replying"
+    ## log(update.message.message_id,"logging",200,log_msg,"text.handle_message",db,db_document_name)
 
 ## Error handler for network and other common errors
 def error_handler(update: Update, context: CallbackContext) -> None:
@@ -338,7 +338,7 @@ def start(update, context):
     message_hist = get_tg_chat_history(db_document_name, db, update.message.message_id)
     message_hist.append({"role": "assistant", "content": character_settings['welcome_msg'], "content_type": "text","response_status":"Success", "timestamp": datetime.now(ist), "update.update_id": update.update_id, "update.message.message_id": update.message.message_id})
     update_chat_hist(message_hist,db_document_name, update.message.message_id)
-    log(update.message.message_id,"logging",200,f"Started BOT for first time!","start",db,db_document_name)
+    ## log(update.message.message_id,"logging",200,f"Started BOT for first time!","start",db,db_document_name)
 
 
 # Main function to start the bot

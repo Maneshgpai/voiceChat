@@ -26,7 +26,7 @@ if "action_setting" not in st.session_state:
     st.session_state["action_setting"] = ""
 if "voice_id_val" not in st.session_state:
     st.session_state["voice_id_val"] = ""
-    print("********* 1 st.session_state['voice_id_val']:", st.session_state["voice_id_val"])
+    # print("********* 1 st.session_state['voice_id_val']:", st.session_state["voice_id_val"])
 
 def check_password():
     with st.spinner('Loading...'):
@@ -97,11 +97,11 @@ def set_character_setting(char_id):
         "voice_similarity_boost": st.session_state.voice_similarity_boost,
         "voice_style": st.session_state.voice_style,
         "voice_use_speaker_boost": st.session_state.voice_use_speaker_boost}
-    print(f"pg_settings >> set_character_setting > Setting Updated Character Settings")
+    # print(f"pg_settings >> set_character_setting > Setting Updated Character Settings")
     st.session_state["character_setting"] = new_voice_setting
 
     if char_id == 'default_char_id':
-        print("pg_settings >> set_character_setting > Creating document with auto generated doc id")
+        # print("pg_settings >> set_character_setting > Creating document with auto generated doc id")
         db.collection('voiceClone_characters').document().set({
             "last_updated_on": datetime.now(ist),
             "name":st.session_state.character_name,
@@ -109,7 +109,7 @@ def set_character_setting(char_id):
             "voice_id":st.session_state.voice_id,
             "setting":new_voice_setting})
     else:
-        print(f"pg_settings >> set_character_setting > Creating document with {char_id} as doc id")
+        # print(f"pg_settings >> set_character_setting > Creating document with {char_id} as doc id")
         db.collection('voiceClone_characters').document(char_id).set({
             "last_updated_on": datetime.now(ist),
             "name":st.session_state.character_name,
@@ -171,17 +171,17 @@ def get_char_setting(char_id):
     doc = setting.get()
     char_setting = {}
     if doc.exists:
-        print("pg_settings >> get_char_setting > Data exists for the character in DB.")
+        # print("pg_settings >> get_char_setting > Data exists for the character in DB.")
         setting = doc.to_dict()
         for k, v in setting.items():
             if k == 'setting':
                 print(v)
                 char_setting = v
     else:
-        print("pg_settings >> get_char_setting > New Character. Fetching default voice settings from config files")
+        # print("pg_settings >> get_char_setting > New Character. Fetching default voice settings from config files")
         char_setting = json.loads(os.getenv("DEFAULT_CHARACTER_SETTING"))
 
-    print("pg_settings >> get_char_setting > Succesfully fetched character setting")
+    # print("pg_settings >> get_char_setting > Succesfully fetched character setting")
 
 
     return char_setting
@@ -372,12 +372,12 @@ def setting_pg(setting_action, char_id):
     with st.spinner('Loading...'):
         if update:
             validate_stat = validate_character_setting()
-            print("******************* Clicked Update Setting. validate_stat:",validate_stat)
+            # print("******************* Clicked Update Setting. validate_stat:",validate_stat)
             if validate_stat == True:
-                print("******************* Update setting validated!")
+                # print("******************* Update setting validated!")
                 set_character_setting(char_id)
             else:
-                print("******************* Error in update setting")
+                # print("******************* Error in update setting")
                 st.error(validate_stat)
 def get_all_characters():
     users_ref = db.collection('voiceClone_characters')
@@ -414,7 +414,7 @@ if st.session_state.status != "verified":
     login_prompt()
     st.stop()
 else:
-    print("********* Session valid, password validated. ")
+    # print("********* Session valid, password validated. ")
     if "character_setting" not in st.session_state:
         df = get_all_characters()
         char_name = st.radio("Select existing character to edit", df['Character'].tolist(), index=0, key="character_nm", horizontal=True, label_visibility="visible")

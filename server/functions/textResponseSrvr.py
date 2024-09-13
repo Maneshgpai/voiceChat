@@ -7,6 +7,7 @@ import replicate
 from functions import functionSrvr as func
 from tenacity import retry, stop_after_attempt, wait_fixed, retry_if_exception_type
 import requests
+import json
 import pandas as pd
 
 
@@ -144,66 +145,6 @@ def convert_voice_to_text(voice_file, system_prompt, db_document_name, db, msg_i
         log_ref = db.collection('voiceClone_tg_logs').document(db_document_name)
         func.createLog(log_ref, log_response)
 
-# @retry(stop=stop_after_attempt(3), wait=wait_fixed(5), retry=retry_if_exception_type(ConnectionError))
-# def get_huggingface_response(model, query, system_prompt, message_hist, db, db_document_name, voice_settings):
-#     try:
-#         final_prompt = system_prompt.replace("\n","\\n")
-#         for item in message_hist:
-#             chat_history += ' '.join(f"{item.get('role')}: {item.get('content', '')}")
-
-#         input_text = final_prompt + ' ' + chat_history + ' user: ' + query
-#         parameters = {
-#             "top_k": voice_settings['top_k'], #1,
-#             "top_p": voice_settings['top_p'], #0.8,
-#             "max_length": voice_settings['max_tokens'], #100,
-#             "min_length": voice_settings['min_tokens'], #10,
-#             "temperature": voice_settings['temperature'], #1,
-#             "repetition_penalty": voice_settings['frequency_penalty'], 
-#             "max_time": 120
-#             # "prompt": new_message_hist,
-#             # "system_prompt": final_prompt,
-#             # "length_penalty": voice_settings['length_penalty'], #0.1,
-#             # "stop_sequences": "<|end_of_text|>,<|eot_id|>",
-#             # "prompt_template": "<|begin_of_text|><|start_header_id|>system<|end_header_id|>{system_prompt}<|eot_id|>{prompt}<|start_header_id|>assistant<|end_header_id|>",
-#             # "presence_penalty": voice_settings['presence_penalty'], #0.1,
-#             # "frequency_penalty": voice_settings['frequency_penalty'], #0.9,
-#             # "log_performance_metrics": False
-
-#         }
-
-#         # api_key = "your_huggingface_api_key"
-#         # model = "your_model/llama3"  # Replace with the exact model name or repository ID
-#         # api = InferenceApi(repo_id=model, token=api_key)
-#         # response = api(inputs=input_text, parameters=parameters)
-
-#         if model == "llama 3":
-#             replicate_model = "meta/meta-llama-3-70b-instruct"
-#         elif model == "llama 3.1":
-#             replicate_model = "meta/meta-llama-3.1-405b-instruct"
-
-#         API_URL = "https://api-inference.huggingface.co/models/meta-llama/Meta-Llama-3-8B"
-#         API_URL = "https://api-inference.huggingface.co/models/meta-llama/Meta-Llama-3.1-8B"
-#         headers = {"Authorization": "Bearer hf_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"}
-
-#         payload = {
-#             "inputs": input_text,
-#             "parameters": parameters
-#         }
-#         response = requests.post(API_URL, headers=headers, json=payload)
-#         assistant_reply = response.get("generated_text", ":)")
-
-#         print("textResponseSrvr > get_huggingface_response > response.json():",response.json())
-#         print("textResponseSrvr > get_huggingface_response > assistant_reply:",assistant_reply)
-#         # return response.json()
-#         # return assistant_reply
-
-#     except Exception as e:
-#         error = "Error: {}".format(str(e))
-#         print("textResponseSrvr > get_huggingface_response > error:",error)
-#         log_response = {str(msg_id)+"_"+str(datetime.now()): {"status": "error","status_cd":400,"message":error, "origin":"get_huggingface_response", "message_id": msg_id, "timestamp":datetime.now(ist)}}
-#         log_ref = db.collection('voiceClone_tg_logs').document(db_document_name)
-#         func.createLog(log_ref, log_response)
-
 @retry(stop=stop_after_attempt(3), wait=wait_fixed(5), retry=retry_if_exception_type(ConnectionError))
 def get_groq_response(system_prompt, message_hist, db, db_document_name, voice_settings, msg_id, voice_or_text):
     try:
@@ -227,47 +168,81 @@ def get_groq_response(system_prompt, message_hist, db, db_document_name, voice_s
         log_response = {str(msg_id)+"_"+str(datetime.now()): {"status": "error","status_cd":400,"message":error, "origin":voice_or_text+".get_groq_response", "message_id": msg_id, "timestamp":datetime.now(ist)}}
         log_ref = db.collection('voiceClone_tg_logs').document(db_document_name)
         func.createLog(log_ref, log_response)
+
+@retry(stop=stop_after_attempt(3), wait=wait_fixed(5), retry=retry_if_exception_type(ConnectionError))
+def get_openrouter_response(model, query, system_prompt, message_hist, db, db_document_name, voice_settings, msg_id, voice_or_text):
+    print("Started get_openrouter_response...")
+    response = ""
+    total_tokens = 0
+    try:
+        OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+        print("system_prompt:",system_prompt)
+        system_message = [{"role": "system", "content": system_prompt}]
+
+        user_message = fetch_optimized_chat_hist_for_openai(message_hist)
+        
+        response = requests.post(
+        url="https://openrouter.ai/api/v1/chat/completions",
+        headers={
+            "Authorization": f"Bearer {OPENROUTER_API_KEY}"},
+        data=json.dumps({
+            "model": "meta-llama/llama-3-70b-instruct",
+            "messages": system_message+user_message,
+            "top_k": voice_settings['top_k'],
+            "top_p": voice_settings['top_p'],
+            "max_tokens": voice_settings['max_tokens'],
+            "min_tokens": voice_settings['min_tokens'],
+            "temperature": voice_settings['temperature'],
+            "length_penalty": voice_settings['length_penalty'],
+            "presence_penalty": voice_settings['presence_penalty'],
+            "frequency_penalty": voice_settings['frequency_penalty'],
+            "repetition_penalty": voice_settings['repetition_penalty']
+        })
+        )
+        print("get_openrouter_response >> Fetched response")
+        response_str = response.content.decode('utf-8')
+        print(f" get_openrouter_response > response_str: {response_str.strip()}")
+        data = json.loads(response_str)
+        print(f" get_openrouter_response > data: {data}")
+        response = data['choices'][0]['message']['content']
+        total_tokens = data['usage']['total_tokens']
+        print(f"*********COSTING Llama via OpenRouter > Total Token Size:",total_tokens)
+    except Exception as e:
+        error = "Error: {}".format(str(e))
+        log_response = {str(msg_id)+"_"+str(datetime.now()): {"status": "error","status_cd":400,"message":error, "origin":voice_or_text+".get_openrouter_response", "message_id": msg_id, "timestamp":datetime.now(ist)}}
+        log_ref = db.collection('voiceClone_tg_logs').document(db_document_name)
+        func.createLog(log_ref, log_response)
+    return response, total_tokens
+
 @retry(stop=stop_after_attempt(3), wait=wait_fixed(5), retry=retry_if_exception_type(ConnectionError))
 def get_replicate_response(model, query, system_prompt, message_hist, db, db_document_name, voice_settings, msg_id, voice_or_text):
     try:
-        print(f"*********** model:{model}")
         replicate_model = replicate_models.get(model, "llama 3")
         final_prompt = system_prompt.replace("\n","\\n")
         query = query.replace("\n","\\n")
-        print(f"*********** replicate_model:{replicate_model}")
         
         new_message_hist = fetch_optimized_chat_hist_for_llama(message_hist)
         
         ## For Llama3 calls, the total context window is 8k tokens. 
         ## So we add logic to pick only the latest chats from the message history, which fit within this context size.
-        llama3_max_context_size = 7000 ##Size for Llama3. Taking 10% lesser than max allowed for contingency
+        llama3_max_context_size = 3500 ##Size for Llama3. Taking 10% lesser than max allowed for contingency
         if model == "llama 3":
             ## Calculate size of message history
             new_message_hist_size = func.calculate_tokens(model, new_message_hist, db, db_document_name, msg_id)
-            log_msg = f"COST: Text response for Llama via Replicate> Token size of msg_hist BEFORE: {new_message_hist_size}"
-            log(msg_id,"logging",200,log_msg,voice_or_text+".get_replicate_response",db,db_document_name)
 
             ## Considering the size of max context window of Llama further gets reduced with user query & system prompt. 
             # So dynamically calculating remaining size available message history
             ideal_message_hist_size = llama3_max_context_size - (func.calculate_tokens(model, query, db, db_document_name, msg_id)+func.calculate_tokens(model, final_prompt, db, db_document_name, msg_id))
-            log_msg = f"COST: Text response for Llama via Replicate> Token size of msg_hist IDEAL SIZE per availablity: {ideal_message_hist_size}"
-            log(msg_id,"logging",200,log_msg,voice_or_text+".get_replicate_response",db,db_document_name)
             
             ## If message history size exceeds the available window size, then reduce the msg history size by taking only latest messages
             if new_message_hist_size > ideal_message_hist_size:
                 shorter_message_hist = fn_reduce_message_hist(ideal_message_hist_size,new_message_hist_size,message_hist)
-                log_msg = f"COST: Text response for Llama via Replicate> Token size of msg_hist AFTER shortening, before adding headers: {func.calculate_tokens(model, str(shorter_message_hist), db, db_document_name, msg_id)}"
-                log(msg_id,"logging",200,log_msg,voice_or_text+".get_replicate_response",db,db_document_name)
                 new_message_hist = fetch_optimized_chat_hist_for_llama(shorter_message_hist)
+        
+        print(f"new_message_hist:{new_message_hist}\n")
+        print(f"final_prompt:{final_prompt}\n")
 
-        log_msg = f"COST: Text response for Llama via Replicate> Token size of msg_hist AFTER: ",func.calculate_tokens(model, new_message_hist, db, db_document_name, msg_id)
-        log(msg_id,"logging",200,log_msg,voice_or_text+".get_replicate_response",db,db_document_name)
-
-        full_text = []
-        for event in replicate.stream(
-                replicate_model,
-                input={
-                    "top_k": voice_settings['top_k'], #1,
+        input = {"top_k": voice_settings['top_k'], #1,
                     "top_p": voice_settings['top_p'], #0.8,
                     "prompt": new_message_hist,
                     "max_tokens": voice_settings['max_tokens'], #100,
@@ -280,17 +255,19 @@ def get_replicate_response(model, query, system_prompt, message_hist, db, db_doc
                     "presence_penalty": voice_settings['presence_penalty'], #0.1,
                     "frequency_penalty": voice_settings['frequency_penalty'], #0.9,
                     "repetition_penalty": voice_settings['repetition_penalty'],
-                    "log_performance_metrics": False
-                },
+                    "log_performance_metrics": False}
+        
+        input_token = func.calculate_tokens(model, str(input), db, db_document_name, msg_id)
+        print(f"*********COSTING Llama via Replicate > Input Token Size:",func.calculate_tokens(model, new_message_hist, db, db_document_name, msg_id))
+
+        full_text = []
+        for event in replicate.stream(
+                replicate_model,
+                input=input,
             ):
                 full_text.append(str(event))
+
         response = ''.join(full_text)
-        response_tot_token = func.calculate_tokens(model, response, db, db_document_name, msg_id)
-
-        log_msg = f"COST: Text response for Llama via Replicate> response_tot_token:{response_tot_token}"
-        log(msg_id,"logging",200,log_msg,voice_or_text+".get_replicate_response",db,db_document_name)
-
-
     except Exception as e:
         error = "Error: {}".format(str(e))
         log_response = {str(msg_id)+"_"+str(datetime.now()): {"status": "error","status_cd":400,"message":error, "origin":voice_or_text+".get_replicate_response", "message_id": msg_id, "timestamp":datetime.now(ist)}}
@@ -298,7 +275,10 @@ def get_replicate_response(model, query, system_prompt, message_hist, db, db_doc
         func.createLog(log_ref, log_response)
         response = get_groq_response(system_prompt, message_hist, db, db_document_name, voice_settings,msg_id,voice_or_text)
 
-    return response
+    output_token = func.calculate_tokens(model, response, db, db_document_name, msg_id)
+    print(f"*********COSTING Llama via Replicate >  Output Token Size:",output_token)
+    cost = input_token + output_token
+    return response, cost
 def get_openai_response(model, system_message, message_hist, db, db_document_name, voice_settings,msg_id, voice_or_text):
     try:
         user_message = fetch_optimized_chat_hist_for_openai(message_hist)
@@ -313,8 +293,8 @@ def get_openai_response(model, system_message, message_hist, db, db_document_nam
             temperature=voice_settings['temperature'], #1.2 # What sampling temperature to use, between 0 and 2. Higher values like 0.8 will make the output more random, while lower values like 0.2 will make it more focused and deterministic.
         )
         full_response = response.choices[0].message.content
-        print(f"COST: Text response for Llama via OpenAI> number_of_tokens: {response.usage.total_tokens}")
-        return full_response
+        print(f"COST: Text response for OpenAI> Total tokens: {response.usage.total_tokens}")
+        return full_response, response.usage.total_tokens
     except Exception as e:
         error = "Error: {}".format(str(e))
         log_response = {str(msg_id)+"_"+str(datetime.now()): {"status": "error","status_cd":400,"message":error, "origin":voice_or_text+".get_openai_response","message_id":msg_id,"timestamp":datetime.now(ist)}}
@@ -358,14 +338,14 @@ def get_agent_response(query, voice_settings, message_hist, db, db_document_name
     if model == "gpt-4o" or model == "gpt-4o-mini":
         system_message = [{"role": "system", "content": final_prompt}]
         try:
-            full_response = get_openai_response(model, system_message, message_hist, db, db_document_name, voice_settings, msg_id, voice_or_text)
+            full_response, cost = get_openai_response(model, system_message, message_hist, db, db_document_name, voice_settings, msg_id, voice_or_text)
         except Exception as e:
             error = "Error: {}".format(str(e))
             log_response = {str(msg_id)+"_"+str(datetime.now()): {"status": "error","status_cd":400,"message":error, "origin":voice_or_text+".get_agent_response", "message_id": msg_id, "timestamp":datetime.now(ist)}}
             log_ref = db.collection('voiceClone_tg_logs').document(db_document_name)
             func.createLog(log_ref, log_response)
     elif model == "llama 3" or model == "llama 3.1":
-        full_response = get_replicate_response(voice_settings['model'], query, final_prompt, message_hist, db, db_document_name, voice_settings, msg_id, voice_or_text)
-
-    print(f"{datetime.now(ist)} textResponseSrvr > get_agent_response: from {model}: {full_response}")
-    return full_response
+        # full_response, cost = get_replicate_response(voice_settings['model'], query, final_prompt, message_hist, db, db_document_name, voice_settings, msg_id, voice_or_text)
+        full_response, cost = get_openrouter_response(voice_settings['model'], query, final_prompt, message_hist, db, db_document_name, voice_settings, msg_id, voice_or_text)
+    # print(f"{datetime.now(ist)} textResponseSrvr > get_agent_response: from {model}: {full_response}")
+    return full_response, cost, model
