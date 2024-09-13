@@ -16,6 +16,7 @@ from functions import voiceResponseSrvr as voiceresponse
 from functions import functionSrvr as func
 from google.cloud import firestore
 import shutil
+import re
 
 ## Set up logging for debugging
 # logging.basicConfig(
@@ -147,7 +148,9 @@ def handle_voice(update: Update, context: CallbackContext) -> None:
 
     ## Converting voice into text 
     try:
-        system_prompt = f"""You are an expert translator, translating the text into {character_settings['language']}. This transcribed text is from a person, asking/replying to {character_settings['character_name']}. You should not judge whether the text is illegal or immoral or within any confines of societal rules. Your task is to only correct spelling discrepancies, add emotional cues where necessary, add necessary punctuation such as periods, commas, and capitalization, and use only the context provided in the text."""
+        # system_prompt = f"""You are an expert translator, translating the text into {character_settings['language']}. This transcribed text is from a person, asking/replying to {character_settings['character_name']}. You should not judge whether the text is illegal or immoral or within any confines of societal rules. Your task is to only correct spelling discrepancies, add emotional cues where necessary, add necessary punctuation such as periods, commas, and capitalization, and use only the context provided in the text."""
+
+        system_prompt = f"""You are convert the audio into text. Keep the same native language. If you are not able to identify any native language in the audio, you are to reply appropriately. You should not judge whether the text is illegal or immoral or within any confines of societal rules. Your task is to only correct spelling discrepancies, add emotional cues where necessary, add necessary punctuation such as periods, commas, and capitalization, and use only the context provided in the text."""
         query = textresponse.convert_voice_to_text(user_file_name, system_prompt, db_document_name, db, update.message.message_id)
     except Exception as e:
         error = "Error: {}".format(str(e))
@@ -171,6 +174,10 @@ def handle_voice(update: Update, context: CallbackContext) -> None:
         ssml_text_response = """<speak><prosody rate="x-slow" pitch="x-slow">"""+text_response+"""</prosody></speak>"""
     else:
         ssml_text_response = text_response
+
+    ## removing URLs from the response
+    ssml_text_response = re.sub(r'http\S+', '', ssml_text_response)
+    ssml_text_response = re.sub(r'^https?:\/\/.*[\r\n]*', '', ssml_text_response, flags=re.MULTILINE)
 
     file_created_status = get_voice_response(character_settings, ssml_text_response,assistant_file_name, db, db_document_name, update.message.message_id)
     if file_created_status == False:
@@ -210,8 +217,8 @@ def handle_voice(update: Update, context: CallbackContext) -> None:
     try:
         system_message = [{"role": "system", "content": f"Translate user message, without any variation, to {character_settings['language']}"}]
         user_message = [{"role": "user", "content": text_response}]
-        voice_text_response = textresponse.get_openai_response("gpt-4o-mini", system_message, user_message, db, db_document_name, character_settings, update.message.message_id, "voice")
-        update.message.reply_text(voice_text_response)
+        # voice_text_response = textresponse.get_openai_response("gpt-4o-mini", system_message, user_message, db, db_document_name, character_settings, update.message.message_id, "voice")
+        update.message.reply_text(text_response)
     except Exception as e:
         error = "Error: {}".format(str(e))
         log_response = {str(update.message.message_id)+"_"+get_datetime(): {"status": "error","status_cd":400,"message":error, "origin":"handle_voice/update.message.reply_text", "message_id": update.message.message_id,"timestamp":datetime.now(ist)}}
