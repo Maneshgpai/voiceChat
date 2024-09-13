@@ -35,7 +35,7 @@ def move_document(source_collection, target_collection, document_id):
     
     print(f"Document {document_id} has been moved from {source_collection} to {target_collection}.")
 ## MOVE DOCUMENT ##
-# source_collection = 'voiceClone_users'
+# source_collection = 'user'
 # target_collection = 'profile'
 # document_id = '1qEiC6qsybMkmnNdVMbK'
 # move_document(source_collection, target_collection, document_id)
@@ -102,7 +102,7 @@ def update_timestamps(collection_name):
         doc_ref.update({'messages': messages})
     print("Finished updating all documents!")
 # update_timestamps('voiceClone_chats')
-# duplicate_collection('voiceClone_tg_chats','voiceClone_tg_chats_bkp20240809')
+# duplicate_collection('chat','chat_bkp20240809')
 
 
 def get_character_dtls():
@@ -145,15 +145,15 @@ for key, value in enumerate(charid_prompt):
             reachout_prompt = v
 
 print(bot_token, reachout_prompt)
-# move_document('voiceClone_tg_chats', 'voiceClone_tg_chats_test_reachout', '6697940905_A8pNNpS9S5ytKTs7XsZY')
+# move_document('chat', 'chat_test_reachout', '6697940905_A8pNNpS9S5ytKTs7XsZY')
 
-# move_document('voiceClone_tg_chats', 'voiceClone_tg_chats_test_reachout', '6733334932_A8pNNpS9S5ytKTs7XsZY')
-# move_document('voiceClone_tg_chats', 'voiceClone_tg_chats_test_reachout', '6733334932_KojdgNzrBNJO8CyQgr5g')
-# move_document('voiceClone_tg_chats', 'voiceClone_tg_chats_test_reachout', '6733334932_bPm741abegxqm3t7rfeB')
-# move_document('voiceClone_tg_chats', 'voiceClone_tg_chats_test_reachout', '6733334932_jyNYGKS4xNjls2YbfFvV')
-# move_document('voiceClone_tg_chats', 'voiceClone_tg_chats_test_reachout', '6733334932_kZ9OXDQLbU6MFCYXkIHm')
-# move_document('voiceClone_tg_chats', 'voiceClone_tg_chats_test_reachout', '6733334932_uPJUM2kXjdnpkphuCPeO')
-# move_document('voiceClone_tg_chats', 'voiceClone_tg_chats_test_reachout', '7142807432_bPm741abegxqm3t7rfeB')
-# move_document('voiceClone_tg_chats', 'voiceClone_tg_chats_test_reachout', '7142807432_jyNYGKS4xNjls2YbfFvV')
-# move_document('voiceClone_tg_chats', 'voiceClone_tg_chats_test_reachout', '7142807432_kZ9OXDQLbU6MFCYXkIHm')
-# move_document('voiceClone_tg_chats', 'voiceClone_tg_chats_test_reachout', '7142807432_uPJUM2kXjdnpkphuCPeO')
+# move_document('chat', 'chat_test_reachout', '6733334932_A8pNNpS9S5ytKTs7XsZY')
+# move_document('chat', 'chat_test_reachout', '6733334932_KojdgNzrBNJO8CyQgr5g')
+# move_document('chat', 'chat_test_reachout', '6733334932_bPm741abegxqm3t7rfeB')
+# move_document('chat', 'chat_test_reachout', '6733334932_jyNYGKS4xNjls2YbfFvV')
+# move_document('chat', 'chat_test_reachout', '6733334932_kZ9OXDQLbU6MFCYXkIHm')
+# move_document('chat', 'chat_test_reachout', '6733334932_uPJUM2kXjdnpkphuCPeO')
+# move_document('chat', 'chat_test_reachout', '7142807432_bPm741abegxqm3t7rfeB')
+# move_document('chat', 'chat_test_reachout', '7142807432_jyNYGKS4xNjls2YbfFvV')
+# move_document('chat', 'chat_test_reachout', '7142807432_kZ9OXDQLbU6MFCYXkIHm')
+# move_document('chat', 'chat_test_reachout', '7142807432_uPJUM2kXjdnpkphuCPeO')

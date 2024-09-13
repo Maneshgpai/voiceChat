@@ -29,4 +29,4 @@ def createCollection(collection_name):
 # createCollection("user")
 # createCollection("voiceClone_tg_reachout")
 # createCollection("log")
-# createCollection("voiceClone_tg_chats")
+# createCollection("chat")

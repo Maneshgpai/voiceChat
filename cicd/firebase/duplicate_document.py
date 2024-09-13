@@ -50,5 +50,5 @@ def copy_document_from_prod_to_dev(prod_collection_name, original_doc_id, dev_co
     except Exception as e:
         print(f'Error duplicating document: {e}')
 
-copy_document_from_prod_to_dev('voiceClone_tg_chats', '5255504053_bPm741abegxqm3t7rfeB', 'voiceClone_tg_chats_test_reachout')
-copy_document_from_prod_to_dev('voiceClone_tg_chats', '6697940905_bPm741abegxqm3t7rfeB', 'voiceClone_tg_chats_test_reachout')
+copy_document_from_prod_to_dev('chat', '5255504053_bPm741abegxqm3t7rfeB', 'chat_test_reachout')
+copy_document_from_prod_to_dev('chat', '6697940905_bPm741abegxqm3t7rfeB', 'chat_test_reachout')

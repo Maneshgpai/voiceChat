@@ -57,7 +57,7 @@ def render_page():
 
 def validate_user():
 # def field_value_exists(collection_name, field_name, field_value):
-    collection_ref = db.collection('voiceClone_users')
+    collection_ref = db.collection('user')
     field_name = 'telegram_id'
     field_value = st.session_state.telegram_id
     query = collection_ref.where(field_name, '==',field_value)

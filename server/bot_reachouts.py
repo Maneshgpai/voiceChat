@@ -31,7 +31,7 @@ def log(status,status_cd,message,origin,db_document_name):
     func.createLog(log_ref, log_response)
 def update_chat_hist(message_hist,db_document_name, msg_id):
     try:
-        chat_ref = db.collection('voiceClone_tg_chats').document(db_document_name)
+        chat_ref = db.collection('chat').document(db_document_name)
         if not chat_ref.get().exists:
             chat_ref.set({'messages': []})
         chat_ref.update({"messages": firestore.ArrayUnion(message_hist)})
@@ -137,7 +137,7 @@ def sort_messages_by_ts(all_docs):
     return all_docs
 def fetch_latest_messages():
     all_docs = []
-    collection_ref = db.collection('voiceClone_tg_chats')
+    collection_ref = db.collection('chat')
 
     for doc in collection_ref.stream():
         doc_id = doc.id

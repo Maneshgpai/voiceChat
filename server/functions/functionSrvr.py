@@ -82,13 +82,13 @@ def get_voice_setting(voice_id, db):
 
 def get_tg_chat_history(document_id, db, msg_id):
     try:
-        chat_ref = db.collection('voiceClone_tg_chats').document(document_id)
+        chat_ref = db.collection('chat').document(document_id)
         doc = chat_ref.get()
         if doc.exists:
-            print("TG_Bot/functionSrvr/get_tg_chat_history > Fetching chat history from 'voiceClone_tg_chats' for ",document_id)
+            print("TG_Bot/functionSrvr/get_tg_chat_history > Fetching chat history from 'chat' for ",document_id)
             return doc.to_dict().get('messages', [])
         else:
-            print("TG_Bot/functionSrvr/get_tg_chat_history > Creating new chat for 'voiceClone_tg_chats' for ",document_id)
+            print("TG_Bot/functionSrvr/get_tg_chat_history > Creating new chat for 'chat' for ",document_id)
             chat_ref.set({'messages': []})
             return []
     except Exception as e:
@@ -162,7 +162,7 @@ def get_tg_char_setting(db_document_name,char_id, db, msg_id):
     return char_setting
 
 def get_user_info(telegram_id, db):
-    collection_ref = db.collection('voiceClone_users')
+    collection_ref = db.collection('user')
     field_name = 'telegram_id'
     field_value = telegram_id
     query = collection_ref.where(field_name, '==',field_value)

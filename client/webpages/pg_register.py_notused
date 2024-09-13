@@ -294,7 +294,7 @@ def register_new_user():
 
 def check_duplicate(db, field_name, field_value):
     duplicate_flag = False
-    collection_ref = db.collection('voiceClone_users')
+    collection_ref = db.collection('user')
     query = collection_ref.where(field_name, "==", field_value)#.where("population", ">", 1000000)
     docs = query.stream()
     for doc in docs:
@@ -320,7 +320,7 @@ def is_telegram_id_valid(telegram_id):
     return True
 
 def create_new_user(user_name, telegram_id):
-    db.collection('voiceClone_users').add({
+    db.collection('user').add({
     "created_on": datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S'),
     "user_name":user_name,
     "telegram_id":telegram_id,

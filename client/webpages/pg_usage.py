@@ -77,7 +77,7 @@ def download_tg_characters():
 
 def download_tg_chat():
     st.write("Downloading chat data...")
-    collection_ref = db.collection('voiceClone_tg_chats')
+    collection_ref = db.collection('chat')
     docs = collection_ref.stream()
     data = []
     for doc in docs:

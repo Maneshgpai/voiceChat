@@ -112,7 +112,7 @@ def get_voice_response(character_settings, text_response,file_name, db, db_docum
 ## Adding chat history to Firebase DB
 def update_chat_hist(message_hist,db_document_name, msg_id):
     try:
-        chat_ref = db.collection('voiceClone_tg_chats').document(db_document_name)
+        chat_ref = db.collection('chat').document(db_document_name)
         if not chat_ref.get().exists:
             chat_ref.set({'messages': []})
         chat_ref.update({"messages": firestore.ArrayUnion(message_hist)})
@@ -186,11 +186,10 @@ def handle_voice(update: Update, context: CallbackContext) -> None:
     ## removing special characters from the response
     special_characters=['@','#','$','*','&','-','_','- ']
     for i in special_characters:
-    # Replace the special character with an empty string
         ssml_text_response=ssml_text_response.replace(i,"")
     ssml_text_response=ssml_text_response.replace(":","\n")
 
-    print("app.py >> Response for Voice:",ssml_text_response)
+    # print("app.py >> Response for Voice:",ssml_text_response)
 
     file_created_status = get_voice_response(character_settings, ssml_text_response,assistant_file_name, db, db_document_name, update.message.message_id)
     if file_created_status == False:
@@ -321,7 +320,7 @@ def handle_message(update: Update, context: CallbackContext) -> None:
         message_hist.append({"role": "assistant", "content": text_response, "translated_content": translated_text_response, "content_type": "text","response_status":text_response_status, "timestamp": datetime.now(ist), "update.update_id": update.update_id, "update.message.message_id": update.message.message_id})
     update_chat_hist(message_hist,db_document_name, update.message.message_id)
 
-    log_msg = f"handle_message: Finished replying"
+    # log_msg = f"handle_message: Finished replying"
     ## log(update.message.message_id,"logging",200,log_msg,"text.handle_message",db,db_document_name)
 
 ## Error handler for network and other common errors
@@ -362,8 +361,6 @@ def start(update, context):
     ## Fetching character settings ##
     character_settings = get_tg_char_setting(db_document_name,char_id, db, update.message.message_id)
 
-    context.bot.send_message(chat_id=update.effective_chat.id, text=character_settings['welcome_msg'])
-
     ## Send "typing" response
     context.bot.send_chat_action(
     chat_id=update.effective_chat.id,
@@ -378,13 +375,22 @@ def start(update, context):
     else:
         ssml_text_response = character_settings['welcome_msg']
 
+
+    ## removing URLs from the response
+    ssml_text_response = re.sub(r'http\S+', '', ssml_text_response)
+    ssml_text_response = re.sub(r'^https?:\/\/.*[\r\n]*', '', ssml_text_response, flags=re.MULTILINE)
+
+    ## removing special characters from the response
+    special_characters=['@','#','$','*','&','-','_','- ']
+    for i in special_characters:
+        ssml_text_response=ssml_text_response.replace(i,"")
+    ssml_text_response=ssml_text_response.replace(":","\n")
+
     file_created_status = get_voice_response(character_settings, ssml_text_response,assistant_file_name, db, db_document_name, update.message.message_id)
-    ## Sending voice message
+    ## Sending Welcome voice message
     try:
         temp_voice_file = db_document_name+".ogg"
-        print("1***")
         shutil.copy(assistant_file_name, temp_voice_file)
-        print("2***")
         with open(temp_voice_file, 'rb') as voice_file:
             context.bot.send_voice(chat_id=update.message.chat_id, voice=voice_file)
     except Exception as e:
@@ -394,6 +400,8 @@ def start(update, context):
         log_ref = db.collection('log').document(db_document_name)
         func.createLog(log_ref, log_response)
 
+    ## Sending Welcome text message
+    context.bot.send_message(chat_id=update.effective_chat.id, text=character_settings['welcome_msg'])
 
     set_tg_user_data(db_document_name,user_id, update, db, update.message.message_id)
     message_hist = get_tg_chat_history(db_document_name, db, update.message.message_id)

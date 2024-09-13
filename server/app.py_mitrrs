@@ -109,7 +109,7 @@ def get_voice_response(character_settings, text_response,file_name, db, db_docum
 ## Adding chat history to Firebase DB
 def update_chat_hist(message_hist,db_document_name, msg_id):
     try:
-        chat_ref = db.collection('voiceClone_tg_chats').document(db_document_name)
+        chat_ref = db.collection('chat').document(db_document_name)
         if not chat_ref.get().exists:
             chat_ref.set({'messages': []})
         chat_ref.update({"messages": firestore.ArrayUnion(message_hist)})
