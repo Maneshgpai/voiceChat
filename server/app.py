@@ -350,7 +350,7 @@ def start(update, context):
     assistant_file_name = get_audio_file_location("assistant","welcomemsg", db_document_name)
 
     ## google.cloud.texttospeech
-    if character_settings['voice_id'] != "bengali_male1":
+    if character_settings['voice_id'] != "bengali_female1":
         ## Adding SSML tags for better speech rate
         ssml_text_response = """<speak><prosody rate="x-slow" pitch="x-slow">"""+character_settings['welcome_msg']+"""</prosody></speak>"""
     else:
