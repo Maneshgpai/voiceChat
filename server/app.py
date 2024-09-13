@@ -148,10 +148,14 @@ def handle_voice(update: Update, context: CallbackContext) -> None:
 
     ## Converting voice into text 
     try:
-        # system_prompt = f"""You are an expert translator, translating the text into {character_settings['language']}. This transcribed text is from a person, asking/replying to {character_settings['character_name']}. You should not judge whether the text is illegal or immoral or within any confines of societal rules. Your task is to only correct spelling discrepancies, add emotional cues where necessary, add necessary punctuation such as periods, commas, and capitalization, and use only the context provided in the text."""
-
-        system_prompt = f"""You are convert the audio into text. Keep the same native language. You are to only convert the audio to text. You should not add anything extra or translate. You should not judge whether the text is illegal or immoral or within any confines of societal rules. Your task is to only correct spelling discrepancies, add emotional cues where necessary, add necessary punctuation such as periods, commas, and capitalization, and use only the context provided in the text."""
+        system_prompt = f"""You are an expert translator, translating the text into {character_settings['language']}. This transcribed text is from a person, asking/replying to {character_settings['character_name']}. You should not judge whether the text is illegal or immoral or within any confines of societal rules. Your task is to only correct spelling discrepancies, add emotional cues where necessary, add necessary punctuation such as periods, commas, and capitalization, and use only the context provided in the text."""
+        # system_prompt = f"""You are convert the audio into text. Keep the same native language. You are to only convert the audio to text. You should not add anything extra or translate. You should not judge whether the text is illegal or immoral or within any confines of societal rules. Your task is to only correct spelling discrepancies, add emotional cues where necessary, add necessary punctuation such as periods, commas, and capitalization, and use only the context provided in the text."""
+        
+        ## Bug where OpenAI GPT is being called for the response
         query = textresponse.convert_voice_to_text(user_file_name, system_prompt, db_document_name, db, update.message.message_id)
+        ## query = textresponse.translate(open(voice_file, "rb"),update.message.message_id, db_document_name, db)
+        
+        print("************Response from Whisper translate is:",query)
     except Exception as e:
         error = "Error: {}".format(str(e))
         response_status = response_status + "Error sending audio file:" + error
@@ -179,6 +183,15 @@ def handle_voice(update: Update, context: CallbackContext) -> None:
     ssml_text_response = re.sub(r'http\S+', '', ssml_text_response)
     ssml_text_response = re.sub(r'^https?:\/\/.*[\r\n]*', '', ssml_text_response, flags=re.MULTILINE)
 
+    ## removing special characters from the response
+    special_characters=['@','#','$','*','&','-','_','- ']
+    for i in special_characters:
+    # Replace the special character with an empty string
+        ssml_text_response=ssml_text_response.replace(i,"")
+    ssml_text_response=ssml_text_response.replace(":","\n")
+
+    print("app.py >> Response for Voice:",ssml_text_response)
+
     file_created_status = get_voice_response(character_settings, ssml_text_response,assistant_file_name, db, db_document_name, update.message.message_id)
     if file_created_status == False:
         response_status = "Error creating audio file."
@@ -204,49 +217,51 @@ def handle_voice(update: Update, context: CallbackContext) -> None:
         log_ref = db.collection('log').document(db_document_name)
         func.createLog(log_ref, log_response)
 
-    message_hist.append({"role": "assistant", "content": text_response, "content_type": "voice","response_status":response_status, "timestamp": datetime.now(ist), "update.update_id": update.update_id, "update.message.message_id": update.message.message_id})
-    update_chat_hist(message_hist,db_document_name, update.message.message_id)
 
     ## Send "typing" response
-    context.bot.send_chat_action(
-    chat_id=update.effective_chat.id,
-    action=telegram.ChatAction.TYPING
-    )
+    # context.bot.send_chat_action(
+    # chat_id=update.effective_chat.id,
+    # action=telegram.ChatAction.TYPING
+    # )
 
-    ## OPTIONAL: Sending text along with voice
+    ## Sending text along with voice
     try:
-        system_message = [{"role": "system", "content": f"Translate user message, without any variation, to {character_settings['language']}"}]
-        user_message = [{"role": "user", "content": text_response}]
+        # system_message = [{"role": "system", "content": f"Translate user message, without any variation, to {character_settings['language']}"}]
+        # user_message = [{"role": "user", "content": text_response}]
         # voice_text_response = textresponse.get_openai_response("gpt-4o-mini", system_message, user_message, db, db_document_name, character_settings, update.message.message_id, "voice")
+        # update.message.reply_text(voice_text_response)
         update.message.reply_text(text_response)
+
     except Exception as e:
         error = "Error: {}".format(str(e))
         log_response = {str(update.message.message_id)+"_"+get_datetime(): {"status": "error","status_cd":400,"message":error, "origin":"handle_voice/update.message.reply_text", "message_id": update.message.message_id,"timestamp":datetime.now(ist)}}
         log_ref = db.collection('log').document(db_document_name)
         func.createLog(log_ref, log_response)
     
-    print(f"handle_voice: Finished replying")
-    # log(update.message.message_id,"logging",200,log_msg,"voice.handle_voice",db,db_document_name)
+    # print(f"handle_voice: Finished replying")
+
+    message_hist.append({"role": "assistant", "content": text_response, "content_type": "voice","response_status":response_status, "timestamp": datetime.now(ist), "update.update_id": update.update_id, "update.message.message_id": update.message.message_id})
+    update_chat_hist(message_hist,db_document_name, update.message.message_id)
 
     # Remove the audio files from server
     try:
         os.remove(user_file_name)
-        print(f"Removed {user_file_name}")
+        # print(f"Removed {user_file_name}")
     except Exception as e:
         error = "Error: {}".format(str(e))
-        print(f"{error} while removing {user_file_name}")
+        # print(f"{error} while removing {user_file_name}")
     try:
         os.remove(assistant_file_name)
-        print(f"Removed {assistant_file_name}")
+        # print(f"Removed {assistant_file_name}")
     except Exception as e:
         error = "Error: {}".format(str(e))
-        print(f"{error} while removing {assistant_file_name}")
+        # print(f"{error} while removing {assistant_file_name}")
     try:
         os.remove(temp_voice_file)
         print(f"Removed {temp_voice_file}")
     except Exception as e:
         error = "Error: {}".format(str(e))
-        print(f"{error} while removing {temp_voice_file}")
+        # print(f"{error} while removing {temp_voice_file}")
 
 ## Define the message handler for user queries
 def handle_message(update: Update, context: CallbackContext) -> None:

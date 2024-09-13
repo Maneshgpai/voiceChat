@@ -122,21 +122,23 @@ def translate(audio_file,msg_id, db_document_name, db):
 def convert_voice_to_text(voice_file, system_prompt, db_document_name, db, msg_id):
     try:
         audio_file= open(voice_file, "rb")
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            temperature=0,
-            messages=[
-                {
-                    "role": "system",
-                    "content": system_prompt
-                },
-                {
-                    "role": "user",
-                    "content": translate(audio_file, msg_id, db_document_name, db)
-                }
-            ]
-        )
-        return response.choices[0].message.content
+        # response = client.chat.completions.create(
+        #     model="gpt-4o-mini",
+        #     temperature=0,
+        #     messages=[
+        #         {
+        #             "role": "system",
+        #             "content": system_prompt
+        #         },
+        #         {
+        #             "role": "user",
+        #             "content": translate(audio_file, msg_id, db_document_name, db)
+        #         }
+        #     ]
+        # )
+        # print("*********** audio response 2:",response.choices[0].message.content)
+        # return response.choices[0].message.content
+        return translate(audio_file, msg_id, db_document_name, db)
     except Exception as e:
         error = "Error: {}".format(str(e))
         log_response = {str(msg_id)+"_"+str(datetime.now()): {"status": "error","status_cd":400,"message":error, "origin":"convert_voice_to_text", "message_id": msg_id, "timestamp":datetime.now(ist)}}
@@ -312,7 +314,7 @@ def get_openai_response(model, system_message, message_hist, db, db_document_nam
             temperature=voice_settings['temperature'], #1.2 # What sampling temperature to use, between 0 and 2. Higher values like 0.8 will make the output more random, while lower values like 0.2 will make it more focused and deterministic.
         )
         full_response = response.choices[0].message.content
-        print(f"COST: Text response for Llama via OpenAI> number_of_tokens: {response.usage.total_tokens}")
+        print(f"COST: of OpenAI call> number_of_tokens: {response.usage.total_tokens}")
         return full_response
     except Exception as e:
         error = "Error: {}".format(str(e))
