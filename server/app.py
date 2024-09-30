@@ -16,6 +16,10 @@ from functions import voiceResponseSrvr as voiceresponse
 from functions import functionSrvr as func
 from google.cloud import firestore
 import shutil
+import random
+import string
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+from flask import request
 
 ## Set up logging for debugging
 logging.basicConfig(
@@ -119,6 +123,60 @@ def update_chat_hist(message_hist,db_document_name, msg_id):
         log_ref = db.collection('voiceClone_tg_logs').document(db_document_name)
         func.createLog(log_ref, log_response)
 
+def update_usage(total_tokens,text_or_voice,db_document_name, tg_user_id, char_id,msg_id):
+    try:
+        chat_ref = db.collection('voiceClone_tg_usage').document(tg_user_id)
+        data = {get_datetime(): {"credits_used":total_tokens, "character":char_id, "chat_type":text_or_voice, "timestamp":datetime.now(ist)}}
+        if not chat_ref.get().exists:
+            chat_ref.set(data)
+        else:
+            chat_ref.update(data)
+
+        ## Update user credits
+        credits_ref = db.collection('voiceClone_tg_credits').document(tg_user_id)
+        credits = credits_ref.get()
+        if credits.exists:
+            credits_data = credits.to_dict()
+            for key, val in credits_data.items():
+                if key == "total_credits_remaining":
+                    new_credits = val-total_tokens
+            print(f"update_usage > old_credits:{val}, total_tokens:{total_tokens}, new_credits:{new_credits}")
+            credits_ref.update({"total_credits_remaining": new_credits, 'last_updated_on': datetime.now(ist)})
+
+    except Exception as e:
+        error = "Error: {}".format(str(e))
+        log_response = {str(msg_id)+"_"+get_datetime(): {"status": "error","status_cd":400,"message":error, "origin":"update_usage", "message_id": msg_id,"timestamp":datetime.now(ist)}}
+        log_ref = db.collection('voiceClone_tg_logs').document(db_document_name)
+        func.createLog(log_ref, log_response)
+
+def get_usage_data(db_document_name,tg_user_id,db,msg_id):
+    try:
+        credits_remaining = 0
+        credits_ref = db.collection('voiceClone_tg_credits').document(tg_user_id)
+        credits = credits_ref.get()
+        if credits.exists:
+            credits_data = credits.to_dict()
+            for key, val in credits_data.items():
+                if key == "total_credits_remaining":
+                    print(f"get_usage_data > credits remaining:{val}")
+                    credits_remaining = val
+    except Exception as e:
+        error = "Error: {}".format(str(e))
+        log_response = {str(msg_id)+"_"+get_datetime(): {"status": "error","status_cd":400,"message":error, "origin":"update_usage", "message_id": msg_id,"timestamp":datetime.now(ist)}}
+        log_ref = db.collection('voiceClone_tg_logs').document(db_document_name)
+        func.createLog(log_ref, log_response)
+    return credits_remaining
+
+def generate_order_id():
+    timestamp = str(int(time.time()))
+    random_bytes = ''.join(random.choices(string.ascii_lowercase + string.digits, k=4))
+    return f'orderId_{timestamp}{random_bytes}'
+
+@app.route('/payment', methods=['POST'])
+def handle_payment():
+    # Here you'd handle the payment logic for the '/pay-now' route
+    pass
+
 ## Define the handler for receiving voice messages
 def handle_voice(update: Update, context: CallbackContext) -> None:
 
@@ -126,9 +184,6 @@ def handle_voice(update: Update, context: CallbackContext) -> None:
     db_document_name = user_id+'_'+char_id
     voice_file = update.message.voice
 
-    ## log_msg = f"handle_voice: Received audio message"
-    ## log(update.message.message_id,"logging",200,log_msg,"voice.handle_voice",db,db_document_name)
-    
     ## Creating new / Updating existing user info in DB ##
     set_tg_user_data(db_document_name,user_id, update, db, update.message.message_id)
 
@@ -157,7 +212,7 @@ def handle_voice(update: Update, context: CallbackContext) -> None:
     ## Fetch LLM Response in regional language only, as regional language is pronounced correctly than Hinglish
     query_timestamp = update.message.date
     message_hist.append({"role": "user", "content": query, "content_type": "voice", "timestamp": query_timestamp, "update.update_id": update.update_id, "update.message.message_id": update.message.message_id})
-    text_response, cost, model = get_agent_response(query, query_timestamp, character_settings, message_hist, db_document_name, update.message.message_id, "voice")
+    text_response, total_tokens1, model1 = get_agent_response(query, query_timestamp, character_settings, message_hist, db_document_name, update.message.message_id, "voice")
     response_status = "Success"
 
     ## Fetch VOICE Response
@@ -189,9 +244,6 @@ def handle_voice(update: Update, context: CallbackContext) -> None:
         log_ref = db.collection('voiceClone_tg_logs').document(db_document_name)
         func.createLog(log_ref, log_response)
 
-    message_hist.append({"role": "assistant", "cost": cost, "model": model, "content": text_response, "content_type": "voice","response_status":response_status, "timestamp": datetime.now(ist), "update.update_id": update.update_id, "update.message.message_id": update.message.message_id})
-    update_chat_hist(message_hist,db_document_name, update.message.message_id)
-
     ## Send "typing" response
     context.bot.send_chat_action(
     chat_id=update.effective_chat.id,
@@ -202,16 +254,13 @@ def handle_voice(update: Update, context: CallbackContext) -> None:
     try:
         system_message = [{"role": "system", "content": f"Translate user message, without any variation, to {character_settings['language']}"}]
         user_message = [{"role": "user", "content": text_response}]
-        voice_text_response = textresponse.get_openai_response("gpt-4o-mini", system_message, user_message, db, db_document_name, character_settings, update.message.message_id, "voice")
+        voice_text_response, total_tokens2, model2 = textresponse.get_openai_response("gpt-4o-mini", system_message, user_message, db, db_document_name, character_settings, update.message.message_id, "voice")
         update.message.reply_text(voice_text_response)
     except Exception as e:
         error = "Error: {}".format(str(e))
         log_response = {str(update.message.message_id)+"_"+get_datetime(): {"status": "error","status_cd":400,"message":error, "origin":"handle_voice/update.message.reply_text", "message_id": update.message.message_id,"timestamp":datetime.now(ist)}}
         log_ref = db.collection('voiceClone_tg_logs').document(db_document_name)
         func.createLog(log_ref, log_response)
-    
-    ## log_msg = f"handle_voice: Finished replying"
-    ## log(update.message.message_id,"logging",200,log_msg,"voice.handle_voice",db,db_document_name)
 
     ## Remove the audio files from server
     try:
@@ -233,66 +282,103 @@ def handle_voice(update: Update, context: CallbackContext) -> None:
         error = "Error: {}".format(str(e))
         print(f"{error} while removing {temp_voice_file}")
 
+    message_hist.append({"role": "assistant", "content": text_response, "content_type": "voice","response_status":response_status, "timestamp": datetime.now(ist), "update.update_id": update.update_id, "update.message.message_id": update.message.message_id})
+    update_chat_hist(message_hist,db_document_name, update.message.message_id)
+    ## Adding 3k to account for Elevenlabs usage
+    update_usage(total_tokens1+total_tokens2+3000, "voice", db_document_name, update.message.message_id)
+
 ## Define the message handler for user queries
 def handle_message(update: Update, context: CallbackContext) -> None:
     text_response = "Thank you, aapke msg ke liye. Thoda sa sabr karo, I will be back soon!"
     user_id = str(update.message.from_user.id)
     db_document_name = user_id+'_'+char_id
-    print("log 1")
-    ## log_msg = f"handle_message: Received text message"
-    ## log(update.message.message_id,"logging",200,log_msg,"text.handle_message",db,db_document_name)
-    print("log 2")
+
     ## Creating new / Updating existing user info in DB ##
     set_tg_user_data(db_document_name,user_id, update, db, update.message.message_id)
-    print("log 3")
+
     ## Fetching chat history ##
     message_hist = get_tg_chat_history(db_document_name, db, update.message.message_id)
-    print("log 4")
-    ## Fetching character settings ##
-    character_settings = get_tg_char_setting(db_document_name,char_id, db, update.message.message_id)
-    print("log 5")
-    ## Fetch LLM Response
-    query = update.message.text
-    query_timestamp = update.message.date
-    message_hist.append({"role": "user", "content": query, "content_type": "text", "timestamp": query_timestamp, "update.update_id": update.update_id, "update.message.message_id": update.message.message_id})
-    print(f"******* app.py > character_settings['model']:{character_settings['model']}")
-    text_response, cost, model = get_agent_response(query, query_timestamp, character_settings, message_hist, db_document_name, update.message.message_id, "text")
 
-    ## Call Google Translate if needed 
-    translated_text_response = ""
-    # if character_settings['model'] == "llama 3" and character_settings['language'] != 'English' and (text_response != "" or text_response):
-    #     lang_cd = {'hindi':'hi','hinglish':'hi','bengali':'bn','gujarati':'gu','kannada':'kn','malayalam':'ml','marathi':'mr','tamil':'ta','telugu':'te'}
-    #     selected_lang_cd = lang_cd.get(character_settings['language'].lower(), "en-us")
-    #     translated_text_response = textresponse.google_translate_text(text_response,selected_lang_cd,db, db_document_name)
-    #     text_response = translated_text_response
-
-    ## Send "typing" response
-    context.bot.send_chat_action(
-    chat_id=update.effective_chat.id,
-    action=telegram.ChatAction.TYPING
-    )
-
-    ## Replying back
-    text_response_status = "Success"
-    try:
+    ## Step 1 : Check Firebase DB for credit remaining. If no credits remaining, then PAY = True. < Manesh >
+    credits_remaining = get_usage_data(db_document_name, user_id, db, update.message.message_id)
+    print(f"credits_remaining:{credits_remaining}")
+    if credits_remaining <= 0:
+        # Before payment
+        #     Generate order_id from cashfree api
+        #     Redirect to cashfree gateway
+        # After payment
+        #     Save order_id, amt in DB against the customer
+        #     order_id rcvd on thankyou.php page
+        #     Verify order_id with the DB
+        #     Get Cashfree > Payments for an order and Verify order_id and amt rcvd from cashfree API with DB details
+        chat_id = update.effective_chat.id
+        reply = "Your free credits are over. To get more credits, recharge now"
+        order_id = generate_order_id()
+        link = f'http://payments.mitrrs.com/pay-now?id={chat_id}&orderId={order_id}'
+        # Create inline keyboard with a payment link
+        keyboard = [[InlineKeyboardButton("Pay Now", url=link)]]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        # Send message with the inline keyboard
+        context.bot.send_message(
+            chat_id=chat_id,
+            text=reply,
+            parse_mode='HTML',
+            reply_markup=reply_markup
+        )
         update.message.reply_text(text_response)
-    except Exception as e:
-        error = "Error: {}".format(str(e))
-        text_response_status = error
-        log_response = {str(update.message.message_id)+"_"+get_datetime(): {"status": "error","status_cd":400,"message":error, "origin":"handle_message/update.message.reply_text", "message_id": update.message.message_id,"timestamp":datetime.now(ist)}}
-        log_ref = db.collection('voiceClone_tg_logs').document(db_document_name)
-        func.createLog(log_ref, log_response)
 
-    if not text_response:
-        text_response = ""
-    if translated_text_response == "":
-        message_hist.append({"role": "assistant","cost":cost,"model":model, "content": text_response, "content_type": "text","response_status":text_response_status, "timestamp": datetime.now(ist), "update.update_id": update.update_id, "update.message.message_id": update.message.message_id})
+        ## Step 2a: Send msg of payment link to user < ASHISH >
+        ## Step 2b: Process payment gateway functionality and
+        ## Step 2c: If user pays successfully, redirect to Thankyou pg, which will call backend API to save order info. Pass parameters as PAYMENT_SUCCESSFUL = True and User details < ASHISH >
+
+        ## Step 4: Inside the backend API, update the DB with user details with credits remaining & other details.
+        ## Step 5: Send message to user about their credit balance < Manesh >
+        ## Step 6: Add menu option to Add credits and Check balance < Manesh > 
     else:
-        message_hist.append({"role": "assistant","cost":cost,"model":model, "content": text_response, "translated_content": translated_text_response, "content_type": "text","response_status":text_response_status, "timestamp": datetime.now(ist), "update.update_id": update.update_id, "update.message.message_id": update.message.message_id})
-    update_chat_hist(message_hist,db_document_name, update.message.message_id)
+        ## Fetching character settings ##
+        character_settings = get_tg_char_setting(db_document_name,char_id, db, update.message.message_id)
 
-    ## log_msg = f"handle_message: Finished replying"
-    ## log(update.message.message_id,"logging",200,log_msg,"text.handle_message",db,db_document_name)
+        ## Fetch LLM Response
+        query = update.message.text
+        query_timestamp = update.message.date
+        message_hist.append({"role": "user", "content": query, "content_type": "text", "timestamp": query_timestamp, "update.update_id": update.update_id, "update.message.message_id": update.message.message_id})
+        text_response, total_tokens, model = get_agent_response(query, query_timestamp, character_settings, message_hist, db_document_name, update.message.message_id, "text")
+
+        ## Call Google Translate if needed
+        translated_text_response = ""
+        # if character_settings['model'] == "llama 3" and character_settings['language'] != 'English' and (text_response != "" or text_response):
+        #     lang_cd = {'hindi':'hi','hinglish':'hi','bengali':'bn','gujarati':'gu','kannada':'kn','malayalam':'ml','marathi':'mr','tamil':'ta','telugu':'te'}
+        #     selected_lang_cd = lang_cd.get(character_settings['language'].lower(), "en-us")
+        #     translated_text_response = textresponse.google_translate_text(text_response,selected_lang_cd,db, db_document_name)
+        #     text_response = translated_text_response
+
+        ## Send "typing" response
+        context.bot.send_chat_action(
+        chat_id=update.effective_chat.id,
+        action=telegram.ChatAction.TYPING
+        )
+
+        ## Replying back
+        text_response_status = "Success"
+        try:
+            update.message.reply_text(text_response)
+        except Exception as e:
+            error = "Error: {}".format(str(e))
+            text_response_status = error
+            log_response = {str(update.message.message_id)+"_"+get_datetime(): {"status": "error","status_cd":400,"message":error, "origin":"handle_message/update.message.reply_text", "message_id": update.message.message_id,"timestamp":datetime.now(ist)}}
+            log_ref = db.collection('voiceClone_tg_logs').document(db_document_name)
+            func.createLog(log_ref, log_response)
+
+        if not text_response:
+            text_response = ""
+        if translated_text_response == "":
+            message_hist.append({"role": "assistant", "content": text_response, "content_type": "text","response_status":text_response_status, "timestamp": datetime.now(ist), "update.update_id": update.update_id, "update.message.message_id": update.message.message_id})
+        else:
+            message_hist.append({"role": "assistant", "content": text_response, "translated_content": translated_text_response, "content_type": "text","response_status":text_response_status, "timestamp": datetime.now(ist), "update.update_id": update.update_id, "update.message.message_id": update.message.message_id})
+        update_chat_hist(message_hist,db_document_name, update.message.message_id)
+        update_usage(total_tokens, "text", db_document_name, user_id, char_id, update.message.message_id)
+        ## log_msg = f"handle_message: Finished replying"
+        ## log(update.message.message_id,"logging",200,log_msg,"text.handle_message",db,db_document_name)
 
 ## Error handler for network and other common errors
 def error_handler(update: Update, context: CallbackContext) -> None:

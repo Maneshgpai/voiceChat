@@ -133,9 +133,14 @@ def set_tg_user_data(db_document_name, user_id, update, db, msg_id):
             'created_on' : datetime.now(ist),
             'last_updated_on': datetime.now(ist)}
             doc_ref.set(user_data)
+
+            ## Create joining free credits
+            print("TG_Bot/functionSrvr/set_tg_user_data > Creating new entry in 'voiceClone_tg_credits' for ",str(update.message.from_user.id))
+            doc_ref = db.collection('voiceClone_tg_credits').document(str(update.message.from_user.id))
+            doc_ref.set({"total_credits_remaining": int(os.getenv("JOINING_CREDITS")), 'created_on' : datetime.now(ist), 'last_updated_on': datetime.now(ist)})
     except Exception as e:
         error = "Error: {}".format(str(e))
-        # print("*** ERROR *** TG_Bot/functionSrvr/set_tg_user_data > Error in updating 'voiceClone_tg_users'",error)
+        print("*** ERROR *** TG_Bot/functionSrvr/set_tg_user_data > Error in updating 'voiceClone_tg_users'",error)
         log_response = {str(msg_id)+"_"+get_datetime(): {"status": "error","status_cd":400,"message":error, "origin":"set_tg_user_data.voiceClone_tg_users", "message_id": msg_id, "timestamp":datetime.now(ist)}}
         log_ref = db.collection('voiceClone_tg_logs').document(db_document_name)
         createLog(log_ref, log_response)
