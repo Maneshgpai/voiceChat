@@ -27,7 +27,7 @@ import re
 
 load_dotenv(find_dotenv())
 ist = timezone(timedelta(hours=5, minutes=30))
-db = firestore.Client.from_service_account_json("./secrets/firestore_key_agent.json")
+db = firestore.Client.from_service_account_json("etc/secrets/firestore_key_agent.json")
 env = os.getenv("ENV")
 TOKEN = os.getenv("BOT_TELEGRAM_API_KEY")
 char_id = os.getenv("BOT_CHAR_ID")
