@@ -166,3 +166,4 @@ test_data
 *.txt
 *.excalidraw
 # firestore_key_agent.json
+telegram_php

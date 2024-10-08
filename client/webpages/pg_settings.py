@@ -96,6 +96,7 @@ def set_character_setting(char_id):
         "voice_stability": st.session_state.voice_stability,
         "voice_similarity_boost": st.session_state.voice_similarity_boost,
         "voice_style": st.session_state.voice_style,
+        "voice_tts": st.session_state.voice_tts,
         "voice_use_speaker_boost": st.session_state.voice_use_speaker_boost}
     print(f"pg_settings >> set_character_setting > Setting Updated Character Settings")
     st.session_state["character_setting"] = new_voice_setting
@@ -227,6 +228,7 @@ def render_setting_pg(action, context):
     voice_stability  = float(context['voice_stability'])
     voice_similarity_boost  = float(context['voice_similarity_boost'])
     voice_style  = float(context['voice_style'])
+    voice_tts = context.get('voice_tts')
     voice_use_speaker_boost = context['voice_use_speaker_boost']
 
     if (action == "create_new_char"):
@@ -245,7 +247,7 @@ def render_setting_pg(action, context):
     for i, item in enumerate(dropdown_val_model):
         if item == model:
             index_model = i
-    dropdown_val_lang = ["Hinglish", "English", "Hindi", "Bengali", "Tamil", "Gujarati", "Telugu", "Kannada", "Marathi", "Malayalam"]
+    dropdown_val_lang = ["German", "Hinglish", "English", "Hindi", "Bengali", "Tamil", "Gujarati", "Telugu", "Kannada", "Marathi", "Malayalam"]
     index_lang = 0
     for i, item in enumerate(dropdown_val_lang):
         if item == language:
@@ -333,6 +335,7 @@ def render_setting_pg(action, context):
         ## Setting Voice setting 
         with st.expander("Voice settings", expanded=False, icon=":material/settings_voice:"):
             st.write("Voices available in system:")
+            st.selectbox("Voice TTS engine", ['elevenlabs','google'], key="voice_tts")
             st.table(data=voice_df.drop(['Voice ID'], axis=1))
             voice_name = st.selectbox("Selected voice", voice_df['Name'].tolist(),index=int(index_voice_name), key="voice_name")
             result = voice_df.loc[voice_df['Name'] == voice_name, 'Voice ID']

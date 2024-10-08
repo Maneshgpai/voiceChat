@@ -98,10 +98,12 @@ def get_agent_response(query, query_timestamp, character_settings, message_hist,
 ## Fetch VOICE Response ##
 def get_voice_response(character_settings, text_response,file_name, db, db_document_name, msg_id):
     file_created_status = False
+    print("voice_tts : ",character_settings['voice_tts'])
     try:
-        ## google.cloud.texttospeech
-        file_created_status = voiceresponse.get_google_tts_voice_response(character_settings, text_response, file_name, db, db_document_name, msg_id)
-        # file_created_status = voiceresponse.get_voice_response(character_settings, text_response, file_name, db, db_document_name, msg_id)
+        if character_settings['voice_tts'] == 'google':
+            file_created_status = voiceresponse.get_google_tts_voice_response(character_settings, text_response, file_name, db, db_document_name, msg_id)
+        else:
+            file_created_status = voiceresponse.get_voice_response(character_settings, text_response, file_name, db, db_document_name, msg_id)
     except Exception as e:
         error = "Error: {}".format(str(e))
         log_response = {str(msg_id)+"_"+get_datetime(): {"status": "error","status_cd":400,"message":error, "origin":"get_voice_response", "message_id": msg_id,"timestamp":datetime.now(ist)}}
@@ -172,12 +174,16 @@ def handle_voice(update: Update, context: CallbackContext) -> None:
     ## Fetch VOICE Response
     assistant_file_name = get_audio_file_location("assistant",str(voice_file.file_id), db_document_name)
 
-    ## google.cloud.texttospeech
-    if character_settings['voice_id'] != "bengali_female1":
-        ## Adding SSML tags for better speech rate
-        ssml_text_response = """<speak><prosody rate="x-slow" pitch="x-slow">"""+text_response+"""</prosody></speak>"""
-    else:
+    if character_settings['voice_tts'] == 'google':
         ssml_text_response = text_response
+    else:
+        ssml_text_response = """<speak><prosody rate="x-slow" pitch="x-slow">"""+text_response+"""</prosody></speak>"""
+
+    # if character_settings['voice_id'] != "bengali_female1":
+    #     ## Adding SSML tags for better speech rate
+    #     ssml_text_response = """<speak><prosody rate="x-slow" pitch="x-slow">"""+text_response+"""</prosody></speak>"""
+    # else:
+    #     ssml_text_response = text_response
 
     ## removing URLs from the response
     ssml_text_response = re.sub(r'http\S+', '', ssml_text_response)
@@ -367,14 +373,16 @@ def start(update, context):
     action=telegram.ChatAction.RECORD_AUDIO)
 
     assistant_file_name = get_audio_file_location("assistant","welcomemsg", db_document_name)
-
-    ## google.cloud.texttospeech
-    if character_settings['voice_id'] != "bengali_female1":
-        ## Adding SSML tags for better speech rate
-        ssml_text_response = """<speak><prosody rate="x-slow" pitch="x-slow">"""+character_settings['welcome_msg']+"""</prosody></speak>"""
-    else:
+    if character_settings['voice_tts'] == 'google':
         ssml_text_response = character_settings['welcome_msg']
-
+    else:
+        ssml_text_response = """<speak><prosody rate="x-slow" pitch="x-slow">"""+character_settings['welcome_msg']+"""</prosody></speak>"""
+    ## google.cloud.texttospeech
+    # if character_settings['voice_id'] != "bengali_female1":
+    #     ## Adding SSML tags for better speech rate
+    #     ssml_text_response = """<speak><prosody rate="x-slow" pitch="x-slow">"""+character_settings['welcome_msg']+"""</prosody></speak>"""
+    # else:
+    #     ssml_text_response = character_settings['welcome_msg']
 
     ## removing URLs from the response
     ssml_text_response = re.sub(r'http\S+', '', ssml_text_response)
@@ -385,7 +393,6 @@ def start(update, context):
     for i in special_characters:
         ssml_text_response=ssml_text_response.replace(i,"")
     ssml_text_response=ssml_text_response.replace(":","\n")
-
     file_created_status = get_voice_response(character_settings, ssml_text_response,assistant_file_name, db, db_document_name, update.message.message_id)
     ## Sending Welcome voice message
     try:

@@ -61,7 +61,7 @@ def generateVoice(context, input_text,voice_id):
 #     # play_audio_stream(audio_stream)
 #     return audio_stream
 def get_voice_response(voice_setting, full_response,filename, db, db_document_name, msg_id):
-    # print(f"{datetime.now(ist)} voiceResponseSrvr > get_voice_response: Started generating voice...")
+    print(f"{datetime.now(ist)} voiceResponseSrvr > get_voice_response: Started generating voice...")
     try:
         audio = generateVoice(voice_setting,full_response,voice_setting['voice_id'])
         # print(f"{datetime.now(ist)} voiceResponseSrvr > get_voice_response: Successfully generated voice.")
@@ -71,7 +71,6 @@ def get_voice_response(voice_setting, full_response,filename, db, db_document_na
         log_ref = db.collection('log').document(db_document_name)
         func.createLog(log_ref, log_response)
 
-    # print(f"{datetime.now(ist)} voiceResponseSrvr > get_voice_response: Saving audio file...")
     try:
         save(audio, filename)
         print(f"{datetime.now(ist)} voiceResponseSrvr > get_voice_response: Successfully saved audio file in ",filename)
@@ -87,6 +86,8 @@ def get_voice_response(voice_setting, full_response,filename, db, db_document_na
 ## google.cloud.texttospeech
 def get_google_tts_voice_response(voice_setting,full_response,filename, db, db_document_name, msg_id):
     try:
+        print(f"{datetime.now(ist)} voiceResponseSrvr > get_google_tts_voice_response: Started generating voice...")
+
         if voice_setting['voice_id'] == "bengali_male1":
             language_code = "bn-IN"
             name="bn-IN-Wavenet-B"
