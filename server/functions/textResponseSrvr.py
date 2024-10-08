@@ -230,6 +230,52 @@ def get_groq_response(system_prompt, message_hist, db, db_document_name, voice_s
         log_response = {str(msg_id)+"_"+str(datetime.now()): {"status": "error","status_cd":400,"message":error, "origin":voice_or_text+".get_groq_response", "message_id": msg_id, "timestamp":datetime.now(ist)}}
         log_ref = db.collection('log').document(db_document_name)
         func.createLog(log_ref, log_response)
+
+# @retry(stop=stop_after_attempt(3), wait=wait_fixed(5), retry=retry_if_exception_type(ConnectionError))
+# def get_openrouter_response(model, query, system_prompt, message_hist, db, db_document_name, voice_settings, msg_id, voice_or_text):
+#     print("Started get_openrouter_response...")
+#     response = ""
+#     total_tokens = 0
+#     try:
+#         OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+#         # print("system_prompt:",system_prompt)
+#         system_message = [{"role": "system", "content": system_prompt}]
+
+#         user_message = fetch_optimized_chat_hist_for_openai(message_hist)
+        
+#         response = requests.post(
+#         url="https://openrouter.ai/api/v1/chat/completions",
+#         headers={
+#             "Authorization": f"Bearer {OPENROUTER_API_KEY}"},
+#         data=json.dumps({
+#             "model": "meta-llama/llama-3-70b-instruct",
+#             "messages": system_message+user_message,
+#             "top_k": voice_settings['top_k'],
+#             "top_p": voice_settings['top_p'],
+#             "max_tokens": voice_settings['max_tokens'],
+#             "min_tokens": voice_settings['min_tokens'],
+#             "temperature": voice_settings['temperature'],
+#             "length_penalty": voice_settings['length_penalty'],
+#             "presence_penalty": voice_settings['presence_penalty'],
+#             "frequency_penalty": voice_settings['frequency_penalty'],
+#             "repetition_penalty": voice_settings['repetition_penalty']
+#         })
+#         )
+#         # print("get_openrouter_response >> Fetched response")
+#         response_str = response.content.decode('utf-8')
+#         # print(f" get_openrouter_response > response_str: {response_str.strip()}")
+#         data = json.loads(response_str)
+#         # print(f" get_openrouter_response > data: {data}")
+#         response = data['choices'][0]['message']['content']
+#         total_tokens = data['usage']['total_tokens']
+#         print(f"*********COSTING Llama via OpenRouter > Total Token Size:",total_tokens)
+#     except Exception as e:
+#         error = "Error: {}".format(str(e))
+#         log_response = {str(msg_id)+"_"+str(datetime.now()): {"status": "error","status_cd":400,"message":error, "origin":voice_or_text+".get_openrouter_response", "message_id": msg_id, "timestamp":datetime.now(ist)}}
+#         log_ref = db.collection('voiceClone_tg_logs').document(db_document_name)
+#         func.createLog(log_ref, log_response)
+#     return response, total_tokens
+
 @retry(stop=stop_after_attempt(3), wait=wait_fixed(5), retry=retry_if_exception_type(ConnectionError))
 def get_replicate_response(model, query, system_prompt, message_hist, db, db_document_name, voice_settings, msg_id, voice_or_text):
     try:
