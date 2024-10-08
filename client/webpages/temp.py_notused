@@ -32,7 +32,7 @@
 # import pandas as pd
 
 # # from google.cloud import firestore
-# # db = firestore.Client.from_service_account_json("firestore_key_agent.json")
+# # db = firestore.Client.from_service_account_json(str(os.getenv("SECRETS_PATH")+"/firestore_key_agent.json"))
 
 # # Initialize the Firebase Admin SDK
 # cred = credentials.Certificate("../firestore_key_agent.json")

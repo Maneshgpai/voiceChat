@@ -10,7 +10,7 @@ import os
 load_dotenv(find_dotenv())
 
 if "firestore_db" not in st.session_state:
-    db = firestore.Client.from_service_account_json("firestore_key_agent.json")
+    db = firestore.Client.from_service_account_json(str(os.getenv("SECRETS_PATH")+"/firestore_key_agent.json"))
 else:
     db = st.session_state["firestore_db"]
 google_client = pygsheets.authorize(service_file="firestore_key_agent.json")

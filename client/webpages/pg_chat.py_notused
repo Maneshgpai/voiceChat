@@ -14,7 +14,7 @@ import nest_asyncio
 nest_asyncio.apply()
 
 if "firestore_db" not in st.session_state:
-    db = firestore.Client.from_service_account_json("firestore_key_agent.json")
+    db = firestore.Client.from_service_account_json(str(os.getenv("SECRETS_PATH")+"/firestore_key_agent.json"))
 else:
     db = st.session_state["firestore_db"]
 # cred = credentials.Certificate("firestore_key_agent.json")

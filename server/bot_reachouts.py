@@ -16,7 +16,7 @@ load_dotenv()
 openai_api_key = os.getenv("OPENAI_API_KEY")
 client = OpenAI(api_key=openai_api_key)
 ist = timezone("Asia/Kolkata")
-db = firestore.Client.from_service_account_json("firestore_key_agent.json")
+db = firestore.Client.from_service_account_json(str(os.getenv("SECRETS_PATH")+"/firestore_key_agent.json"))
 
 ## reachout parameters
 latest_messages_to_check = int(os.getenv("REACHOUT_LATEST_MSG_TO_CHECK"))

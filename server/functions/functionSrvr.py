@@ -15,7 +15,7 @@ def get_datetime():
     return (str(datetime.now())).replace('.','').replace(':','').replace(' ','').replace('-','')
 
 def set_default_settings(voice_id):
-    db = firestore.Client.from_service_account_json("firestore_key_agent.json")
+    db = firestore.Client.from_service_account_json(str(os.getenv("SECRETS_PATH")+"/firestore_key_agent.json"))
     db.collection('profile').document(voice_id).set({"timestamp": datetime.now(ist),"action":"update_profile","setting":default_setting})
 
 def get_default_settings():

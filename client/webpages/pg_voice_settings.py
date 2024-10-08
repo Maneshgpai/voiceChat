@@ -8,7 +8,7 @@ import pandas as pd
 load_dotenv()
 
 if "firestore_db" not in st.session_state:
-    db = firestore.Client.from_service_account_json("firestore_key_agent.json")
+    db = firestore.Client.from_service_account_json(str(os.getenv("SECRETS_PATH")+"/firestore_key_agent.json"))
 else:
     db = st.session_state["firestore_db"]
 if "status" not in st.session_state:

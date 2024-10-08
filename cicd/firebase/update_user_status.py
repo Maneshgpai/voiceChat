@@ -11,7 +11,7 @@ import telegram
 
 ist = timezone(timedelta(hours=5, minutes=30))
 load_dotenv()
-# db = firestore.Client.from_service_account_json("firestore_key_agent.json")
+# db = firestore.Client.from_service_account_json(str(os.getenv("SECRETS_PATH")+"/firestore_key_agent.json"))
 
 cred_prod = credentials.Certificate("./cred_cert/prod_serviceAccountKey.json")
 firebase_admin.initialize_app(cred_prod, name='prod')
