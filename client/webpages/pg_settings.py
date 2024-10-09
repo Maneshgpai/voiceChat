@@ -168,7 +168,7 @@ def reset_voice_setting():
     return voice_stability, voice_similarity_boost, voice_style, voice_use_speaker_boost
 def get_char_setting(char_id):
     ## If exists, fetch settings from DB
-    setting = db.collection('profile').document(char_id)
+    setting = db.collection('voiceClone_characters').document(char_id)
     doc = setting.get()
     char_setting = {}
     if doc.exists:
@@ -383,7 +383,7 @@ def setting_pg(setting_action, char_id):
                 # print("******************* Error in update setting")
                 st.error(validate_stat)
 def get_all_characters():
-    users_ref = db.collection('profile')
+    users_ref = db.collection('voiceClone_characters')
     docs = users_ref.stream()
     user_data = []
     for doc in docs:

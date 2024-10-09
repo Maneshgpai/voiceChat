@@ -70,7 +70,7 @@ def get_tg_user_data(document_name, db):
     return userdata
 
 def get_voice_setting(voice_id, db):
-    setting = db.collection('profile').document(voice_id)
+    setting = db.collection('voiceClone_characters').document(voice_id)
     doc = setting.get()
     voice_setting = {}
     if doc.exists:

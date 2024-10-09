@@ -204,7 +204,7 @@ def update_reachout_hist(text,text_or_voice,db_document_name):
 
 def get_character_dtls():
     print("Downloading Character data...")
-    collection_ref = db.collection('profile')
+    collection_ref = db.collection('voiceClone_characters')
     docs = collection_ref.stream()
     charid_bottoken = []
     charid_prompt = []
