@@ -68,7 +68,7 @@ def get_voice_response(voice_setting, full_response,filename, db, db_document_na
     except Exception as e:
         error = "Error: {}".format(str(e))
         log_response = {str(msg_id)+"_"+str(datetime.now()): {"status": "error","status_cd":400,"message":error, "origin":"get_voice_response.generateVoice", "message_id": msg_id, "timestamp":datetime.now(ist)}}
-        log_ref = db.collection('log').document(db_document_name)
+        log_ref = db.collection('voiceClone_tg_logs').document(db_document_name)
         func.createLog(log_ref, log_response)
 
     try:
@@ -78,7 +78,7 @@ def get_voice_response(voice_setting, full_response,filename, db, db_document_na
         error = "Error: {}".format(str(e))
         # print("*** ERROR *** TG_Bot/voiceResponseSrvr/get_voice_response > Error in saving Audio file",error)
         log_response = {str(msg_id)+"_"+str(datetime.now()): {"status": "error","status_cd":400,"message":error, "origin":"get_voice_response.save_audio", "message_id": msg_id, "timestamp":datetime.now(ist)}}
-        log_ref = db.collection('log').document(db_document_name)
+        log_ref = db.collection('voiceClone_tg_logs')Clone_tg_logs').document(db_document_name)
         func.createLog(log_ref, log_response)
         return False
     return True
@@ -129,6 +129,6 @@ def get_google_tts_voice_response(voice_setting,full_response,filename, db, db_d
     except Exception as e:
         error = "Error: {}".format(str(e))
         log_response = {str(msg_id)+"_"+str(datetime.now()): {"status": "error","status_cd":400,"message":error, "origin":"get_voice_response.generateVoice", "message_id": msg_id, "timestamp":datetime.now(ist)}}
-        log_ref = db.collection('log').document(db_document_name)
+        log_ref = db.collection('voiceClone_tg_logs')Clone_tg_logs').document(db_document_name)
         func.createLog(log_ref, log_response)
         return False

@@ -159,7 +159,7 @@ def chat_interface():
             st.session_state.messages.append({"role": "assistant", "content": response, "audio_file": file_name})
 def validate_user(db, telegram_id):
     user_exist = False
-    collection_ref = db.collection('user')
+    collection_ref = db.collection('voiceClone_tg_users')
 
     query = collection_ref.where("telegram_id", "==", telegram_id)#.where("population", ">", 1000000)
     docs = query.stream()
