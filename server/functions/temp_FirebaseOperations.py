@@ -52,7 +52,7 @@ def duplicate_collection(source_collection_name,target_collection_name):
         doc_dict = doc.to_dict()
         target_doc_ref = target_collection_ref.document(doc.id)
         target_doc_ref.set(doc_dict)
-# duplicate_collection('log','voiceClone_tg_log_bkp')
+# duplicate_collection('voiceClone_tg_logs','voiceClone_tg_log_bkp')
 
 def duplicate_document(collection_name, original_doc_id):
     original_doc_ref = db.collection(collection_name).document(original_doc_id)
@@ -107,7 +107,7 @@ def update_timestamps(collection_name):
 
 def get_character_dtls():
     print("Downloading Character data...")
-    collection_ref = db.collection('profile')
+    collection_ref = db.collection('voiceClone_characters')
     docs = collection_ref.stream()
     charid_bottoken = []
     charid_prompt = []
