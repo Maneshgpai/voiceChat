@@ -48,7 +48,7 @@ def get_datetime():
 
 def log(msg_id,status,status_cd,message,origin,db,db_document_name):
     log_response = {str(msg_id)+"_"+get_datetime(): {"status": status,"status_cd":status_cd,"message":message, "origin":origin, "message_id": msg_id, "timestamp":datetime.now(ist)}}
-    log_ref = db.collection('log').document(db_document_name)
+    log_ref = db.collection('voiceClone_tg_logs').document(db_document_name)
     func.createLog(log_ref, log_response)
 
 def get_audio_file_location(response_type,tg_voice_id, db_document_name):
@@ -66,7 +66,7 @@ def set_tg_user_data(db_document_name,user_id, update, db, msg_id):
     except Exception as e:
         error = "Error: {}".format(str(e))
         log_response = {str(msg_id)+"_"+get_datetime(): {"status": "error","status_cd":400,"message":error, "origin":"set_tg_user_data", "message_id": msg_id,"timestamp":datetime.now(ist)}}
-        log_ref = db.collection('log').document(db_document_name)
+        log_ref = db.collection('voiceClone_tg_logs').document(db_document_name)
         func.createLog(log_ref, log_response)
 
 ## Fetching chat history ##
@@ -77,7 +77,7 @@ def get_tg_chat_history(db_document_name, db, msg_id):
     except Exception as e:
         error = "Error: {}".format(str(e))
         log_response = {str(msg_id)+"_"+get_datetime(): {"status": "error","status_cd":400,"message":error, "origin":"get_tg_chat_history", "message_id": msg_id,"timestamp":datetime.now(ist)}}
-        log_ref = db.collection('log').document(db_document_name)
+        log_ref = db.collection('voiceClone_tg_logs').document(db_document_name)
         func.createLog(log_ref, log_response)
     return message_hist
 
@@ -89,7 +89,7 @@ def get_tg_char_setting(db_document_name,char_id, db, msg_id):
     except Exception as e:
         error = "Error: {}".format(str(e))
         log_response = {str(msg_id)+"_"+get_datetime(): {"status": "error","status_cd":400,"message":error, "origin":"get_tg_char_setting", "message_id": msg_id,"timestamp":datetime.now(ist)}}
-        log_ref = db.collection('log').document(db_document_name)
+        log_ref = db.collection('voiceClone_tg_logs').document(db_document_name)
         func.createLog(log_ref, log_response)
     return character_settings
 
@@ -111,21 +111,21 @@ def get_voice_response(character_settings, text_response,file_name, db, db_docum
     except Exception as e:
         error = "Error: {}".format(str(e))
         log_response = {str(msg_id)+"_"+get_datetime(): {"status": "error","status_cd":400,"message":error, "origin":"get_voice_response", "message_id": msg_id,"timestamp":datetime.now(ist)}}
-        log_ref = db.collection('log').document(db_document_name)
+        log_ref = db.collection('voiceClone_tg_logs').document(db_document_name)
         func.createLog(log_ref, log_response)
     return file_created_status
 
 ## Adding chat history to Firebase DB
 def update_chat_hist(message_hist,db_document_name, msg_id):
     try:
-        chat_ref = db.collection('chat').document(db_document_name)
+        chat_ref = db.collection('voiceClone_tg_chats').document(db_document_name)
         if not chat_ref.get().exists:
             chat_ref.set({'messages': []})
         chat_ref.update({"messages": firestore.ArrayUnion(message_hist)})
     except Exception as e:
         error = "Error: {}".format(str(e))
         log_response = {str(msg_id)+"_"+get_datetime(): {"status": "error","status_cd":400,"message":error, "origin":"update_chat_hist", "message_id": msg_id,"timestamp":datetime.now(ist)}}
-        log_ref = db.collection('log').document(db_document_name)
+        log_ref = db.collection('voiceClone_tg_logs').document(db_document_name)
         func.createLog(log_ref, log_response)
 
 # def update_usage(total_tokens,text_or_voice,db_document_name, tg_user_id, char_id,msg_id):
@@ -215,7 +215,7 @@ def handle_voice(update: Update, context: CallbackContext) -> None:
         error = "Error: {}".format(str(e))
         response_status = response_status + "Error sending audio file:" + error
         log_response = {str(update.message.message_id)+"_"+get_datetime(): {"status": "error","status_cd":400,"message":error, "origin":"handle_voice/convert_voice_to_text", "message_id": update.message.message_id,"timestamp":datetime.now(ist)}}
-        log_ref = db.collection('log').document(db_document_name)
+        log_ref = db.collection('voiceClone_tg_logs').document(db_document_name)
         func.createLog(log_ref, log_response)
 
     ## Fetch LLM Response in regional language only, as regional language is pronounced correctly than Hinglish
@@ -272,7 +272,7 @@ def handle_voice(update: Update, context: CallbackContext) -> None:
         error = "Error: {}".format(str(e))
         response_status = response_status + "Error sending audio file:" + error
         log_response = {str(update.message.message_id)+"_"+get_datetime(): {"status": "error","status_cd":400,"message":error, "origin":"handle_voice/context.bot.send_voice", "message_id": update.message.message_id,"timestamp":datetime.now(ist)}}
-        log_ref = db.collection('log').document(db_document_name)
+        log_ref = db.collection('voiceClone_tg_logs').document(db_document_name)
         func.createLog(log_ref, log_response)
 
 
@@ -293,7 +293,7 @@ def handle_voice(update: Update, context: CallbackContext) -> None:
     except Exception as e:
         error = "Error: {}".format(str(e))
         log_response = {str(update.message.message_id)+"_"+get_datetime(): {"status": "error","status_cd":400,"message":error, "origin":"handle_voice/update.message.reply_text", "message_id": update.message.message_id,"timestamp":datetime.now(ist)}}
-        log_ref = db.collection('log').document(db_document_name)
+        log_ref = db.collection('voiceClone_tg_logs').document(db_document_name)
         func.createLog(log_ref, log_response)
     
     # print(f"handle_voice: Finished replying")
@@ -428,18 +428,18 @@ def error_handler(update: Update, context: CallbackContext) -> None:
         # Wait before retrying to handle transient network issues more gracefully
         # logger.warning('Network error occurred. Retrying in 15 seconds...')
         log_response = {str(update.message.message_id)+"_"+get_datetime(): {"status": "error","status_cd":400,"message":e, "origin":"error_handler/NetworkError", "message_id": update.message.message_id, "timestamp":datetime.now(ist)}}
-        log_ref = db.collection('log').document(db_document_name)
+        log_ref = db.collection('voiceClone_tg_logs').document(db_document_name)
         func.createLog(log_ref, log_response)
         time.sleep(15)
     except TelegramError as e:
         # logger.warning(f'A Telegram error occurred: {e}')
         log_response = {str(update.message.message_id)+"_"+get_datetime(): {"status": "error","status_cd":400,"message":e, "origin":"error_handler/TelegramError", "message_id": update.message.message_id, "timestamp":datetime.now(ist)}}
-        log_ref = db.collection('log').document(db_document_name)
+        log_ref = db.collection('voiceClone_tg_logs').document(db_document_name)
         func.createLog(log_ref, log_response)
     except Exception as e:
         # logger.error(f'An unexpected error occurred: {e}')
         log_response = {str(update.message.message_id)+"_"+get_datetime(): {"status": "error","status_cd":400,"message":e, "origin":"error_handler/Exception", "message_id": update.message.message_id, "timestamp":datetime.now(ist)}}
-        log_ref = db.collection('log').document(db_document_name)
+        log_ref = db.collection('voiceClone_tg_logs').document(db_document_name)
         func.createLog(log_ref, log_response)
 
 ## Set webhook URL
@@ -494,7 +494,7 @@ def start(update, context):
         error = "Error: {}".format(str(e))
         response_status = response_status + "Error sending audio file:" + error
         log_response = {str(update.message.message_id)+"_"+get_datetime(): {"status": "error","status_cd":400,"message":error, "origin":"handle_voice/context.bot.send_voice", "message_id": update.message.message_id,"timestamp":datetime.now(ist)}}
-        log_ref = db.collection('log').document(db_document_name)
+        log_ref = db.collection('voiceClone_tg_logs').document(db_document_name)
         func.createLog(log_ref, log_response)
 
     ## Sending Welcome text message

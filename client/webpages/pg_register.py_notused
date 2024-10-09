@@ -68,7 +68,7 @@ ist = timezone(timedelta(hours=5, minutes=30))
     
 #     print(f"pg_settings > set_voice_setting > Setting Updated Voice Setting")
 #     st.session_state["context"] = new_voice_setting
-#     db.collection('profile').document(voice_id).set({
+#     db.collection('voiceClone_characters').document(voice_id).set({
 #         "last_updated_on": datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S'),
 #         "name":st.session_state.character_name,
 #         "voice_id":voice_id,
@@ -125,7 +125,7 @@ ist = timezone(timedelta(hours=5, minutes=30))
 # def get_voice_setting(voice_id):
 #     print("pg_settings >> get_voice_setting")
 #     ## If exists, fetch settings from DB
-#     setting = db.collection('profile').document(voice_id)
+#     setting = db.collection('voiceClone_characters').document(voice_id)
 #     doc = setting.get()
 #     voice_setting = {}
 #     if doc.exists:
@@ -139,7 +139,7 @@ ist = timezone(timedelta(hours=5, minutes=30))
 #         print("pg_settings >> get_voice_setting > Fetching default voice settings from config files")
 #         voice_setting = json.loads(os.getenv("DEFAULT_CHARACTER_SETTING"))
 #         print("pg_settings >> get_voice_setting > Default voice settings:",voice_setting)
-#         db.collection('profile').document(voice_id).set({
+#         db.collection('voiceClone_characters').document(voice_id).set({
 #             "last_updated_on": datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S'),
 #             "name":voice_setting['character_name'],
 #             "voice_id":voice_id,
@@ -294,7 +294,7 @@ def register_new_user():
 
 def check_duplicate(db, field_name, field_value):
     duplicate_flag = False
-    collection_ref = db.collection('user')
+    collection_ref = db.collection('voiceClone_tg_users')
     query = collection_ref.where(field_name, "==", field_value)#.where("population", ">", 1000000)
     docs = query.stream()
     for doc in docs:
@@ -320,7 +320,7 @@ def is_telegram_id_valid(telegram_id):
     return True
 
 def create_new_user(user_name, telegram_id):
-    db.collection('user').add({
+    db.collection('voiceClone_tg_users').add({
     "created_on": datetime.now(ist).strftime('%Y-%m-%d %H:%M:%S'),
     "user_name":user_name,
     "telegram_id":telegram_id,
