@@ -2,7 +2,7 @@
 from google.cloud import firestore
 
 def get_user_info(telegram_id, db):
-    collection_ref = db.collection('voiceClone_users')
+    collection_ref = db.collection('user')
     field_name = 'telegram_id'
     field_value = telegram_id
     query = collection_ref.where(field_name, '==',field_value)
@@ -32,7 +32,7 @@ def get_chat_history(document_id, db):
 
 def validate_user(db, telegram_id):
     user_exist = False
-    collection_ref = db.collection('voiceClone_users')
+    collection_ref = db.collection('user')
 
     # Query for cities where state is 'CA' and population is greater than 1000000
     query = collection_ref.where("telegram_id", "==", "@maneshtg")#.where("population", ">", 1000000)
@@ -49,7 +49,7 @@ def validate_user(db, telegram_id):
             user_exist = True
     return user_exist
 
-db = firestore.Client.from_service_account_json("../firestore_key.json")
+db = firestore.Client.from_service_account_json("../firestore_key_agent.json")
 # print(get_chat_history('', db))
 user_exist = validate_user(db, '@maneshtg')
 print(user_exist)

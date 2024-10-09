@@ -7,6 +7,7 @@ import replicate
 from functions import functionSrvr as func
 from tenacity import retry, stop_after_attempt, wait_fixed, retry_if_exception_type
 import requests
+import json
 import pandas as pd
 
 
@@ -15,8 +16,6 @@ openai_api_key = os.getenv("OPENAI_API_KEY")
 voice_api_key = os.getenv("ELEVENLABS_API_KEY")
 client = OpenAI(api_key=openai_api_key)
 ist = timezone(timedelta(hours=5, minutes=30))
-groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
-API_KEY = os.environ['GOOGLE_API_KEY']
 replicate_models = {"llama 3":"meta/meta-llama-3-70b-instruct", "llama 3.1":"meta/meta-llama-3.1-405b-instruct"}
 groq_models = {"llama 3":"llama3-70b-8192", "llama 3.1":"llama-3.1-70b-versatile"}
 
@@ -25,7 +24,7 @@ def get_datetime():
 
 def log(msg_id,status,status_cd,message,origin,db,db_document_name):
     log_response = {str(msg_id)+"_"+get_datetime(): {"status": status,"status_cd":status_cd,"message":message, "origin":origin, "message_id": msg_id, "timestamp":datetime.now(ist)}}
-    log_ref = db.collection('voiceClone_tg_logs').document(db_document_name)
+    log_ref = db.collection('log').document(db_document_name)
     func.createLog(log_ref, log_response)
 
 def fetch_optimized_chat_hist_for_openai(message_hist):
@@ -86,6 +85,7 @@ def fn_reduce_message_hist(ideal_size,curr_size,message_hist):
 
 def google_translate_text(text,target_lang_cd, db, db_document_name, msg_id):
     # print(f"************** textResponseSrvr > google_translate_text > text:{text}, target_lang_cd:{target_lang_cd}")
+    API_KEY = os.environ['GOOGLE_API_KEY']
     url = "https://translation.googleapis.com/language/translate/v2" 
     params = {
             'q': text,
@@ -103,7 +103,7 @@ def google_translate_text(text,target_lang_cd, db, db_document_name, msg_id):
         translation = text
         # print("************** textResponseSrvr > google_translate_text > error:",error)
         log_response = {str(msg_id)+"_"+str(datetime.now()): {"status": "error","status_cd":400,"message":error, "origin":"google_translate_text", "message_id": msg_id, "timestamp":datetime.now(ist)}}
-        log_ref = db.collection('voiceClone_tg_logs').document(db_document_name)
+        log_ref = db.collection('log').document(db_document_name)
         func.createLog(log_ref, log_response)
 
     return translation
@@ -117,31 +117,49 @@ def translate(audio_file,msg_id, db_document_name, db):
     except Exception as e:
         error = "Error: {}".format(str(e))
         log_response = {str(msg_id)+"_"+str(datetime.now()): {"status": "error","status_cd":400,"message":error, "origin":"translate_whisper-1", "message_id": msg_id, "timestamp":datetime.now(ist)}}
-        log_ref = db.collection('voiceClone_tg_logs').document(db_document_name)
+        log_ref = db.collection('log').document(db_document_name)
         func.createLog(log_ref, log_response)
 
 def convert_voice_to_text(voice_file, system_prompt, db_document_name, db, msg_id):
     try:
         audio_file= open(voice_file, "rb")
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            temperature=0,
-            messages=[
-                {
-                    "role": "system",
-                    "content": system_prompt
-                },
-                {
-                    "role": "user",
-                    "content": translate(audio_file, msg_id, db_document_name, db)
-                }
-            ]
-        )
-        return response.choices[0].message.content
+        # response = client.chat.completions.create(
+        #     model="gpt-4o-mini",
+        #     temperature=0,
+        #     messages=[
+        #         {
+        #             "role": "system",
+        #             "content": system_prompt
+        #         },
+        #         {
+        #             "role": "user",
+        #             "content": translate(audio_file, msg_id, db_document_name, db)
+        #         }
+        #     ]
+        # )
+        # print("*********** audio response 2:",response.choices[0].message.content)
+        # return response.choices[0].message.content
+        return translate(audio_file, msg_id, db_document_name, db)
+        # response = client.chat.completions.create(
+        #     model="gpt-4o-mini",
+        #     temperature=0,
+        #     messages=[
+        #         {
+        #             "role": "system",
+        #             "content": system_prompt
+        #         },
+        #         {
+        #             "role": "user",
+        #             "content": translate(audio_file, msg_id, db_document_name, db)
+        #         }
+        #     ]
+        # )
+        # return response.choices[0].message.content
+        return translate(audio_file, msg_id, db_document_name, db)
     except Exception as e:
         error = "Error: {}".format(str(e))
         log_response = {str(msg_id)+"_"+str(datetime.now()): {"status": "error","status_cd":400,"message":error, "origin":"convert_voice_to_text", "message_id": msg_id, "timestamp":datetime.now(ist)}}
-        log_ref = db.collection('voiceClone_tg_logs').document(db_document_name)
+        log_ref = db.collection('log').document(db_document_name)
         func.createLog(log_ref, log_response)
 
 # @retry(stop=stop_after_attempt(3), wait=wait_fixed(5), retry=retry_if_exception_type(ConnectionError))
@@ -201,12 +219,14 @@ def convert_voice_to_text(voice_file, system_prompt, db_document_name, db, msg_i
 #         error = "Error: {}".format(str(e))
 #         print("textResponseSrvr > get_huggingface_response > error:",error)
 #         log_response = {str(msg_id)+"_"+str(datetime.now()): {"status": "error","status_cd":400,"message":error, "origin":"get_huggingface_response", "message_id": msg_id, "timestamp":datetime.now(ist)}}
-#         log_ref = db.collection('voiceClone_tg_logs').document(db_document_name)
+#         log_ref = db.collection('log').document(db_document_name)
 #         func.createLog(log_ref, log_response)
 
 @retry(stop=stop_after_attempt(3), wait=wait_fixed(5), retry=retry_if_exception_type(ConnectionError))
 def get_groq_response(system_prompt, message_hist, db, db_document_name, voice_settings, msg_id, voice_or_text):
     try:
+        groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+
         groq_model = groq_models.get(voice_settings['model'].lower(), "llama 3")
         system_message = [{"role": "system", "content": system_prompt}]
 
@@ -225,8 +245,54 @@ def get_groq_response(system_prompt, message_hist, db, db_document_name, voice_s
     except Exception as e:
         error = "Error: {}".format(str(e))
         log_response = {str(msg_id)+"_"+str(datetime.now()): {"status": "error","status_cd":400,"message":error, "origin":voice_or_text+".get_groq_response", "message_id": msg_id, "timestamp":datetime.now(ist)}}
+        log_ref = db.collection('log').document(db_document_name)
+        func.createLog(log_ref, log_response)
+
+@retry(stop=stop_after_attempt(3), wait=wait_fixed(5), retry=retry_if_exception_type(ConnectionError))
+def get_openrouter_response(model, query, system_prompt, message_hist, db, db_document_name, voice_settings, msg_id, voice_or_text):
+    print("Started get_openrouter_response...")
+    response = ""
+    total_tokens = 0
+    try:
+        OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+        # print("system_prompt:",system_prompt)
+        system_message = [{"role": "system", "content": system_prompt}]
+
+        user_message = fetch_optimized_chat_hist_for_openai(message_hist)
+        
+        response = requests.post(
+        url="https://openrouter.ai/api/v1/chat/completions",
+        headers={
+            "Authorization": f"Bearer {OPENROUTER_API_KEY}"},
+        data=json.dumps({
+            "model": "meta-llama/llama-3-70b-instruct",
+            "messages": system_message+user_message,
+            "top_k": voice_settings['top_k'],
+            "top_p": voice_settings['top_p'],
+            "max_tokens": voice_settings['max_tokens'],
+            "min_tokens": voice_settings['min_tokens'],
+            "temperature": voice_settings['temperature'],
+            "length_penalty": voice_settings['length_penalty'],
+            "presence_penalty": voice_settings['presence_penalty'],
+            "frequency_penalty": voice_settings['frequency_penalty'],
+            "repetition_penalty": voice_settings['repetition_penalty']
+        })
+        )
+        # print("get_openrouter_response >> Fetched response")
+        response_str = response.content.decode('utf-8')
+        # print(f" get_openrouter_response > response_str: {response_str.strip()}")
+        data = json.loads(response_str)
+        # print(f" get_openrouter_response > data: {data}")
+        response = data['choices'][0]['message']['content']
+        total_tokens = data['usage']['total_tokens']
+        print(f"*********COSTING Llama via OpenRouter > Total Token Size:",total_tokens)
+    except Exception as e:
+        error = "Error: {}".format(str(e))
+        log_response = {str(msg_id)+"_"+str(datetime.now()): {"status": "error","status_cd":400,"message":error, "origin":voice_or_text+".get_openrouter_response", "message_id": msg_id, "timestamp":datetime.now(ist)}}
         log_ref = db.collection('voiceClone_tg_logs').document(db_document_name)
         func.createLog(log_ref, log_response)
+    return response, total_tokens
+
 @retry(stop=stop_after_attempt(3), wait=wait_fixed(5), retry=retry_if_exception_type(ConnectionError))
 def get_replicate_response(model, query, system_prompt, message_hist, db, db_document_name, voice_settings, msg_id, voice_or_text):
     try:
@@ -238,34 +304,24 @@ def get_replicate_response(model, query, system_prompt, message_hist, db, db_doc
         
         ## For Llama3 calls, the total context window is 8k tokens. 
         ## So we add logic to pick only the latest chats from the message history, which fit within this context size.
-        llama3_max_context_size = 7000 ##Size for Llama3. Taking 10% lesser than max allowed for contingency
+        llama3_max_context_size = 3500 ##Size for Llama3. Taking 10% lesser than max allowed for contingency
         if model == "llama 3":
             ## Calculate size of message history
             new_message_hist_size = func.calculate_tokens(model, new_message_hist, db, db_document_name, msg_id)
-            log_msg = f"COST: Text response for Llama via Replicate> Token size of msg_hist BEFORE: {new_message_hist_size}"
-            log(msg_id,"logging",200,log_msg,voice_or_text+".get_replicate_response",db,db_document_name)
 
             ## Considering the size of max context window of Llama further gets reduced with user query & system prompt. 
             # So dynamically calculating remaining size available message history
             ideal_message_hist_size = llama3_max_context_size - (func.calculate_tokens(model, query, db, db_document_name, msg_id)+func.calculate_tokens(model, final_prompt, db, db_document_name, msg_id))
-            log_msg = f"COST: Text response for Llama via Replicate> Token size of msg_hist IDEAL SIZE per availablity: {ideal_message_hist_size}"
-            log(msg_id,"logging",200,log_msg,voice_or_text+".get_replicate_response",db,db_document_name)
             
             ## If message history size exceeds the available window size, then reduce the msg history size by taking only latest messages
             if new_message_hist_size > ideal_message_hist_size:
                 shorter_message_hist = fn_reduce_message_hist(ideal_message_hist_size,new_message_hist_size,message_hist)
-                log_msg = f"COST: Text response for Llama via Replicate> Token size of msg_hist AFTER shortening, before adding headers: {func.calculate_tokens(model, str(shorter_message_hist), db, db_document_name, msg_id)}"
-                log(msg_id,"logging",200,log_msg,voice_or_text+".get_replicate_response",db,db_document_name)
                 new_message_hist = fetch_optimized_chat_hist_for_llama(shorter_message_hist)
+        
+        # print(f"new_message_hist:{new_message_hist}\n")
+        # print(f"final_prompt:{final_prompt}\n")
 
-        log_msg = f"COST: Text response for Llama via Replicate> Token size of msg_hist AFTER: ",func.calculate_tokens(model, new_message_hist, db, db_document_name, msg_id)
-        log(msg_id,"logging",200,log_msg,voice_or_text+".get_replicate_response",db,db_document_name)
-
-        full_text = []
-        for event in replicate.stream(
-                replicate_model,
-                input={
-                    "top_k": voice_settings['top_k'], #1,
+        input = {"top_k": voice_settings['top_k'], #1,
                     "top_p": voice_settings['top_p'], #0.8,
                     "prompt": new_message_hist,
                     "max_tokens": voice_settings['max_tokens'], #100,
@@ -278,25 +334,29 @@ def get_replicate_response(model, query, system_prompt, message_hist, db, db_doc
                     "presence_penalty": voice_settings['presence_penalty'], #0.1,
                     "frequency_penalty": voice_settings['frequency_penalty'], #0.9,
                     "repetition_penalty": voice_settings['repetition_penalty'],
-                    "log_performance_metrics": False
-                },
+                    "log_performance_metrics": False}
+        
+        input_token = func.calculate_tokens(model, str(input), db, db_document_name, msg_id)
+
+        full_text = []
+        for event in replicate.stream(
+                replicate_model,
+                input=input,
             ):
                 full_text.append(str(event))
+
         response = ''.join(full_text)
-        response_tot_token = func.calculate_tokens(model, response, db, db_document_name, msg_id)
-
-        log_msg = f"COST: Text response for Llama via Replicate> response_tot_token:{response_tot_token}"
-        log(msg_id,"logging",200,log_msg,voice_or_text+".get_replicate_response",db,db_document_name)
-
-
     except Exception as e:
         error = "Error: {}".format(str(e))
         log_response = {str(msg_id)+"_"+str(datetime.now()): {"status": "error","status_cd":400,"message":error, "origin":voice_or_text+".get_replicate_response", "message_id": msg_id, "timestamp":datetime.now(ist)}}
-        log_ref = db.collection('voiceClone_tg_logs').document(db_document_name)
+        log_ref = db.collection('log').document(db_document_name)
         func.createLog(log_ref, log_response)
         response = get_groq_response(system_prompt, message_hist, db, db_document_name, voice_settings,msg_id,voice_or_text)
 
-    return response
+    output_token = func.calculate_tokens(model, response, db, db_document_name, msg_id)
+    total_tokens = input_token + output_token
+    print(f"*********COSTING Llama via Replicate >   Total Token Size:",total_tokens)
+    return response, total_tokens
 def get_openai_response(model, system_message, message_hist, db, db_document_name, voice_settings,msg_id, voice_or_text):
     try:
         user_message = fetch_optimized_chat_hist_for_openai(message_hist)
@@ -311,12 +371,12 @@ def get_openai_response(model, system_message, message_hist, db, db_document_nam
             temperature=voice_settings['temperature'], #1.2 # What sampling temperature to use, between 0 and 2. Higher values like 0.8 will make the output more random, while lower values like 0.2 will make it more focused and deterministic.
         )
         full_response = response.choices[0].message.content
-        print(f"COST: Text response for Llama via OpenAI> number_of_tokens: {response.usage.total_tokens}")
+        # print(f"COST: of OpenAI call> number_of_tokens: {response.usage.total_tokens}")
         return full_response
     except Exception as e:
         error = "Error: {}".format(str(e))
         log_response = {str(msg_id)+"_"+str(datetime.now()): {"status": "error","status_cd":400,"message":error, "origin":voice_or_text+".get_openai_response","message_id":msg_id,"timestamp":datetime.now(ist)}}
-        log_ref = db.collection('voiceClone_tg_logs').document(db_document_name)
+        log_ref = db.collection('log').document(db_document_name)
         func.createLog(log_ref, log_response)
 def get_system_prompt(voice_settings, voice_or_text):
     prompt  = voice_settings['prompt']
@@ -356,14 +416,14 @@ def get_agent_response(query, voice_settings, message_hist, db, db_document_name
     if model == "gpt-4o" or model == "gpt-4o-mini":
         system_message = [{"role": "system", "content": final_prompt}]
         try:
-            full_response = get_openai_response(model, system_message, message_hist, db, db_document_name, voice_settings, msg_id, voice_or_text)
+            full_response, total_tokens, model = get_openai_response(model, system_message, message_hist, db, db_document_name, voice_settings, msg_id, voice_or_text)
         except Exception as e:
             error = "Error: {}".format(str(e))
             log_response = {str(msg_id)+"_"+str(datetime.now()): {"status": "error","status_cd":400,"message":error, "origin":voice_or_text+".get_agent_response", "message_id": msg_id, "timestamp":datetime.now(ist)}}
-            log_ref = db.collection('voiceClone_tg_logs').document(db_document_name)
+            log_ref = db.collection('log').document(db_document_name)
             func.createLog(log_ref, log_response)
     elif model == "llama 3" or model == "llama 3.1":
-        full_response = get_replicate_response(voice_settings['model'], query, final_prompt, message_hist, db, db_document_name, voice_settings, msg_id, voice_or_text)
-
-    print(f"{datetime.now(ist)} textResponseSrvr > get_agent_response: from {model}: {full_response}")
-    return full_response
+        full_response, total_tokens = get_replicate_response(voice_settings['model'], query, final_prompt, message_hist, db, db_document_name, voice_settings, msg_id, voice_or_text)
+        # full_response, total_tokens = get_openrouter_response(voice_settings['model'], query, final_prompt, message_hist, db, db_document_name, voice_settings, msg_id, voice_or_text)
+    # print(f"{datetime.now(ist)} textResponseSrvr > get_agent_response: from {model}: {full_response}")
+    return full_response, total_tokens, model

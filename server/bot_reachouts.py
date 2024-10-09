@@ -16,7 +16,7 @@ load_dotenv()
 openai_api_key = os.getenv("OPENAI_API_KEY")
 client = OpenAI(api_key=openai_api_key)
 ist = timezone("Asia/Kolkata")
-db = firestore.Client.from_service_account_json("firestore_key.json")
+db = firestore.Client.from_service_account_json(str(os.getenv("SECRETS_PATH")+"/firestore_key_agent.json"))
 
 ## reachout parameters
 latest_messages_to_check = int(os.getenv("REACHOUT_LATEST_MSG_TO_CHECK"))
@@ -27,11 +27,11 @@ def get_datetime():
     return (str(datetime.now())).replace('.','').replace(':','').replace(' ','').replace('-','')
 def log(status,status_cd,message,origin,db_document_name):
     log_response = {"reachout"+"_"+get_datetime(): {"status": status,"status_cd":status_cd,"message":message, "origin":origin, "reachout": True, "timestamp":datetime.now(ist)}}
-    log_ref = db.collection('voiceClone_tg_logs').document(db_document_name)
+    log_ref = db.collection('log').document(db_document_name)
     func.createLog(log_ref, log_response)
 def update_chat_hist(message_hist,db_document_name, msg_id):
     try:
-        chat_ref = db.collection('voiceClone_tg_chats').document(db_document_name)
+        chat_ref = db.collection('chat').document(db_document_name)
         if not chat_ref.get().exists:
             chat_ref.set({'messages': []})
         chat_ref.update({"messages": firestore.ArrayUnion(message_hist)})
@@ -44,22 +44,22 @@ def sendtgtext(token, tg_user_id, text, message_hist, db_document_name ):
     try:
         bot.send_message(chat_id=tg_user_id, text=text)
         update_chat_hist(message_hist,db_document_name, "reachout")
-        update_reachout_hist(text,'text',db_document_name)
+        # update_reachout_hist(text,'text',db_document_name)
     except Exception as e:
         error = "Error: {}".format(str(e))
         log("error",400,error,"text.reachout.sendtgtext",db_document_name)
 
-def sendtgvoice(token, tg_user_id, voice, text, message_hist, db_document_name):
-    bot = telegram.Bot(token=token)
-    try:
-        with open(voice, 'rb') as voice_file:
-            bot.send_voice(chat_id=tg_user_id, voice=voice_file)
-        bot.send_message(chat_id=tg_user_id, text=text)
-        update_chat_hist(message_hist,db_document_name, "reachout")
-        update_reachout_hist(text,'voice',db_document_name)
-    except Exception as e:
-        error = "Error: {}".format(str(e))
-        log("error",400,error,"voice"+".reachout.sendtgvoice",db_document_name)
+# def sendtgvoice(token, tg_user_id, voice, text, message_hist, db_document_name):
+#     bot = telegram.Bot(token=token)
+#     try:
+#         with open(voice, 'rb') as voice_file:
+#             bot.send_voice(chat_id=tg_user_id, voice=voice_file)
+#         bot.send_message(chat_id=tg_user_id, text=text)
+#         update_chat_hist(message_hist,db_document_name, "reachout")
+#         # update_reachout_hist(text,'voice',db_document_name)
+#     except Exception as e:
+#         error = "Error: {}".format(str(e))
+#         log("error",400,error,"voice"+".reachout.sendtgvoice",db_document_name)
 
 def get_reachout_response(system_prompt,message_hist, db_document_name, voice_or_text):
     try:
@@ -137,7 +137,7 @@ def sort_messages_by_ts(all_docs):
     return all_docs
 def fetch_latest_messages():
     all_docs = []
-    collection_ref = db.collection('voiceClone_tg_chats')
+    collection_ref = db.collection('chat')
 
     for doc in collection_ref.stream():
         doc_id = doc.id
@@ -204,7 +204,7 @@ def update_reachout_hist(text,text_or_voice,db_document_name):
 
 def get_character_dtls():
     print("Downloading Character data...")
-    collection_ref = db.collection('voiceClone_characters')
+    collection_ref = db.collection('profile')
     docs = collection_ref.stream()
     charid_bottoken = []
     charid_prompt = []
@@ -288,29 +288,26 @@ def main():
                             reachout_prompt = v
                 reachout_prompt = reachout_prompt + f"""\nIt is {datetime.now(ist)} in India now. Always be aware of the time with respect to your context in every response. Never repeat any response from this list {previous_reachout_msg}"""
 
-                
                 # print(f"################## Reachout prompt:{reachout_prompt}")
 
-                message_list.append({"role": "user", "content": reachout_prompt, "timestamp": datetime.now(timezone('Asia/Kolkata'))})
+                message_list.append({"role": "reachout", "content": reachout_prompt, "timestamp": datetime.now(timezone('Asia/Kolkata'))})
                 reachout_response = get_reachout_response(system_prompt, message_list, db_document_name, latest_content_type)
                 reachout_response = reachout_response.replace("\n"," ")
                 # print(f"################## reachout_response:{reachout_response}")
                 message_hist = func.get_tg_chat_history(db_document_name, db, "reachout")
-                message_hist.append({"role": "user", "content": reachout_response, "content_type": latest_content_type, "timestamp": datetime.now(timezone('Asia/Kolkata')), 'reachout': True})
+                message_hist.append({"role": "reachout", "content": reachout_response, "content_type": 'text', "timestamp": datetime.now(timezone('Asia/Kolkata')), 'reachout': True})
 
-                # print(f"################## bot_token:{bot_token}")
-
-                if latest_content_type == 'voice':
-                    voice_file = 'reachout_audio.ogg'
-                    ssml_text_response = """<speak><prosody rate="x-slow" pitch="x-slow">"""+reachout_response+"""</prosody></speak>"""
-                    file_created_status = voiceresponse.get_voice_response(char_setting, ssml_text_response,voice_file, db, db_document_name, 'reachout')
-                    if file_created_status == False:
-                        response_status = "Error creating audio file."
-                    else:
-                        sendtgvoice(bot_token, tg_user_id, voice_file, reachout_response, message_hist, db_document_name)
-                else:
-                    sendtgtext(bot_token, tg_user_id, reachout_response, message_hist, db_document_name)
-                # print(f"\n\n\n")
+                sendtgtext(bot_token, tg_user_id, reachout_response, message_hist, db_document_name)
+                # if latest_content_type == 'voice':
+                #     voice_file = 'reachout_audio.ogg'
+                #     ssml_text_response = """<speak><prosody rate="x-slow" pitch="x-slow">"""+reachout_response+"""</prosody></speak>"""
+                #     file_created_status = voiceresponse.get_voice_response(char_setting, ssml_text_response,voice_file, db, db_document_name, 'reachout')
+                #     if file_created_status == False:
+                #         response_status = "Error creating audio file."
+                #     else:
+                #         sendtgvoice(bot_token, tg_user_id, voice_file, reachout_response, message_hist, db_document_name)
+                # else:
+                #     sendtgtext(bot_token, tg_user_id, reachout_response, message_hist, db_document_name)
             else:
                 skipped_for_users += 1
                 print(f"User active but reachout criteria not met. Skip reachout for {tg_user_id} ({db_document_name})")
@@ -319,7 +316,7 @@ def main():
             skipped_for_users += 1
             print(f"User {tg_user_id} ({db_document_name}) is not active. Skip reachout.")
 
-    update_reachout_hist(f"Reachout ended. Run for {run_for_users} users. Skipped for {skipped_for_users} users",log_message,"reachout_runlog")
+    # update_reachout_hist(f"Reachout ended. Run for {run_for_users} users. Skipped for {skipped_for_users} users",log_message,"reachout_runlog")
 
 if __name__ == "__main__":
     current_time_ist = datetime.now(ist).time()
@@ -336,5 +333,5 @@ if __name__ == "__main__":
     
     ## Run program if the current time is not between 00:30 AM and 5:30 AM IST
     if not(start_time <= current_time_ist <= end_time):
-        update_reachout_hist("Reachout started","","reachout_runlog")
+        # update_reachout_hist("Reachout started","","reachout_runlog")
         main()

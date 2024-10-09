@@ -5,3 +5,5 @@ google-cloud-firestore
 firebase-admin
 nest_asyncio
 pygsheets
+pandas
+pygsheets

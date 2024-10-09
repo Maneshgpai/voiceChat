@@ -50,5 +50,11 @@ def copy_document_from_prod_to_dev(prod_collection_name, original_doc_id, dev_co
     except Exception as e:
         print(f'Error duplicating document: {e}')
 
-copy_document_from_prod_to_dev('voiceClone_tg_chats', '5255504053_bPm741abegxqm3t7rfeB', 'voiceClone_tg_chats_test_reachout')
-copy_document_from_prod_to_dev('voiceClone_tg_chats', '6697940905_bPm741abegxqm3t7rfeB', 'voiceClone_tg_chats_test_reachout')
+copy_document_from_prod_to_dev('voiceClone_characters', '53fpGPMr3mK6ARLgzxec', 'voiceClone_characters')
+copy_document_from_prod_to_dev('voiceClone_characters', 'IJfd3UlnIo6vtbreVaQT', 'voiceClone_characters')
+copy_document_from_prod_to_dev('voiceClone_characters', 'WoMSWOjyKY4ADJZKQ9Vc', 'voiceClone_characters')
+copy_document_from_prod_to_dev('voiceClone_characters', 'bPm741abegxqm3t7rfeB', 'voiceClone_characters')
+copy_document_from_prod_to_dev('voiceClone_characters', 'fcBSm3rPGXkzo7tQPHN5', 'voiceClone_characters')
+copy_document_from_prod_to_dev('voiceClone_characters', 'jyNYGKS4xNjls2YbfFvV', 'voiceClone_characters')
+copy_document_from_prod_to_dev('voiceClone_characters', 'kZ9OXDQLbU6MFCYXkIHm', 'voiceClone_characters')
+copy_document_from_prod_to_dev('voiceClone_characters', 'uPJUM2kXjdnpkphuCPeO', 'voiceClone_characters')
