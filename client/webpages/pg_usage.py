@@ -15,10 +15,10 @@ load_dotenv(find_dotenv())
 # firestore_json_file =  "firestore_key.json"
 firestore_json_file = "/home/manesh/Documents/Git/voiceChat/cicd/firebase/cred_cert/prod_serviceAccountKey.json"
 if "firestore_db" not in st.session_state:
-    db = firestore.Client.from_service_account_json(firestore_json_file)
+    db = firestore.Client.from_service_account_json(str(os.getenv("SECRETS_PATH")+"/firestore_key_agent.json"))
 else:
     db = st.session_state["firestore_db"]
-google_client = pygsheets.authorize(service_file=firestore_json_file)
+google_client = pygsheets.authorize(service_file="firestore_key_agent.json")
 spreadsheet_id = os.getenv("USAGE_RPT_SPREADSHEET_ID")
 
 
@@ -126,7 +126,7 @@ def download_tg_logs():
     st.subheader("Processing log data...")
     st.write("Downloading...")
     data = []
-    collection_ref = db.collection('voiceClone_tg_logs')
+    collection_ref = db.collection('log')
     for doc in collection_ref.stream():
         doc_id = doc.id
         array = doc_id.split("_")

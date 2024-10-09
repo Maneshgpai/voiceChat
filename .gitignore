@@ -164,4 +164,8 @@ test_data
 *.xlsx
 *.csv
 *.txt
-# firestore_key.json
+*.excalidraw
+# firestore_key_agent.json
+telegram_php
+etc/secrets
+*.json

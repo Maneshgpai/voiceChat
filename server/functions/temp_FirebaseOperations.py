@@ -4,7 +4,7 @@ import datetime
 from pytz import timezone
 
 # Initialize the Firebase Admin SDK
-cred = credentials.Certificate("firestore_key.json")
+cred = credentials.Certificate("firestore_key_agent.json")
 firebase_admin.initialize_app(cred)
 
 # Initialize Firestore
@@ -35,8 +35,8 @@ def move_document(source_collection, target_collection, document_id):
     
     print(f"Document {document_id} has been moved from {source_collection} to {target_collection}.")
 ## MOVE DOCUMENT ##
-# source_collection = 'voiceClone_users'
-# target_collection = 'voiceClone_characters'
+# source_collection = 'user'
+# target_collection = 'profile'
 # document_id = '1qEiC6qsybMkmnNdVMbK'
 # move_document(source_collection, target_collection, document_id)
 
@@ -52,7 +52,7 @@ def duplicate_collection(source_collection_name,target_collection_name):
         doc_dict = doc.to_dict()
         target_doc_ref = target_collection_ref.document(doc.id)
         target_doc_ref.set(doc_dict)
-# duplicate_collection('voiceClone_tg_logs','voiceClone_tg_log_bkp')
+# duplicate_collection('log','voiceClone_tg_log_bkp')
 
 def duplicate_document(collection_name, original_doc_id):
     original_doc_ref = db.collection(collection_name).document(original_doc_id)
@@ -102,12 +102,12 @@ def update_timestamps(collection_name):
         doc_ref.update({'messages': messages})
     print("Finished updating all documents!")
 # update_timestamps('voiceClone_chats')
-# duplicate_collection('voiceClone_tg_chats','voiceClone_tg_chats_bkp20240809')
+# duplicate_collection('chat','chat_bkp20240809')
 
 
 def get_character_dtls():
     print("Downloading Character data...")
-    collection_ref = db.collection('voiceClone_characters')
+    collection_ref = db.collection('profile')
     docs = collection_ref.stream()
     charid_bottoken = []
     charid_prompt = []
@@ -152,13 +152,13 @@ def get_collection_count():
 # print(bot_token, reachout_prompt)
 # move_document('voiceClone_tg_chats', 'voiceClone_tg_chats_test_reachout', '6697940905_A8pNNpS9S5ytKTs7XsZY')
 
-# move_document('voiceClone_tg_chats', 'voiceClone_tg_chats_test_reachout', '6733334932_A8pNNpS9S5ytKTs7XsZY')
-# move_document('voiceClone_tg_chats', 'voiceClone_tg_chats_test_reachout', '6733334932_KojdgNzrBNJO8CyQgr5g')
-# move_document('voiceClone_tg_chats', 'voiceClone_tg_chats_test_reachout', '6733334932_bPm741abegxqm3t7rfeB')
-# move_document('voiceClone_tg_chats', 'voiceClone_tg_chats_test_reachout', '6733334932_jyNYGKS4xNjls2YbfFvV')
-# move_document('voiceClone_tg_chats', 'voiceClone_tg_chats_test_reachout', '6733334932_kZ9OXDQLbU6MFCYXkIHm')
-# move_document('voiceClone_tg_chats', 'voiceClone_tg_chats_test_reachout', '6733334932_uPJUM2kXjdnpkphuCPeO')
-# move_document('voiceClone_tg_chats', 'voiceClone_tg_chats_test_reachout', '7142807432_bPm741abegxqm3t7rfeB')
-# move_document('voiceClone_tg_chats', 'voiceClone_tg_chats_test_reachout', '7142807432_jyNYGKS4xNjls2YbfFvV')
-# move_document('voiceClone_tg_chats', 'voiceClone_tg_chats_test_reachout', '7142807432_kZ9OXDQLbU6MFCYXkIHm')
-# move_document('voiceClone_tg_chats', 'voiceClone_tg_chats_test_reachout', '7142807432_uPJUM2kXjdnpkphuCPeO')
+# move_document('chat', 'chat_test_reachout', '6733334932_A8pNNpS9S5ytKTs7XsZY')
+# move_document('chat', 'chat_test_reachout', '6733334932_KojdgNzrBNJO8CyQgr5g')
+# move_document('chat', 'chat_test_reachout', '6733334932_bPm741abegxqm3t7rfeB')
+# move_document('chat', 'chat_test_reachout', '6733334932_jyNYGKS4xNjls2YbfFvV')
+# move_document('chat', 'chat_test_reachout', '6733334932_kZ9OXDQLbU6MFCYXkIHm')
+# move_document('chat', 'chat_test_reachout', '6733334932_uPJUM2kXjdnpkphuCPeO')
+# move_document('chat', 'chat_test_reachout', '7142807432_bPm741abegxqm3t7rfeB')
+# move_document('chat', 'chat_test_reachout', '7142807432_jyNYGKS4xNjls2YbfFvV')
+# move_document('chat', 'chat_test_reachout', '7142807432_kZ9OXDQLbU6MFCYXkIHm')
+# move_document('chat', 'chat_test_reachout', '7142807432_uPJUM2kXjdnpkphuCPeO')

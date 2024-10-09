@@ -10,7 +10,7 @@ load_dotenv()
 ist = timezone(timedelta(hours=5, minutes=30))
 
 if "firestore_db" not in st.session_state:
-    db = firestore.Client.from_service_account_json("firestore_key.json")
+    db = firestore.Client.from_service_account_json(str(os.getenv("SECRETS_PATH")+"/firestore_key_agent.json"))
 else:
     db = st.session_state["firestore_db"]
 
@@ -57,7 +57,7 @@ def render_page():
 
 def validate_user():
 # def field_value_exists(collection_name, field_name, field_value):
-    collection_ref = db.collection('voiceClone_users')
+    collection_ref = db.collection('user')
     field_name = 'telegram_id'
     field_value = st.session_state.telegram_id
     query = collection_ref.where(field_name, '==',field_value)

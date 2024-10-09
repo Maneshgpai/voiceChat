@@ -15,3 +15,5 @@ replicate
 tenacity
 transformers
 pandas
+pygsheets
+google.cloud.texttospeech

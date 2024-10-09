@@ -16,7 +16,7 @@ load_dotenv()
 openai_api_key = os.getenv("OPENAI_API_KEY")
 client = OpenAI(api_key=openai_api_key)
 ist = timezone("Asia/Kolkata")
-db = firestore.Client.from_service_account_json("firestore_key.json")
+db = firestore.Client.from_service_account_json(str(os.getenv("SECRETS_PATH")+"/firestore_key_agent.json"))
 
 ## reachout parameters
 latest_messages_to_check = int(os.getenv("REACHOUT_LATEST_MSG_TO_CHECK"))
@@ -27,11 +27,11 @@ def get_datetime():
     return (str(datetime.now())).replace('.','').replace(':','').replace(' ','').replace('-','')
 def log(status,status_cd,message,origin,db_document_name):
     log_response = {"reachout"+"_"+get_datetime(): {"status": status,"status_cd":status_cd,"message":message, "origin":origin, "reachout": True, "timestamp":datetime.now(ist)}}
-    log_ref = db.collection('voiceClone_tg_logs').document(db_document_name)
+    log_ref = db.collection('log').document(db_document_name)
     func.createLog(log_ref, log_response)
 def update_chat_hist(message_hist,db_document_name, msg_id):
     try:
-        chat_ref = db.collection('voiceClone_tg_chats').document(db_document_name)
+        chat_ref = db.collection('chat').document(db_document_name)
         if not chat_ref.get().exists:
             chat_ref.set({'messages': []})
         chat_ref.update({"messages": firestore.ArrayUnion(message_hist)})
@@ -137,7 +137,7 @@ def sort_messages_by_ts(all_docs):
     return all_docs
 def fetch_latest_messages():
     all_docs = []
-    collection_ref = db.collection('voiceClone_tg_chats')
+    collection_ref = db.collection('chat')
 
     for doc in collection_ref.stream():
         doc_id = doc.id
@@ -204,7 +204,7 @@ def update_reachout_hist(text,text_or_voice,db_document_name):
 
 def get_character_dtls():
     print("Downloading Character data...")
-    collection_ref = db.collection('voiceClone_characters')
+    collection_ref = db.collection('profile')
     docs = collection_ref.stream()
     charid_bottoken = []
     charid_prompt = []

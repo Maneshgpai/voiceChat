@@ -10,7 +10,7 @@ import pandas as pd
 load_dotenv()
 
 if "firestore_db" not in st.session_state:
-    db = firestore.Client.from_service_account_json("firestore_key.json")
+    db = firestore.Client.from_service_account_json(str(os.getenv("SECRETS_PATH")+"/firestore_key_agent.json"))
 else:
     db = st.session_state["firestore_db"]
 
@@ -96,6 +96,7 @@ def set_character_setting(char_id):
         "voice_stability": st.session_state.voice_stability,
         "voice_similarity_boost": st.session_state.voice_similarity_boost,
         "voice_style": st.session_state.voice_style,
+        "voice_tts": st.session_state.voice_tts,
         "voice_use_speaker_boost": st.session_state.voice_use_speaker_boost}
     # print(f"pg_settings >> set_character_setting > Setting Updated Character Settings")
     st.session_state["character_setting"] = new_voice_setting
@@ -167,7 +168,7 @@ def reset_voice_setting():
     return voice_stability, voice_similarity_boost, voice_style, voice_use_speaker_boost
 def get_char_setting(char_id):
     ## If exists, fetch settings from DB
-    setting = db.collection('voiceClone_characters').document(char_id)
+    setting = db.collection('profile').document(char_id)
     doc = setting.get()
     char_setting = {}
     if doc.exists:
@@ -227,6 +228,7 @@ def render_setting_pg(action, context):
     voice_stability  = float(context['voice_stability'])
     voice_similarity_boost  = float(context['voice_similarity_boost'])
     voice_style  = float(context['voice_style'])
+    voice_tts = context.get('voice_tts')
     voice_use_speaker_boost = context['voice_use_speaker_boost']
 
     if (action == "create_new_char"):
@@ -245,7 +247,7 @@ def render_setting_pg(action, context):
     for i, item in enumerate(dropdown_val_model):
         if item == model:
             index_model = i
-    dropdown_val_lang = ["Hinglish", "English", "Hindi", "Bengali", "Tamil", "Gujarati", "Telugu", "Kannada", "Marathi", "Malayalam"]
+    dropdown_val_lang = ["German", "Hinglish", "English", "Hindi", "Bengali", "Tamil", "Gujarati", "Telugu", "Kannada", "Marathi", "Malayalam"]
     index_lang = 0
     for i, item in enumerate(dropdown_val_lang):
         if item == language:
@@ -333,6 +335,7 @@ def render_setting_pg(action, context):
         ## Setting Voice setting 
         with st.expander("Voice settings", expanded=False, icon=":material/settings_voice:"):
             st.write("Voices available in system:")
+            st.selectbox("Voice TTS engine", ['elevenlabs','google'], key="voice_tts")
             st.table(data=voice_df.drop(['Voice ID'], axis=1))
             voice_name = st.selectbox("Selected voice", voice_df['Name'].tolist(),index=int(index_voice_name), key="voice_name")
             result = voice_df.loc[voice_df['Name'] == voice_name, 'Voice ID']
@@ -380,7 +383,7 @@ def setting_pg(setting_action, char_id):
                 # print("******************* Error in update setting")
                 st.error(validate_stat)
 def get_all_characters():
-    users_ref = db.collection('voiceClone_characters')
+    users_ref = db.collection('profile')
     docs = users_ref.stream()
     user_data = []
     for doc in docs:
@@ -392,7 +395,7 @@ def get_all_characters():
     df = pd.DataFrame(user_data, columns=['Character', 'About Me', 'ID'])
     return(df)
 def get_all_voices():
-    users_ref = db.collection('voiceClone_voices')
+    users_ref = db.collection('voice')
     docs = users_ref.stream()
     user_data = []
     for doc in docs:
@@ -417,6 +420,7 @@ else:
     # print("********* Session valid, password validated. ")
     if "character_setting" not in st.session_state:
         df = get_all_characters()
+        print(f"*********** df:{df}")
         char_name = st.radio("Select existing character to edit", df['Character'].tolist(), index=0, key="character_nm", horizontal=True, label_visibility="visible")
         result = df.loc[df['Character'] == st.session_state.character_nm, 'About Me'].iloc[0]
         with st.expander(result[:30]+" ...", expanded=True):
