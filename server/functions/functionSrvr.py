@@ -190,12 +190,12 @@ def calculate_tokens(model, input_text, db, db_document_name, msg_id):
         if 'llama' in model.lower():
             # tokenizer = AutoTokenizer.from_pretrained("meta-llama/Meta-Llama-3-8B", token=os.getenv("HUGGINGFACE_API_KEY"))
             tokenizer = AutoTokenizer.from_pretrained("meta-llama/Meta-Llama-3-70B", token=os.getenv("HUGGINGFACE_API_KEY"))
-            tokens = tokenizer.tokenize(input_text)
+            tokens = tokenizer.tokenize(str(input_text))
             token_count = len(tokens)
         return token_count
     except Exception as e:
         error = "Error: {}".format(str(e))
-        print("*** ERROR *** TG_Bot/functionSrvr/get_tg_char_setting > ",error)
+        print("*** ERROR *** TG_Bot/functionSrvr/calculate_tokens > ",error)
         log_response = {str(msg_id)+"_"+get_datetime(): {"status": "error","status_cd":400,"message":error, "origin":"calculate_tokens", "message_id": msg_id, "timestamp":datetime.now(ist)}}
         log_ref = db.collection('voiceClone_tg_logs').document(db_document_name)
         createLog(log_ref, log_response)
